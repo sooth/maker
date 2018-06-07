@@ -1,0 +1,314 @@
+<div class="container-fluid">
+
+  <ng-template #loading>
+    Loading
+  </ng-template>
+
+  <div *ngIf="binance.isReady$ | async; else loading">
+
+    <div class="row mt-2">
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col">
+                <div class="form-row">
+                  <div class="form-group col">
+                    <label for="symbolInput">Symbol</label>
+                    <select class="form-control" id="symbolInput"
+                            [(ngModel)]="model.symbol"
+                            (change)="changeSymbol()">
+                      <option [value]=""></option>
+                      <option
+                          *ngFor="let symbol of binance.symbols | withquoteasset:model.quoteAsset"
+                          [value]="symbol">
+                        {{symbol}}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-group col">
+                    <label for="quoteAssetInput">Quote Asset</label>
+                    <select class="form-control" id="quoteAssetInput"
+                            (change)="changeQuoteAsset()"
+                            [(ngModel)]="model.quoteAsset">
+                      <option *ngFor="let quoteAsset of binance.quoteAssets"
+                              [value]="quoteAsset">
+                        {{quoteAsset}}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row"
+                     *ngIf="model.symbol && binance.symbolMap[model.symbol]">
+                  <div class="form-group col">
+                    <label for="baseAmountInput">Amount
+                      {{binance.symbolMap[model.symbol].baseAsset}}</label>
+                    <input id="baseAmountInput" class="form-control"
+                           type="text"
+                           disabled
+                           [(ngModel)]="model.orderInput.amount"
+                           [placeholder]="binance.symbolMap[model.symbol].baseAsset">
+                  </div>
+                  <div class="form-group col">
+                    <label for="quoteAmountInput">Amount
+                      {{model.quoteAsset}}</label>
+                    <input id="quoteAmountInput" class="form-control"
+                           type="text"
+                           disabled
+                           [(ngModel)]="model.orderInput.quoteAmount"
+                           [placeholder]="model.quoteAsset">
+                  </div>
+                  <div class="form-group col-3">
+                    <label for="quoteAmountInput">Balance %</label>
+                    <select class="form-control"
+                            (change)="updateOrderFormAssetAmount(); saveState();"
+                            [(ngModel)]="model.orderInput.quoteAssetPercent">
+                      <option [value]="pct"
+                              *ngFor="let pct of balancePercents">{{pct}}%
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="col">
+                    <div class="form-group">
+                      <label for="baseAmountInput">Buy Price</label>
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <select class="form-control"
+                                  style="border-top-right-radius: 0; z-index: 1029; border-bottom-right-radius: 0;"
+                                  [(ngModel)]="model.orderInput.priceSource"
+                                  [value]="model.orderInput.priceSource">
+                            <option value="LAST_PRICE">Last Price</option>
+                            <option value="BEST_BID">Best Bid</option>
+                            <option value="BEST_ASK">Best Ask</option>
+                          </select>
+                        </div>
+                        <input
+                            *ngIf="model.orderInput.priceSource == 'LAST_PRICE'"
+                            type="number" class="form-control" disabled
+                            [value]="binance.lastPriceMap[model.symbol] || null">
+                        <input
+                            *ngIf="model.orderInput.priceSource == 'BEST_BID'"
+                            type="number" class="form-control" disabled
+                            [value]="bidAskMap[model.symbol] && bidAskMap[model.symbol].bid || null">
+                        <input
+                            *ngIf="model.orderInput.priceSource == 'BEST_ASK'"
+                            type="number" class="form-control" disabled
+                            [value]="bidAskMap[model.symbol] && bidAskMap[model.symbol].ask || null">
+                        <!-- Disabled for now. -->
+                        <div class="input-group-append" hidden>
+                          <select class="form-control"
+                                  [(ngModel)]="model.orderInput.buyLimitPercent">
+                            <option [value]="0">--</option>
+                            <option [value]="1">+1%</option>
+                            <option [value]="0.1">+0.1%</option>
+                            <option [value]="0.01">+0.01%</option>
+                            <option [value]="-0.01">-0.01%</option>
+                            <option [value]="-0.1">-0.1%</option>
+                            <option [value]="-1">-1%</option>
+                            <option [value]="-5">-5%</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row mt-2">
+                  <div class="col">
+                    <button type="button"
+                            class="form-control btn btn-primary"
+                            (click)="makeOrder()">Make Order
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-3">
+                <table style="font-size: 0.95rem;">
+                  <!-- Quote asset balance. -->
+                  <tr>
+                    <th>{{model.quoteAsset}} Balance</th>
+                    <td *ngIf="balances[model.quoteAsset]">
+                      {{balances[model.quoteAsset].free | number:".8-8"}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>BNB Balance</th>
+                    <td *ngIf="balances['BNB']">{{balances['BNB'].free |
+                      number:".8-8"}}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <th>Last</th>
+                    <td>
+                      {{(binance.lastPriceMap[model.symbol] | number:".8-8")
+                      ||
+                      '--'}}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <th>Bid</th>
+                    <td>{{(bidAskMap[model.symbol] &&
+                      bidAskMap[model.symbol].bid
+                      | number:".8-8") || '--' }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Ask</th>
+                    <td>{{(bidAskMap[model.symbol] &&
+                      bidAskMap[model.symbol].ask
+                      | number:".8-8") || '--' }}
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="model.symbol">
+                    <th>Min. Notional</th>
+                    <td>
+                      {{binance.symbolMap[model.symbol] &&
+                      binance.symbolMap[model.symbol].minNotional || "--"}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Min. Quantity</th>
+                    <td>{{binance.symbolMap[model.symbol] &&
+                      binance.symbolMap[model.symbol].minQuantity || "--"}}
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="model.symbol">
+                    <th>Tick Size</th>
+                    <td>{{binance.symbolMap[model.symbol].tickSize |
+                      number:".8-8"}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Step Size</th>
+                    <td>{{binance.symbolMap[model.symbol].stepSize |
+                      number:".3-8"}}
+                    </td>
+                  </tr>
+
+                </table>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-1" id="sellActionRow">
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <div class="form-row mb-2">
+              <div class="form-group col">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox"
+                         value="false"
+                         name="trailingStopEnabled"
+                         [(ngModel)]="model.orderInput.trailingStopEnabled">
+                  <label class="form-check-label">Trailing
+                    Stop</label>
+                </div>
+
+                <div class="input-group"
+                     style="width: 100%;">
+                  <input type="number" class="form-control"
+                         step="0.1"
+                         title="Stop percent"
+                         placeholder="Percent..."
+                         name="trailingStopPercent"
+                         [disabled]="!model.orderInput.trailingStopEnabled"
+                         [(ngModel)]="model.orderInput.trailingStopPercent">
+                  <div class="input-group-append">
+                    <span class="input-group-text">%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group col">
+                <label>Deviation</label>
+                <div class="input-group"
+                     style="width: 100%;">
+                  <input type="number" class="form-control"
+                         title="Deviation"
+                         step="0.1"
+                         placeholder="Deviation..."
+                         name="trailingStopDeviation"
+                         [disabled]="!model.orderInput.trailingStopEnabled"
+                         [(ngModel)]="model.orderInput.trailingStopDeviation">
+                  <div class="input-group-append">
+                    <span class="input-group-text">%</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <div class="form-row mb-2">
+
+              <div class="form-group col">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox"
+                         value="false"
+                         [(ngModel)]="model.orderInput.stopLossEnabled">
+                  <label class="form-check-label">Stop Loss</label>
+                </div>
+                <div class="input-group">
+                  <input type="number" step="0.1" class="form-control"
+                         placeholder="Percent..."
+                         [disabled]="!model.orderInput.stopLossEnabled"
+                         [(ngModel)]="model.orderInput.stopLossPercent">
+                  <div class="input-group-append">
+                    <div class="input-group-text">%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group col">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox"
+                         value="false"
+                         [(ngModel)]="model.orderInput.limitSellEnabled">
+                  <label class="form-check-label">Quick Sell</label>
+                </div>
+                <div class="input-group">
+                  <input type="number" class="form-control"
+                         title="Stop percent"
+                         placeholder="Percent..."
+                         step="0.1"
+                         [value]="model.orderInput.limitSellPercent"
+                         [disabled]="!model.orderInput.limitSellEnabled"
+                         [(ngModel)]="model.orderInput.limitSellPercent">
+                  <div class="input-group-append">
+                    <div class="input-group-text">%</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-2">
+      <app-trade-table
+          (symbolClickHandler)="changeSymbol($event)"></app-trade-table>
+    </div>
+
+  </div>
+
+</div>
+
+<br/>

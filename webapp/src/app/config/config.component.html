@@ -1,0 +1,93 @@
+<div class="container">
+
+  <br/>
+
+  <div class="card">
+    <div class="card-header">
+      <b>Binance</b>
+    </div>
+    <div class="card-body">
+      <form *ngIf="form" [formGroup]="form">
+
+        <div class="form-group">
+          <label>Binance API key</label>
+          <input type="text" class="form-control"
+                 placeholder="Binance API key..."
+                 formControlName="binanceApiKey">
+        </div>
+
+        <div class="form-group">
+          <label>Binance API Secret</label>
+          <input type="text" class="form-control"
+                 placeholder="Binance API secret..."
+                 formControlName="binanceApiSecret">
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <button type="button" class="btn btn-outline-secondary btn-block"
+                    (click)="resetBinanceForm()">Reset
+            </button>
+          </div>
+
+          <div class="col">
+            <button type="button" class="btn btn-success btn-block"
+                    [disabled]="form.invalid"
+                    (click)="binanceTest()">Test
+            </button>
+          </div>
+        </div>
+
+        <div class="row mt-2">
+          <div class="col">
+            <button type="button" class="btn btn-primary btn-block"
+                    (click)="binanceSave()"
+                    [disabled]="form.invalid || !testOk">
+              Save
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <br/>
+
+  <div class="card">
+    <div class="card-header">
+      <b>Preferences</b>
+    </div>
+    <div class="card-body">
+
+      <form *ngIf="preferenceForm" [formGroup]="preferenceForm">
+
+        <div class="form-group">
+          <label>Balance Percentages
+            <small>(Comma separated list)</small>
+          </label>
+          <input type="text" class="form-control"
+                 formControlName="balancePercents">
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <button type="button" class="btn btn-primary btn-block"
+                    [disabled]="preferenceForm.invalid"
+                    (click)="savePreferences()">Save
+            </button>
+          </div>
+          <div class="col">
+            <button type="button" class="btn btn-secondary btn-block"
+                    (click)="resetPreferences()">
+              Reset
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>

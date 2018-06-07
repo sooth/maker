@@ -1,0 +1,233 @@
+<div class="container">
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Quadriga Trader</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+      </ul>
+      <form class="form-inline my-2 my-lg-0">
+      </form>
+    </div>
+  </nav>
+
+  <br/>
+
+  <div class="row">
+    <div class="col">
+      <table class="table-sm table table-bordered">
+        <tr>
+          <th>Book</th>
+          <th>Last</th>
+          <th>Bid</th>
+          <th>Ask</th>
+          <th>Spread</th>
+          <th>%</th>
+          <th>Buy %</th>
+        </tr>
+        <tr *ngFor="let book of books">
+          <td>{{book}}</td>
+          <td>{{orderBooks[book].ticker.last | number:".8"}}</td>
+          <td (click)="model.buy.price=orderBooks[book].ticker.bid">
+            {{orderBooks[book].ticker.bid | number:".8"}}
+          </td>
+          <td>{{orderBooks[book].ticker.ask | number:".8"}}</td>
+          <td>{{orderBooks[book].ticker.spread | number:".8"}}</td>
+          <td>{{orderBooks[book].ticker.spreadPercent | percent:".2"}}</td>
+          <td>{{orderBooks[book].buyPct | percent:".2"}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <br/>
+
+  <table class="table table-bordered">
+    <tr>
+      <th colspan="3">Arbitrage</th>
+    </tr>
+    <tr *ngIf="arb['LTC_BTC']">
+      <td>LTC -> BTC</td>
+      <td>{{arb["LTC_BTC"].cashIn}}</td>
+      <td>{{arb["LTC_BTC"].cashOut}}</td>
+    </tr>
+    <tr *ngIf="arb['BTC_LTC']">
+      <td>BTC -> LTC</td>
+      <td>{{arb["BTC_LTC"].cashIn}}</td>
+      <td>{{arb["BTC_LTC"].cashOut}}</td>
+    </tr>
+    <tr *ngIf="arb['ETH_BTC']">
+      <td>ETH -> BTC</td>
+      <td>{{arb["ETH_BTC"].cashIn}}</td>
+      <td>{{arb["ETH_BTC"].cashOut}}</td>
+    </tr>
+    <tr *ngIf="arb['BTC_ETH']">
+      <td>BTC -> ETH</td>
+      <td>{{arb["BTC_ETH"].cashIn}}</td>
+      <td>{{arb["BTC_ETH"].cashOut}}</td>
+    </tr>
+    <tr *ngIf="arb['BCH_BTC']">
+      <td>BCH -> BTC</td>
+      <td>{{arb["BCH_BTC"].cashIn}}</td>
+      <td>{{arb["BCH_BTC"].cashOut}}</td>
+    </tr>
+    <tr *ngIf="arb['BTC_BCH']">
+      <td>BTC -> BCH</td>
+      <td>{{arb["BTC_BCH"].cashIn}}</td>
+      <td>{{arb["BTC_BCH"].cashOut}}</td>
+    </tr>
+  </table>
+
+  <br/>
+
+  <div class="row">
+
+    <div class="col">
+
+      <div class="card">
+        <div class="card-header">
+          Order
+        </div>
+        <div class="card-body">
+
+          <div class="row">
+            <div class="col">
+              <div class="card">
+                <div class="card-header">Buy</div>
+                <div class="card-body">
+                  <form>
+                    <div class="form-group">
+                      <label>Amount</label>
+                      <input type="number" class="form-control"
+                             [(ngModel)]="model.buy.amount"
+                             name="buyAmount">
+                    </div>
+                    <div class="form-group">
+                      <label>Price</label>
+                      <input type="number" class="form-control"
+                             [(ngModel)]="model.buy.price"
+                             name="averageBuyPrice">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"
+                            (click)="submitBuy()">
+                      Buy
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card">
+                <div class="card-header">
+                  Sell
+                </div>
+                <div class="card-body">
+                  <form>
+                    <div class="form-group">
+                      <label>Amount</label>
+                      <input type="number" class="form-control"
+                             [(ngModel)]="model.sell.amount"
+                             name="buyAmount">
+                    </div>
+                    <div class="form-group">
+                      <label>Price</label>
+                      <input type="number" class="form-control"
+                             [(ngModel)]="model.sell.price"
+                             name="averageBuyPrice">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"
+                            (click)="submitSell()">
+                      Sell
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <button type="button" class="btn btn-primary btn-block"
+                      (click)="populate()">Populate
+              </button>
+            </div>
+            <div class="col">
+              <button type="button" (click)="submitBuySell()"
+                      class="btn btn-primary btn-block">Buy /
+                Sell
+              </button>
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <br/>
+
+  <div class="row">
+
+    <div class="col">
+
+      <div class="card">
+        <div class="card-header">
+          Order Book
+          <select class="float-right" [(ngModel)]="book">
+            <option *ngFor="let book of books">{{book}}</option>
+          </select>
+        </div>
+        <div class="card-body">
+
+          <div class="row">
+
+            <div class="col">
+              <div class="card">
+                <div class="card-header">Buy Orders</div>
+                <table class="table table-bordered table-sm table-striped">
+                  <tr>
+                    <th>Price</th>
+                    <th>Amount</th>
+                    <th>Value</th>
+                  </tr>
+                  <tr *ngFor="let order of orderBooks[book].bidsArray">
+                    <td>{{order.price}}</td>
+                    <td>{{order.amount}}</td>
+                    <td>{{order.value}}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card">
+                <div class="card-header">Sell Orders</div>
+                <table class="table table-bordered table-sm table-striped">
+                  <tr>
+                    <th>Price</th>
+                    <th>Amount</th>
+                    <th>Value</th>
+                  </tr>
+                  <tr *ngFor="let order of orderBooks[book].asksArray">
+                    <td>{{order.price}}</td>
+                    <td>{{order.amount}}</td>
+                    <td>{{order.value}}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

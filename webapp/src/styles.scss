@@ -1,0 +1,39 @@
+@import "~bootstrap/scss/bootstrap";
+@import "~toastr/build/toastr.css";
+
+body {
+  padding-top: 40px;
+}
+
+.dropdown-menu span {
+  cursor: pointer;
+}
+
+.input-group-append {
+  select {
+    @extend .dropdown-toggle;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    // Fixes the glowing border around the select.
+    position: relative;
+    z-index: 2;
+  }
+}
+
+.form-control {
+  @extend .form-control-sm;
+}
+
+.btn {
+  @extend .btn-sm;
+}
+
+.input-group {
+  @extend .input-group-sm;
+}
+
+.top-nav {
+  padding-top: 0;
+  padding-bottom: 0;
+}

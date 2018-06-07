@@ -1,0 +1,57 @@
+image: fedora:28
+
+before_script:
+  - mkdir -p /go/src/github.com/crankykernel/maker
+  - cp -a . /go/src/github.com/crankykernel/maker
+  - |
+    if test -e ./vendor; then
+      echo "Restoring vendor directory."
+      cp -a vendor /go/src/github.com/crankykernel/maker/
+    fi
+  - |
+    if test -e ./node_modules; then
+      echo "Restoring node_modules directory."
+      cp -a node_modules /go/src/github.com/crankykernel/maker/webapp/
+    fi
+  - |
+    if test -e ./dnf; then
+      echo "Restoring dnf cache."
+      cp -a dnf /var/cache/
+    fi
+  - yum -y install git make gcc mingw64-gcc zip
+  - yum -y install go nodejs npm
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - vendor/
+    - node_modules/
+    - dnf/
+
+build:
+  script: |
+    export GOPATH=/go
+    export PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+    go get -u github.com/gobuffalo/packr/...
+    go get -u github.com/golang/dep/cmd/dep
+    go version
+    go env
+    cd /go/src/github.com/crankykernel/maker
+    (cd webapp && make install-deps)
+    GOOS=linux GOARCH=amd64 make dist
+    CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 make dist
+
+    cp dist/*.zip ${CI_PROJECT_DIR}
+
+    cp -a webapp/node_modules ${CI_PROJECT_DIR}
+    cp -a vendor ${CI_PROJECT_DIR}
+    cp -a /var/cache/dnf ${CI_PROJECT_DIR}
+
+  artifacts:
+    paths:
+      - "*.zip"
+
+  artifacts:
+    paths:
+      - "*.zip"
+

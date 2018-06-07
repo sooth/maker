@@ -1,0 +1,15 @@
+{
+  "/api": {
+    "target": "http://localhost:6045",
+    "secure": false
+  },
+  "/proxy": {
+    "target": "http://localhost:6045",
+    "secure": false
+  },
+  "/ws": {
+    "target": "ws://localhost:6045",
+    "secure": false,
+    "ws": true
+  }
+}

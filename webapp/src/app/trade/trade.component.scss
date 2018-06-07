@@ -1,0 +1,33 @@
+.form-group {
+  label {
+    margin-bottom: 0px;
+    font-size: smaller;
+  }
+}
+
+.form-group .custom-select {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}
+
+.card-body {
+  padding-top: 0px;
+  padding-bottom: 2px;
+}
+
+.col {
+  margin-bottom: 0 !important;
+}
+
+.form-group {
+  margin-bottom: 0 !important;
+}
+
+#sellActionRow {
+  .col:first-child {
+    padding-right: 2px;
+  }
+  .col:nth-child(2) {
+    padding-left: 2px;
+  }
+}
