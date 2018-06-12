@@ -33,4 +33,4 @@ clean:
 	rm -f maker maker.exe
 
 dev-server:
-	reflex -d none -s -r \.go$ -- go run ./main.go server
+	reflex -d none -s -r \.go$$ -- go run ./main.go server
