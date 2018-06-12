@@ -295,6 +295,16 @@
               </button>
             </div>
 
+            <div class="col-12">
+              <button type="button"
+                      title="Stop Tracking Order"
+                      (click)="abandon(trade)"
+                      [disabled]="!trade.__canAbandon"
+                      class="btn btn-primary btn-sm btn-block mb-1">
+                Abandon
+              </button>
+            </div>
+
           </div>
 
         </td>

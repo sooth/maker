@@ -84,6 +84,32 @@ func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
+func abandonTradeHandler(tradeService *TradeService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		tradeId := vars["tradeId"]
+		if tradeId == "" {
+			writeJsonError(w, http.StatusBadRequest, "tradeId required")
+			return
+		}
+
+		logFields := log.Fields{
+			"tradeId": tradeId,
+		}
+
+		trade := tradeService.FindTradeByLocalID(tradeId)
+		if trade == nil {
+			log.WithFields(logFields).
+				Warn("Failed to abandon trade, tradeId not found.")
+			writeJsonError(w, http.StatusNotFound, "trade not found")
+			return
+		}
+
+		tradeService.AbandonTrade(trade)
+		log.WithFields(logFields).Info("Trade abandoned.")
+	}
+}
+
 func updateTradeStopLossSettingsHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error

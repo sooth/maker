@@ -131,6 +131,14 @@ export class MakerService {
                     this.logger.log("Failed to archive trade: " + JSON.stringify(error));
                 });
     }
+
+    abandonTrade(trade: TradeState) {
+        this.http.post(`/api/binance/trade/${trade.LocalID}/abandon`, null, {})
+                .subscribe(() => {
+                }, (error) => {
+                    this.logger.log("Failed to abandon trade: " + JSON.stringify(error));
+                });
+    }
 }
 
 export enum TradeStatus {
@@ -141,6 +149,7 @@ export enum TradeStatus {
     PENDING_SELL = "PENDING_SELL",
     DONE = "DONE",
     CANCELED = "CANCELED",
+    ABANDONED = "ABANDONED",
 }
 
 export interface TradeState {

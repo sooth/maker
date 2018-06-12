@@ -91,6 +91,11 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	for _, trade := range s.TradesByLocalID {
+
+		if trade.IsDone() {
+			continue
+		}
+
 		if trade.State.Symbol == lastTrade.Symbol {
 
 			switch trade.State.Status {
@@ -236,13 +241,16 @@ func (s *TradeService) FindTradeByLocalID(localId string) *Trade {
 	return s.TradesByLocalID[localId]
 }
 
+func (s *TradeService) AbandonTrade(trade *Trade) {
+	if !trade.IsDone() {
+		trade.State.Status = TradeStatusAbandoned
+		DbUpdateTrade(trade)
+		s.BroadcastTradeUpdate(trade)
+	}
+}
+
 func (s *TradeService) ArchiveTrade(trade *Trade) error {
-	switch trade.State.Status {
-	case TradeStatusDone:
-		fallthrough
-	case TradeStatusCanceled:
-		fallthrough
-	case TradeStatusFailed:
+	if trade.IsDone() {
 		if err := DbArchiveTrade(trade); err != nil {
 			return err
 		}

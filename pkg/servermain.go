@@ -120,6 +120,8 @@ func ServerMain() {
 		marketSellHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/trade/{tradeId}/archive",
 		archiveTradeHandler(tradeService)).Methods("POST")
+	router.HandleFunc("/api/binance/trade/{tradeId}/abandon",
+		abandonTradeHandler(tradeService)).Methods("POST")
 
 	router.HandleFunc("/api/binance/account/test",
 		binanceTestHandler).Methods("GET")
@@ -186,6 +188,6 @@ func ServerMain() {
 			}
 		}()
 	}
-	
+
 	wg.Wait()
 }

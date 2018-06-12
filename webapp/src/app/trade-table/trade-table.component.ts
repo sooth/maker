@@ -48,6 +48,7 @@ export class TradeTableComponent implements OnInit {
                 appTradeState.__rowClassName = this.getRowClass(trade);
                 appTradeState.__canArchive = this.canArchive(trade);
                 appTradeState.__canSell = this.canSell(trade);
+                appTradeState.__canAbandon = this.canAbandon(trade);
                 trades.push(appTradeState);
             }
             this.trades = trades.sort((a, b) => {
@@ -83,6 +84,7 @@ export class TradeTableComponent implements OnInit {
             case TradeStatus.DONE:
             case TradeStatus.CANCELED:
             case TradeStatus.FAILED:
+            case TradeStatus.ABANDONED:
                 return true;
             default:
                 return false;
@@ -96,6 +98,18 @@ export class TradeTableComponent implements OnInit {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    private canAbandon(trade: AppTradeState): boolean {
+        switch (trade.Status) {
+            case TradeStatus.DONE:
+            case TradeStatus.CANCELED:
+            case TradeStatus.FAILED:
+            case TradeStatus.ABANDONED:
+                return false;
+            default:
+                return true;
         }
     }
 
@@ -140,6 +154,10 @@ export class TradeTableComponent implements OnInit {
         this.maker.archiveTrade(trade);
     }
 
+    abandon(trade: TradeState) {
+        this.maker.abandonTrade(trade);
+    }
+
     archiveAll() {
         for (const trade of this.trades) {
             switch (trade.Status) {
@@ -180,6 +198,7 @@ export interface AppTradeState extends TradeState {
     __rowClassName?: string;
     __canArchive?: boolean;
     __canSell?: boolean;
+    __canAbandon?: boolean;
 
     /** The percent off from the purchase price. */
     buyPercentOffsetPercent?: number;

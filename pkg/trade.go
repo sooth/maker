@@ -34,6 +34,7 @@ const (
 	TradeStatusPendingSell TradeStatus = "PENDING_SELL"
 	TradeStatusDone        TradeStatus = "DONE"
 	TradeStatusCanceled    TradeStatus = "CANCELED"
+	TradeStatusAbandoned   TradeStatus = "ABANDONED"
 )
 
 type BuyOrder struct {
@@ -149,6 +150,18 @@ func NewTradeWithState(state TradeState) *Trade {
 	trade.UpdateSellState()
 	trade.UpdateBuyState()
 	return trade
+}
+
+func (t *Trade) IsDone() bool {
+	switch (t.State.Status) {
+	case TradeStatusDone:
+	case TradeStatusCanceled:
+	case TradeStatusFailed:
+	case TradeStatusAbandoned:
+	default:
+		return false
+	}
+	return true
 }
 
 func (t *Trade) SetLimitSell(enable bool, percent float64) {
