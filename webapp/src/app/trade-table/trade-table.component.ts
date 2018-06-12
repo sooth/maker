@@ -16,7 +16,6 @@
 import {Component, EventEmitter, OnInit, Output} from "@angular/core";
 import {MakerService, TradeMap, TradeState, TradeStatus} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
-import {BinanceService} from "../binance.service";
 
 @Component({
     selector: "app-trade-table",
@@ -36,8 +35,7 @@ export class TradeTableComponent implements OnInit {
     @Output() symbolClickHandler: EventEmitter<any> = new EventEmitter();
 
     constructor(public maker: MakerService,
-                logger: LoggerService,
-                private binance: BinanceService) {
+                logger: LoggerService) {
         this.logger = logger.getLogger("TradeTableComponent");
     }
 
@@ -48,7 +46,8 @@ export class TradeTableComponent implements OnInit {
                 const trade: TradeState = tradeMap[tradeId];
                 const appTradeState = <AppTradeState>trade;
                 appTradeState.__rowClassName = this.getRowClass(trade);
-                appTradeState.__canArchive = this.getCanArchive(trade);
+                appTradeState.__canArchive = this.canArchive(trade);
+                appTradeState.__canSell = this.canSell(trade);
                 trades.push(appTradeState);
             }
             this.trades = trades.sort((a, b) => {
@@ -79,11 +78,21 @@ export class TradeTableComponent implements OnInit {
         this.symbolClickHandler.emit(symbol);
     }
 
-    private getCanArchive(trade: AppTradeState): boolean {
+    private canArchive(trade: AppTradeState): boolean {
         switch (trade.Status) {
             case TradeStatus.DONE:
             case TradeStatus.CANCELED:
             case TradeStatus.FAILED:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private canSell(trade: AppTradeState): boolean {
+        switch (trade.Status) {
+            case TradeStatus.WATCHING:
+            case TradeStatus.PENDING_SELL:
                 return true;
             default:
                 return false;
@@ -170,6 +179,7 @@ export class TradeTableComponent implements OnInit {
 export interface AppTradeState extends TradeState {
     __rowClassName?: string;
     __canArchive?: boolean;
+    __canSell?: boolean;
 
     /** The percent off from the purchase price. */
     buyPercentOffsetPercent?: number;

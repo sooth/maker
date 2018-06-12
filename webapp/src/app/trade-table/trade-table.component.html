@@ -214,7 +214,7 @@
             <div class="col-12">
               <button type="button"
                       class="btn btn-primary btn-sm mb-1 btn-block"
-                      [disabled]="trade.Status == TradeStatus.DONE"
+                      [disabled]="trade.Status != TradeStatus.PENDING_BUY"
                       (click)="cancelBuy(trade)"
               >Cancel Buy
               </button>
@@ -224,6 +224,7 @@
                 <button type="button"
                         class="btn btn-primary btn-sm dropdown-toggle mb-1 btn-block"
                         data-toggle="dropdown" aria-haspopup="true"
+                        [disabled]="!trade.__canSell"
                         aria-expanded="false">
                   Sell
                 </button>
