@@ -45,6 +45,10 @@
           <span *ngIf="trade.CloseTime">
             C: {{trade.CloseTime| date:"LLL dd HH:mm:ss"}}
           </span>
+          <span
+              style="display: block; font-size: 0.675rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            {{trade.LocalID}}
+          </span>
         </td>
 
         <!-- Buy status. -->
