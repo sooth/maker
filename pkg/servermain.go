@@ -20,7 +20,6 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"github.com/crankykernel/cryptotrader/binance"
-	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/crankykernel/maker/pkg/log"
 	"github.com/crankykernel/maker/pkg/config"
@@ -48,9 +47,10 @@ func getBinanceRestClient() *binance.RestClient {
 }
 
 type ApplicationContext struct {
-	TradeService         *TradeService
-	BinanceStreamManager *BinanceStreamManager
-	OpenBrowser          bool
+	TradeService          *TradeService
+	BinanceStreamManager  *BinanceStreamManager
+	BinanceUserDataStream *BinanceUserDataStream
+	OpenBrowser           bool
 }
 
 func ServerMain() {
@@ -82,9 +82,9 @@ func ServerMain() {
 	}
 	log.Printf("Restored %d trade states.", len(tradeService.TradesByClientID))
 
-	binanceUserDataStream := NewBinanceUserDataStream()
-	userStreamChannel := binanceUserDataStream.Subscribe()
-	go binanceUserDataStream.Run()
+	applicationContext.BinanceUserDataStream = NewBinanceUserDataStream()
+	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
+	go applicationContext.BinanceUserDataStream.Run()
 
 	go func() {
 		for {
@@ -132,23 +132,6 @@ func ServerMain() {
 	binanceApiProxyHandler := http.StripPrefix("/proxy/binance",
 		binance.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)
-
-	router.HandleFunc("/ws/binance/userStream", func(w http.ResponseWriter, r *http.Request) {
-		upgrader := websocket.Upgrader{}
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Printf("error: failed to upgrade user stream websocket: %v", err)
-		}
-		userStreamChannel := binanceUserDataStream.Subscribe()
-		defer binanceUserDataStream.Unsubscribe(userStreamChannel)
-
-		for {
-			select {
-			case message := <-userStreamChannel:
-				ws.WriteMessage(websocket.TextMessage, message.Raw)
-			}
-		}
-	})
 
 	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext))
 

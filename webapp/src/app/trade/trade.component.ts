@@ -23,6 +23,7 @@ import * as Mousetrap from "mousetrap";
 import * as $ from "jquery";
 import {round8, roundx} from "../utils";
 import {ConfigService} from "../config.service";
+import {MakerService} from "../maker.service";
 
 declare var window: any;
 
@@ -96,8 +97,11 @@ export class TradeComponent implements OnInit, OnDestroy {
 
     balancePercents: number[] = [];
 
+    private subscriptions: Subscription[] = [];
+
     constructor(private api: BinanceApiService,
                 public binance: BinanceService,
+                private maker: MakerService,
                 private config: ConfigService,
     ) {
     }
@@ -118,16 +122,15 @@ export class TradeComponent implements OnInit, OnDestroy {
         }, () => {
         });
 
-        this.binance.userDataStream$
-                .subscribe((msg) => {
-                    if (msg.accountInfo) {
-                        this.updateBalances(msg.accountInfo);
-                    }
-                });
+        let s = this.maker.binanceAccountInfo$.subscribe((accountInfo) => {
+            this.updateBalances(accountInfo);
+        });
+        this.subscriptions.push(s);
 
-        this.binance.aggTradeStream$.subscribe((trade) => {
+        s = this.binance.aggTradeStream$.subscribe((trade) => {
             this.onAggTrade(trade);
         });
+        this.subscriptions.push(s);
 
         Mousetrap.bind("/", () => {
             window.scrollTo(0, 0);
@@ -141,6 +144,9 @@ export class TradeComponent implements OnInit, OnDestroy {
         }
         if (this.userDataStreamSubscription) {
             this.userDataStreamSubscription.unsubscribe();
+        }
+        for (const sub of this.subscriptions) {
+            sub.unsubscribe();
         }
     }
 
@@ -233,6 +239,9 @@ export class TradeComponent implements OnInit, OnDestroy {
     }
 
     updateOrderFormAssetAmount() {
+        if (!this.balances[this.model.quoteAsset]) {
+            return;
+        }
         const symbol = this.model.symbol;
         const available = this.balances[this.model.quoteAsset].free;
         const portion = round8(available * this.model.orderInput.quoteAssetPercent / 100);

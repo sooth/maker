@@ -25,8 +25,7 @@ import {
     OrderType,
     PriceTicker,
     SymbolInfo,
-    TimeInForce,
-    UserStreamEvent
+    TimeInForce
 } from "./binance-api.service";
 import {roundx} from "./utils";
 import {map, multicast, refCount, switchMap, take, tap} from "rxjs/operators";
@@ -85,14 +84,6 @@ export class BinanceService {
 
     streams$: { [key: string]: Observable<any> } = {};
 
-    /**
-     * The Binance user stream that can be subscribed to.
-     *
-     * As this service subscribes to the Binance user stream, publish all
-     * received messages to this subjects for other modules that are interested.
-     */
-    userDataStream$: Subject<UserStreamEvent> = new Subject<UserStreamEvent>();
-
     private isReadySubject: Subject<boolean> = null;
     public isReady$: Observable<boolean> = null;
 
@@ -113,12 +104,6 @@ export class BinanceService {
         this.makerApi.getConfig().subscribe((config) => {
             this.api.apiKey = config["binance.api.key"];
             this.api.apiSecret = config["binance.api.secret"];
-
-            // Subscribe to the user data stream.
-            this.api.openUserDataStream()
-                    .subscribe((msg) => {
-                        this.userDataStream$.next(msg);
-                    });
 
             this.updateExchangeInfo()
                     .pipe(switchMap(() => {

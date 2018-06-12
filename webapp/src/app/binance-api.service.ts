@@ -67,8 +67,7 @@ export class BinanceApiService {
 
     private _apiSecret: string = null;
 
-    constructor(private http: HttpClient,
-                private toastr: ToastrService) {
+    constructor(private http: HttpClient) {
     }
 
     set apiKey(key: string) {
@@ -216,75 +215,6 @@ export class BinanceApiService {
         }));
     }
 
-    openUserDataStream(): Observable<UserStreamEvent> {
-        return Observable.create((observer) => {
-            let ws: WebSocket = null;
-            let closeRequested = false;
-            const openWebSocket = () => {
-                console.log(`Opening user stream.`);
-                let opened = false;
-
-                ws = new WebSocket(`ws://${window.location.host}/ws/binance/userStream`);
-
-                ws.onmessage = (event) => {
-                    observer.next(JSON.parse(event.data));
-                };
-
-                ws.onopen = (event) => {
-                    opened = true;
-                    this.toastr.info("Connected to Binance user stream.", null, {
-                        timeOut: 3000,
-                        preventDuplicates: true,
-                    });
-                };
-
-                ws.onerror = (event) => {
-                    console.log(`User stream websocket error: ${JSON.stringify(event)}`);
-                };
-
-                ws.onclose = () => {
-                    console.log(`User stream closed: closeRequested=${closeRequested}`);
-                    if (!closeRequested) {
-                        this.toastr.error("User data stream closed. Reconnecting.", null, {
-                            timeOut: 3000,
-                            closeButton: true,
-                            preventDuplicates: true,
-                            preventOpenDuplicates: true,
-                        });
-                        if (opened) {
-                            openWebSocket();
-                        } else {
-                            setTimeout(() => {
-                                openWebSocket();
-                            }, 3000);
-                        }
-                    }
-                };
-            };
-
-            openWebSocket();
-
-            return () => {
-                closeRequested = true;
-                if (ws != null) {
-                    ws.close();
-                }
-            };
-
-        }).pipe(map((r: any) => {
-            const event: UserStreamEvent = {
-                event: r.e,
-                data: r,
-            };
-            if (event.event === "outboundAccountInfo") {
-                event.accountInfo = AccountInfo.fromStream(event.data);
-            } else if (event.event === "executionReport") {
-                event.executionReport = ExecutionReport.fromStream(event.data);
-            }
-            return event;
-        }));
-    }
-
 }
 
 interface RestTickerPriceResponse {
@@ -306,14 +236,6 @@ export interface BuyOrderResponse {
     trade_id: string;
 }
 
-export interface UserStreamEvent {
-    event: string;
-    data: any;
-
-    accountInfo?: AccountInfo;
-    executionReport?: ExecutionReport;
-}
-
 export interface StreamBalance {
     a: string; // Asset.
     f: string; // Free amount.
@@ -324,104 +246,6 @@ export interface RestBalance {
     asset: string;
     free: string;
     locked: string;
-}
-
-export interface StreamExecutionReport {
-    e: string;
-    E: number;
-    s: string;
-    c: string;
-    S: Side; // Side.
-    o: OrderType;
-    f: string;
-    q: string;
-    p: string;
-    P: string;
-    F: string;
-    C: string; // Original client order ID.
-    x: string;
-    X: string;
-    r: string;
-    i: number;
-    l: string;
-    z: string;
-    L: string;
-    n: string;
-    N: string;
-    T: number;
-    t: number;
-    w: boolean;
-    M: boolean;
-}
-
-export class ExecutionReport {
-
-    eventTime: Date = null;
-
-    symbol: string = null;
-
-    clientOrderId: string = null;
-
-    side: Side = null;
-
-    orderType: OrderType = null;
-
-    timeInForce: string = null;
-
-    quantity: number = null;
-
-    price: number = null;
-
-    originalClientOrderId: string = null;
-
-    executionType: string = null;
-
-    orderStatus: OrderStatus = null;
-
-    rejectReason: string = null;
-
-    orderId: number = null;
-
-    lastExecutedQuantity: number = null;
-
-    cumulativeFilledQuantity: number = null;
-
-    lastExecutedPrice: number = null;
-
-    commissionAmount: number = null;
-
-    commissionAsset: string = null;
-
-    transactionTime: Date = null;
-
-    tradeId: number = null;
-
-    static fromStream(data: StreamExecutionReport): ExecutionReport {
-        const r = new ExecutionReport();
-        r.eventTime = new Date(data.E);
-        r.symbol = data.s;
-        r.clientOrderId = data.c;
-        r.side = data.S;
-        r.orderType = data.o;
-        r.timeInForce = data.f;
-        r.quantity = +data.q;
-        r.price = +data.p;
-        r.originalClientOrderId = data.C;
-        r.executionType = data.x;
-        r.orderStatus = <OrderStatus>data.X;
-        r.rejectReason = data.r;
-        r.orderId = data.i;
-        r.lastExecutedQuantity = +data.l;
-        r.cumulativeFilledQuantity = +data.z;
-        r.lastExecutedPrice = +data.L;
-        r.commissionAmount = +data.n;
-        r.commissionAsset = data.N;
-        r.transactionTime = new Date(data.T);
-        r.tradeId = data.t;
-
-        return r;
-    }
-
 }
 
 export class Balance {

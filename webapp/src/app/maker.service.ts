@@ -16,7 +16,14 @@
 import {Injectable} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
 import {Subject} from "rxjs/Subject";
-import {AggTrade, BinanceApiService, buildAggTradeFromStream, StreamAggTrade} from "./binance-api.service";
+import {
+    AccountInfo,
+    AggTrade,
+    BinanceApiService,
+    buildAggTradeFromStream,
+    RawStreamAccountInfo,
+    StreamAggTrade
+} from "./binance-api.service";
 import {HttpClient, HttpParams} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
 
@@ -38,6 +45,8 @@ export class MakerService {
 
     public binanceAggTrades$: Subject<AggTrade> = new Subject();
 
+    public binanceAccountInfo$: Subject<AccountInfo> = new Subject();
+
     private logger: Logger = null;
 
     constructor(private http: HttpClient,
@@ -57,6 +66,13 @@ export class MakerService {
                 case MakerMessageType.TRADE_ARCHIVED:
                     delete(this.tradeMap[message.tradeId]);
                     this.onTradeUpdate.next(this.tradeMap);
+                    break;
+                case MakerMessageType.BINANCE_OUTBOUND_ACCOUNT_INFO:
+                    const accountInfo = AccountInfo.fromStream(
+                            message.binanceOutboundAccountInfo);
+                    this.binanceAccountInfo$.next(accountInfo);
+                    break;
+                default:
                     break;
             }
         };
@@ -192,13 +208,15 @@ export interface MakerMessage {
     trade?: TradeState;
     binanceAggTrade?: StreamAggTrade;
     tradeId?: string;
+    binanceOutboundAccountInfo: RawStreamAccountInfo;
 }
 
 export enum MakerMessageType {
-    PING = "ping",
     TRADE = "trade",
     BINANCE_AGG_TRADE = "binanceAggTrade",
     TRADE_ARCHIVED = "tradeArchived",
+    BINANCE_EXECUTION_REPORT = "binanceExecutionReport",
+    BINANCE_OUTBOUND_ACCOUNT_INFO = "binanceOutboundAccountInfo",
 }
 
 class MakerWebSocket {

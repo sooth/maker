@@ -84,6 +84,9 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	binanceTradeStreamChannel := h.appContext.BinanceStreamManager.SubscribeTrades()
 	defer h.appContext.BinanceStreamManager.UnsubscribeTrades(binanceTradeStreamChannel)
 
+	binanceUserStreamChannel := h.appContext.BinanceUserDataStream.Subscribe()
+	defer h.appContext.BinanceUserDataStream.Unsubscribe(binanceUserStreamChannel)
+
 	writeChannel := make(chan interface{})
 
 	go h.readLoop(ws, doneChannel)
@@ -108,6 +111,25 @@ Loop:
 		select {
 		case <-doneChannel:
 			break Loop
+		case binanceUserEvent := <-binanceUserStreamChannel:
+			switch binanceUserEvent.EventType {
+			case EventTypeExecutionReport:
+				message := map[string]interface{}{
+					"messageType":            "binanceExecutionReport",
+					"binanceExecutionReport": binanceUserEvent.ExecutionReport,
+				}
+				writeChannel <- message
+			case EventTypeOutboundAccountInfo:
+				message := map[string]interface{}{
+					"messageType":                "binanceOutboundAccountInfo",
+					"binanceOutboundAccountInfo": binanceUserEvent.OutboundAccountInfo,
+				}
+				writeChannel <- message
+			default:
+				log.WithFields(log.Fields{
+					"eventType": binanceUserEvent.EventType,
+				}).Info("Ignoring binance user stream event.")
+			}
 		case trade := <-binanceTradeStreamChannel:
 			message := map[string]interface{}{
 				"messageType":     "binanceAggTrade",
