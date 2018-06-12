@@ -118,6 +118,10 @@ type TradeState struct {
 		Quantity float64
 		Price    float64
 	}
+
+	// The last known price for this symbol. Use to estimate profit. Source may
+	// not always be the last price, but could also be the last best bid or ask.
+	LastPrice float64
 }
 
 type Trade struct {

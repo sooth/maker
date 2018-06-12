@@ -92,6 +92,20 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 	defer s.lock.RUnlock()
 	for _, trade := range s.TradesByLocalID {
 		if trade.State.Symbol == lastTrade.Symbol {
+
+			switch trade.State.Status {
+			case TradeStatusPendingSell:
+			case TradeStatusWatching:
+			default:
+				continue
+			}
+
+			trade.State.LastPrice = lastTrade.Price
+
+			lastEffectivePrice := lastTrade.Price * (1 - trade.State.Fee)
+			trade.State.ProfitPercent = (lastEffectivePrice - trade.State.EffectiveBuyPrice) /
+				trade.State.EffectiveBuyPrice * 100
+
 			if trade.State.StopLoss.Enabled {
 				s.checkStopLoss(trade, lastTrade)
 			}
@@ -112,17 +126,10 @@ func (s *TradeService) checkStopLoss(trade *Trade, lastTrade *binance.StreamAggT
 	if trade.State.StopLoss.Triggered {
 		return
 	}
-	lastEffectivePrice := lastTrade.Price * (1 - trade.State.Fee)
-	profit := (lastEffectivePrice - trade.State.EffectiveBuyPrice) /
-		trade.State.EffectiveBuyPrice * 100
-	//log.WithFields(log.Fields{
-	//	"symbol": trade.State.Symbol,
-	//	"profit": roundx(profit, 1000),
-	//}).Debugf("Stop loss check for %s.", trade.State.Symbol)
-	if profit < math.Abs(trade.State.StopLoss.Percent) * -1 {
+	if trade.State.ProfitPercent < math.Abs(trade.State.StopLoss.Percent) * -1 {
 		log.WithFields(log.Fields{
 			"symbol": trade.State.Symbol,
-			"loss":   profit,
+			"loss":   trade.State.ProfitPercent,
 		}).Infof("Stop Loss: Triggering market sell.")
 		if trade.State.Status == TradeStatusPendingSell {
 			s.CancelSell(trade)
@@ -144,10 +151,6 @@ func (s *TradeService) checkTrailingStop(trade *Trade, lastTrade *binance.Stream
 		return
 	}
 
-	lastEffectivePrice := lastTrade.Price * (1 - trade.State.Fee)
-	profit := (lastEffectivePrice - trade.State.EffectiveBuyPrice) /
-		trade.State.EffectiveBuyPrice * 100
-
 	if trade.State.TrailingStop.Activated {
 		if lastTrade.Price > trade.State.TrailingStop.Price {
 			trade.State.TrailingStop.Price = lastTrade.Price
@@ -162,15 +165,16 @@ func (s *TradeService) checkTrailingStop(trade *Trade, lastTrade *binance.Stream
 				trade.State.Symbol, deviation, trade.State.TrailingStop.Deviation)
 			if math.Abs(deviation) > trade.State.TrailingStop.Deviation {
 				log.Printf("%s: TrailingStop: Triggering sell: profit=%.8f",
-					trade.State.Symbol, profit)
+					trade.State.Symbol, trade.State.ProfitPercent)
 				trade.State.TrailingStop.Triggered = true
 				s.MarketSell(trade, true)
 			}
 		}
 	} else {
-		if profit > trade.State.TrailingStop.Percent {
+		if trade.State.ProfitPercent > trade.State.TrailingStop.Percent {
 			log.Printf("%s: Activating trailing stop: profit=%.8f; percent: %.8f",
-				trade.State.Symbol, profit, trade.State.TrailingStop.Percent)
+				trade.State.Symbol, trade.State.ProfitPercent,
+				trade.State.TrailingStop.Percent)
 			trade.State.TrailingStop.Activated = true
 		}
 	}

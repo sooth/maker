@@ -13,16 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {MakerService, TradeMap, TradeState, TradeStatus} from '../maker.service';
-import {Logger, LoggerService} from '../logger.service';
-import {BinanceService} from '../binance.service';
-import {AggTrade} from '../binance-api.service';
+import {Component, EventEmitter, OnInit, Output} from "@angular/core";
+import {MakerService, TradeMap, TradeState, TradeStatus} from "../maker.service";
+import {Logger, LoggerService} from "../logger.service";
+import {BinanceService} from "../binance.service";
 
 @Component({
-    selector: 'app-trade-table',
-    templateUrl: './trade-table.component.html',
-    styleUrls: ['./trade-table.component.scss']
+    selector: "app-trade-table",
+    templateUrl: "./trade-table.component.html",
+    styleUrls: ["./trade-table.component.scss"]
 })
 export class TradeTableComponent implements OnInit {
 
@@ -39,7 +38,7 @@ export class TradeTableComponent implements OnInit {
     constructor(public maker: MakerService,
                 logger: LoggerService,
                 private binance: BinanceService) {
-        this.logger = logger.getLogger('TradeTableComponent');
+        this.logger = logger.getLogger("TradeTableComponent");
     }
 
     ngOnInit() {
@@ -47,19 +46,10 @@ export class TradeTableComponent implements OnInit {
             const trades: AppTradeState[] = [];
             for (const tradeId of Object.keys(tradeMap)) {
                 const trade: TradeState = tradeMap[tradeId];
-                switch (trade.Status) {
-                    case TradeStatus.DONE:
-                    case TradeStatus.CANCELED:
-                    case TradeStatus.FAILED:
-                    default:
-                        const appTradeState = <AppTradeState>trade;
-                        appTradeState.lastPrice = this.binance.lastPriceMap[trade.Symbol];
-                        this.updateProfit(trade, this.binance.lastPriceMap[trade.Symbol]);
-                        appTradeState.__rowClassName = this.getRowClass(trade);
-                        appTradeState.__canArchive = this.getCanArchive(trade);
-                        trades.push(appTradeState);
-                        break;
-                }
+                const appTradeState = <AppTradeState>trade;
+                appTradeState.__rowClassName = this.getRowClass(trade);
+                appTradeState.__canArchive = this.getCanArchive(trade);
+                trades.push(appTradeState);
             }
             this.trades = trades.sort((a, b) => {
                 return new Date(b.OpenTime).getTime() -
@@ -76,7 +66,7 @@ export class TradeTableComponent implements OnInit {
                         case TradeStatus.CANCELED:
                             break;
                         default:
-                            trade.lastPrice = aggTrade.price;
+                            trade.LastPrice = aggTrade.price;
                             this.updateProfit(trade, aggTrade.price);
                             trade.__rowClassName = this.getRowClass(trade);
                     }
@@ -104,20 +94,20 @@ export class TradeTableComponent implements OnInit {
         switch (trade.Status) {
             case TradeStatus.CANCELED:
             case TradeStatus.FAILED:
-                return 'table-secondary';
+                return "table-secondary";
             case TradeStatus.DONE:
                 if (trade.ProfitPercent > 0) {
-                    return 'bg-success';
+                    return "bg-success";
                 }
-                return 'bg-warning';
+                return "bg-warning";
             case TradeStatus.NEW:
             case TradeStatus.PENDING_BUY:
-                return 'table-info';
+                return "table-info";
             default:
                 if (trade.ProfitPercent > 0) {
-                    return 'table-success';
+                    return "table-success";
                 }
-                return 'table-warning';
+                return "table-warning";
         }
     }
 
@@ -178,7 +168,6 @@ export class TradeTableComponent implements OnInit {
 }
 
 export interface AppTradeState extends TradeState {
-    lastPrice?: number;
     __rowClassName?: string;
     __canArchive?: boolean;
 
