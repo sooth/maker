@@ -153,7 +153,7 @@ export interface TradeState {
     BuyOrder: {
         Price: number;
         Quantity: number;
-    }
+    };
     BuyFillQuantity: number;
     AverageBuyPrice: number;
     BuyCost: number;

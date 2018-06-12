@@ -51,16 +51,6 @@ export enum OrderStatus {
     EXPIRED = "EXPIRED",
 }
 
-export interface SellOrderOptions {
-    trade_id: string;
-    symbol: string;
-    type: OrderType;
-    quantity: number;
-    price?: number | string;
-    timeInForce?: TimeInForce;
-    newClientOrderId?: string;
-}
-
 export interface BuyOrderOptions {
     symbol: string;
     type: OrderType;
@@ -103,7 +93,7 @@ export class BinanceApiService {
             const timestamp = new Date().getTime();
             params = params.set("timestamp", `${timestamp}`);
 
-            let hmacDigest = hmacSHA256(params.toString(), this._apiSecret);
+            const hmacDigest = hmacSHA256(params.toString(), this._apiSecret);
             params = params.set("signature", hex.stringify(hmacDigest));
 
             headers = headers.append("X-MBX-APIKEY", this._apiKey);
@@ -119,8 +109,8 @@ export class BinanceApiService {
         params?: HttpParams;
         headers?: HttpHeaders;
     }, body: any = null) {
-        let headers = options.headers || new HttpHeaders();
-        let params = options.params || new HttpParams();
+        const headers = options.headers || new HttpHeaders();
+        const params = options.params || new HttpParams();
         return this.http.post(path, body, {
             params: params,
             headers: headers,
@@ -203,13 +193,13 @@ export class BinanceApiService {
 
     cancelSellOrder(tradeId: string): Observable<CancelOrderResponse> {
         const endpoint = "/api/binance/sell";
-        let params = new HttpParams().set("trade_id", tradeId);
+        const params = new HttpParams().set("trade_id", tradeId);
         return this.delete(endpoint, params);
     }
 
     cancelBuy(tradeId: string): Observable<CancelOrderResponse> {
         const endpoint = "/api/binance/buy";
-        let params = new HttpParams()
+        const params = new HttpParams()
                 .set("trade_id", tradeId);
         return this.delete(endpoint, params);
     }
@@ -357,7 +347,7 @@ export interface StreamExecutionReport {
     z: string;
     L: string;
     n: string;
-    N: string
+    N: string;
     T: number;
     t: number;
     w: boolean;
@@ -407,7 +397,7 @@ export class ExecutionReport {
     tradeId: number = null;
 
     static fromStream(data: StreamExecutionReport): ExecutionReport {
-        let r = new ExecutionReport();
+        const r = new ExecutionReport();
         r.eventTime = new Date(data.E);
         r.symbol = data.s;
         r.clientOrderId = data.c;
@@ -443,7 +433,7 @@ export class Balance {
     locked: number;
 
     static fromRest(raw: RestBalance): Balance {
-        let balance = new Balance();
+        const balance = new Balance();
         balance.asset = raw.asset;
         balance.free = +raw.free;
         balance.locked = +raw.locked;
@@ -451,7 +441,7 @@ export class Balance {
     }
 
     static fromStream(raw: StreamBalance): Balance {
-        let balance = new Balance();
+        const balance = new Balance();
         balance.asset = raw.a;
         balance.free = +raw.f;
         balance.locked = +raw.l;
@@ -480,7 +470,7 @@ export class AccountInfo {
     balances: Balance[] = null;
 
     static fromRest(raw: RawRestAccountInfo): AccountInfo {
-        let accountInfo = new AccountInfo();
+        const accountInfo = new AccountInfo();
         accountInfo.balances = raw.balances.map((b): Balance => {
             return Balance.fromRest(b);
         });
@@ -488,7 +478,7 @@ export class AccountInfo {
     }
 
     static fromStream(raw: RawStreamAccountInfo): AccountInfo {
-        let accountInfo = new AccountInfo();
+        const accountInfo = new AccountInfo();
         accountInfo.balances = raw.B.map((b): Balance => {
             return Balance.fromStream(b);
         });
@@ -522,6 +512,13 @@ export class SymbolInfo {
     stepSize: number;
     tickSize: number;
 
+    static fromRest(rest: RestSymbolInfo): SymbolInfo {
+        const info = new SymbolInfo();
+        Object.assign(info, rest);
+        info.init();
+        return info;
+    }
+
     private init() {
         this.minNotional = this.getMinNotional();
         this.minQuantity = this.getMinQuantity();
@@ -531,7 +528,7 @@ export class SymbolInfo {
 
     getMinNotional(): number {
         if (this.filters) {
-            for (let f of this.filters) {
+            for (const f of this.filters) {
                 if (f.minNotional) {
                     return +f.minNotional;
                 }
@@ -542,8 +539,8 @@ export class SymbolInfo {
 
     getMinQuantity(): number {
         if (this.filters) {
-            for (let f of this.filters) {
-                if (f.filterType && f.filterType == "LOT_SIZE") {
+            for (const f of this.filters) {
+                if (f.filterType && f.filterType === "LOT_SIZE") {
                     return +f.minQty;
                 }
             }
@@ -553,8 +550,8 @@ export class SymbolInfo {
 
     getStepSize(): number {
         if (this.filters) {
-            for (let f of this.filters) {
-                if (f.filterType && f.filterType == "LOT_SIZE") {
+            for (const f of this.filters) {
+                if (f.filterType && f.filterType === "LOT_SIZE") {
                     return +f.stepSize;
                 }
             }
@@ -564,8 +561,8 @@ export class SymbolInfo {
 
     getTickSize(): number {
         if (this.filters) {
-            for (let f of this.filters) {
-                if (f.filterType && f.filterType == "PRICE_FILTER") {
+            for (const f of this.filters) {
+                if (f.filterType && f.filterType === "PRICE_FILTER") {
                     return +f.tickSize;
                 }
             }
@@ -573,12 +570,6 @@ export class SymbolInfo {
         return null;
     }
 
-    static fromRest(rest: RestSymbolInfo): SymbolInfo {
-        let info = new SymbolInfo();
-        Object.assign(info, rest);
-        info.init();
-        return info;
-    }
 }
 
 export class ExchangeInfo {
@@ -586,8 +577,8 @@ export class ExchangeInfo {
     symbols: SymbolInfo[] = [];
 
     static fromRest(rest: RestExchangeInfoResponse): ExchangeInfo {
-        let info = new ExchangeInfo();
-        for (let symbol of rest.symbols) {
+        const info = new ExchangeInfo();
+        for (const symbol of rest.symbols) {
             info.symbols.push(SymbolInfo.fromRest(symbol));
         }
         return info;
@@ -652,9 +643,6 @@ interface StreamDepth {
     asks: any[];
 }
 
-interface RestDepth extends StreamDepth {
-}
-
 export interface Depth {
     symbol: string;
     lastUpdateId: number;
@@ -662,14 +650,14 @@ export interface Depth {
     asks: { price: number, quantity: number }[];
 }
 
-export function makeDepthFromStream(symbol: string, raw: StreamDepth | RestDepth): Depth {
-    let bids = raw.bids.map((bid) => {
+export function makeDepthFromStream(symbol: string, raw: StreamDepth): Depth {
+    const bids = raw.bids.map((bid) => {
         return {
             price: +bid[0],
             quantity: +bid[1],
         };
     });
-    let asks = raw.asks.map((ask) => {
+    const asks = raw.asks.map((ask) => {
         return {
             price: +ask[0],
             quantity: +ask[1],
@@ -707,14 +695,6 @@ export class MultiStreamMessage {
     getAggTrade(): AggTrade {
         return buildAggTradeFromStream(this.data);
     }
-
-    getTicker(): PriceTicker {
-        return buildTickerFromStream(this.data);
-    }
-
-    getDepth(): Depth {
-        return makeDepthFromStream(this.symbol, this.data);
-    }
 }
 
 export function buildAggTradeFromStream(raw: StreamAggTrade): AggTrade {
@@ -743,7 +723,7 @@ export function makeWebSocketObservable(url: string): Observable<any> {
     return Observable.create((observer: Observer<any>) => {
 
         let ws: WebSocket = null;
-        let closeRequested: boolean = false;
+        let closeRequested = false;
 
         const openWebSocket = () => {
             console.log("Connecting to websocket: " + url);

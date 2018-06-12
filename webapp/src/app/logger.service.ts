@@ -13,12 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Injectable} from '@angular/core';
+import {Injectable} from "@angular/core";
 
 export let LOGGER: LoggerService = null;
 
 @Injectable({
-    providedIn: 'root',
+    providedIn: "root",
 })
 export class LoggerService {
 
@@ -63,11 +63,11 @@ export class LoggerService {
                 break;
             default:
                 this.log(`${prefix}: ${JSON.stringify(msg)}`);
-                break
+                break;
         }
     }
 
-    getLogger(prefix:string): Logger {
+    getLogger(prefix: string): Logger {
         return new Logger(prefix, this);
     }
 }

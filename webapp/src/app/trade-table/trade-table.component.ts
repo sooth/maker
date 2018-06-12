@@ -53,9 +53,10 @@ export class TradeTableComponent implements OnInit {
                     case TradeStatus.FAILED:
                     default:
                         const appTradeState = <AppTradeState>trade;
+                        appTradeState.lastPrice = this.binance.lastPriceMap[trade.Symbol];
+                        this.updateProfit(trade, this.binance.lastPriceMap[trade.Symbol]);
                         appTradeState.__rowClassName = this.getRowClass(trade);
                         appTradeState.__canArchive = this.getCanArchive(trade);
-                        appTradeState.lastPrice = this.binance.lastPriceMap[trade.Symbol];
                         trades.push(appTradeState);
                         break;
                 }
@@ -76,7 +77,7 @@ export class TradeTableComponent implements OnInit {
                             break;
                         default:
                             trade.lastPrice = aggTrade.price;
-                            this.updateProfit(trade, aggTrade);
+                            this.updateProfit(trade, aggTrade.price);
                             trade.__rowClassName = this.getRowClass(trade);
                     }
                 }
@@ -163,16 +164,16 @@ export class TradeTableComponent implements OnInit {
         }
     }
 
-    private updateProfit(trade: AppTradeState, aggTrade: AggTrade) {
+    private updateProfit(trade: AppTradeState, lastPrice: number) {
         if (trade.BuyFillQuantity > 0) {
-            const profit = aggTrade.price * (1 - trade.Fee) - trade.EffectiveBuyPrice;
+            const profit = lastPrice * (1 - trade.Fee) - trade.EffectiveBuyPrice;
             trade.ProfitPercent = profit / trade.EffectiveBuyPrice * 100;
         }
 
         // Calculate the percent different between our buy price and the
         // current price.
-        const diffFromBuyPrice = trade.BuyOrder.Price - aggTrade.price;
-        trade.buyPercentOffsetPercent = diffFromBuyPrice / aggTrade.price * 100;
+        const diffFromBuyPrice = trade.BuyOrder.Price - lastPrice;
+        trade.buyPercentOffsetPercent = diffFromBuyPrice / lastPrice * 100;
     }
 }
 
