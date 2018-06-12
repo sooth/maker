@@ -63,8 +63,8 @@ export class ConfigComponent implements OnInit {
 
     private buildPreferenceForm() {
         let percents: string = null;
-        if (this.configService.config.balancePercents) {
-            percents = this.configService.config.balancePercents;
+        if (this.configService.config[ConfigKey.PREFERENCE_BALANCE_PERCENTS]) {
+            percents = this.configService.config[ConfigKey.PREFERENCE_BALANCE_PERCENTS];
         } else {
             percents = DEFAULT_BALANCE_PERCENTS;
         }

@@ -18,6 +18,7 @@ import {MakerApiService} from "./maker-api.service";
 import {Observable, of} from "rxjs";
 import {map, tap} from "rxjs/operators";
 import {HttpClient} from "@angular/common/http";
+import {Logger, LoggerService} from "./logger.service";
 
 export const DEFAULT_BALANCE_PERCENTS = "5,10,25,50,75,100";
 
@@ -28,15 +29,22 @@ export class ConfigService {
 
     config: Config = null;
 
+    private logger: Logger = null;
+
     constructor(private makerApi: MakerApiService,
-                private http: HttpClient) {
+                private http: HttpClient,
+                logger: LoggerService,
+    ) {
+        this.logger = logger.getLogger("config-server");
     }
 
     loadConfig(): Observable<any> {
         if (this.config) {
+            this.logger.log("Returning cached configuration.");
             return of(this.config);
         }
         return this.makerApi.getConfig().pipe(tap((config) => {
+            this.logger.log("Fetching configuration from server.");
             this.config = config;
         }));
     }
