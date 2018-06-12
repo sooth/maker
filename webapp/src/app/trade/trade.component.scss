@@ -31,3 +31,15 @@
     padding-left: 2px;
   }
 }
+
+.wrapper-button {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  outline: none;
+}
+
+.wrapper-button:hover {
+  background: #f7f7f7;
+}

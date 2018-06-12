@@ -207,14 +207,18 @@
           <div class="card-body">
             <div class="form-row mb-2">
               <div class="form-group col">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox"
-                         value="false"
-                         name="trailingStopEnabled"
-                         [(ngModel)]="model.orderInput.trailingStopEnabled">
-                  <label class="form-check-label">Trailing
-                    Stop</label>
-                </div>
+                <button type="button"
+                        class="wrapper-button"
+                        (click)="model.orderInput.trailingStopEnabled = !model.orderInput.trailingStopEnabled">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="trailingStopEnabled"
+                           (click)="$event.stopPropagation()"
+                           [(ngModel)]="model.orderInput.trailingStopEnabled">
+                    <label class="form-check-label">Trailing
+                      Stop</label>
+                  </div>
+                </button>
 
                 <div class="input-group"
                      style="width: 100%;">
@@ -258,12 +262,16 @@
             <div class="form-row mb-2">
 
               <div class="form-group col">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox"
-                         value="false"
-                         [(ngModel)]="model.orderInput.stopLossEnabled">
-                  <label class="form-check-label">Stop Loss</label>
-                </div>
+                <button type="button"
+                        class="wrapper-button"
+                        (click)="model.orderInput.stopLossEnabled = !model.orderInput.stopLossEnabled">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           (click)="$event.stopPropagation();"
+                           [(ngModel)]="model.orderInput.stopLossEnabled">
+                    <label class="form-check-label">Stop Loss</label>
+                  </div>
+                </button>
                 <div class="input-group">
                   <input type="number" step="0.1" class="form-control"
                          placeholder="Percent..."
@@ -276,12 +284,16 @@
               </div>
 
               <div class="form-group col">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox"
-                         value="false"
-                         [(ngModel)]="model.orderInput.limitSellEnabled">
-                  <label class="form-check-label">Quick Sell</label>
-                </div>
+                <button type="button"
+                        class="wrapper-button"
+                        (click)="model.orderInput.limitSellEnabled = !model.orderInput.limitSellEnabled">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           (click)="$event.stopPropagation()"
+                           [(ngModel)]="model.orderInput.limitSellEnabled">
+                    <label class="form-check-label">Quick Sell</label>
+                  </div>
+                </button>
                 <div class="input-group">
                   <input type="number" class="form-control"
                          title="Stop percent"

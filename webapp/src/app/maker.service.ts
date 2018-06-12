@@ -201,6 +201,12 @@ export interface TradeState {
     LastBuyStatus: string;
     LastSellstatus: string;
     LastPrice?: number;
+    SellOrder: {
+        Type: string;
+        Status: string;
+        Price: number;
+        Quantity: number;
+    };
 }
 
 export interface MakerMessage {
