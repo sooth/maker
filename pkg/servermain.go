@@ -27,6 +27,8 @@ import (
 	"runtime"
 	"os/exec"
 	"sync"
+	"path/filepath"
+	"os"
 )
 
 var ServerFlags struct {
@@ -172,11 +174,18 @@ func ServerMain() {
 				c := exec.Command("open", url)
 				c.Run()
 			} else if runtime.GOOS == "windows" {
-				c := exec.Command("start", url)
-				c.Run()
+				cmd := "url.dll,FileProtocolHandler"
+				runDll32 := filepath.Join(os.Getenv("SYSTEMROOT"), "System32",
+					"rundll32.exe")
+				c := exec.Command(runDll32, cmd, url)
+				if err := c.Run(); err != nil {
+					log.WithError(err).WithFields(log.Fields{
+						"os": "windows",
+					}).Errorf("Failed to start browser.")
+				}
 			}
 		}()
 	}
-
+	
 	wg.Wait()
 }

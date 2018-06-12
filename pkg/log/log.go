@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"os"
 	"log"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Fields = logrus.Fields
@@ -79,6 +80,15 @@ func init() {
 	formatter.FullTimestamp = true
 	formatter.TimestampFormat = "2006-01-02 15:04:05.999"
 	logrus.SetLevel(logLevel)
+
+	if !terminal.IsTerminal(int(os.Stderr.Fd())) {
+		formatter.DisableColors = true
+	} else if os.Getenv("SHELL") == "" {
+		// The idea here is to disable colour if running in something like
+		// cmd.exe, as it doesn't seem to handle colour.
+		formatter.DisableColors = true
+	}
+
 	logrus.SetFormatter(&formatter)
 }
 
