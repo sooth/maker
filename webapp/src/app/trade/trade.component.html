@@ -16,11 +16,11 @@
                   <div class="form-group col">
                     <label for="symbolInput">Symbol</label>
                     <select class="form-control" id="symbolInput"
-                            [(ngModel)]="model.symbol"
+                            [(ngModel)]="orderFormSettings.symbol"
                             (change)="changeSymbol()">
                       <option [value]=""></option>
                       <option
-                          *ngFor="let symbol of binance.symbols | withquoteasset:model.quoteAsset"
+                          *ngFor="let symbol of binance.symbols | withquoteasset:orderFormSettings.quoteAsset"
                           [value]="symbol">
                         {{symbol}}
                       </option>
@@ -30,7 +30,7 @@
                     <label for="quoteAssetInput">Quote Asset</label>
                     <select class="form-control" id="quoteAssetInput"
                             (change)="changeQuoteAsset()"
-                            [(ngModel)]="model.quoteAsset">
+                            [(ngModel)]="orderFormSettings.quoteAsset">
                       <option *ngFor="let quoteAsset of binance.quoteAssets"
                               [value]="quoteAsset">
                         {{quoteAsset}}
@@ -39,30 +39,30 @@
                   </div>
                 </div>
                 <div class="form-row"
-                     *ngIf="model.symbol && binance.symbolMap[model.symbol]">
+                     *ngIf="orderFormSettings.symbol && binance.symbolMap[orderFormSettings.symbol]">
                   <div class="form-group col">
                     <label for="baseAmountInput">Amount
-                      {{binance.symbolMap[model.symbol].baseAsset}}</label>
+                      {{binance.symbolMap[orderFormSettings.symbol].baseAsset}}</label>
                     <input id="baseAmountInput" class="form-control"
                            type="text"
                            disabled
-                           [(ngModel)]="model.orderInput.amount"
-                           [placeholder]="binance.symbolMap[model.symbol].baseAsset">
+                           [(ngModel)]="orderForm.amount"
+                           [placeholder]="binance.symbolMap[orderFormSettings.symbol].baseAsset">
                   </div>
                   <div class="form-group col">
                     <label for="quoteAmountInput">Amount
-                      {{model.quoteAsset}}</label>
+                      {{orderFormSettings.quoteAsset}}</label>
                     <input id="quoteAmountInput" class="form-control"
                            type="text"
                            disabled
-                           [(ngModel)]="model.orderInput.quoteAmount"
-                           [placeholder]="model.quoteAsset">
+                           [(ngModel)]="orderForm.quoteAmount"
+                           [placeholder]="orderFormSettings.quoteAsset">
                   </div>
                   <div class="form-group col-3">
                     <label for="quoteAmountInput">Balance %</label>
                     <select class="form-control"
                             (change)="updateOrderFormAssetAmount(); saveState();"
-                            [(ngModel)]="model.orderInput.quoteAssetPercent">
+                            [(ngModel)]="orderFormSettings.balancePercent">
                       <option [value]="pct"
                               *ngFor="let pct of balancePercents">{{pct}}%
                       </option>
@@ -77,29 +77,30 @@
                         <div class="input-group-prepend">
                           <select class="form-control"
                                   style="border-top-right-radius: 0; z-index: 1029; border-bottom-right-radius: 0;"
-                                  [(ngModel)]="model.orderInput.priceSource"
-                                  [value]="model.orderInput.priceSource">
+                                  [(ngModel)]="orderFormSettings.priceSource"
+                                  (change)="saveState()"
+                                  [value]="orderFormSettings.priceSource">
                             <option value="LAST_PRICE">Last Price</option>
                             <option value="BEST_BID">Best Bid</option>
                             <option value="BEST_ASK">Best Ask</option>
                           </select>
                         </div>
                         <input
-                            *ngIf="model.orderInput.priceSource == 'LAST_PRICE'"
+                            *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
                             type="number" class="form-control" disabled
-                            [value]="binance.lastPriceMap[model.symbol] || null">
+                            [value]="binance.lastPriceMap[orderFormSettings.symbol] || null">
                         <input
-                            *ngIf="model.orderInput.priceSource == 'BEST_BID'"
+                            *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
                             type="number" class="form-control" disabled
-                            [value]="bidAskMap[model.symbol] && bidAskMap[model.symbol].bid || null">
+                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid || null">
                         <input
-                            *ngIf="model.orderInput.priceSource == 'BEST_ASK'"
+                            *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
                             type="number" class="form-control" disabled
-                            [value]="bidAskMap[model.symbol] && bidAskMap[model.symbol].ask || null">
+                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask || null">
                         <!-- Disabled for now. -->
                         <div class="input-group-append" hidden>
                           <select class="form-control"
-                                  [(ngModel)]="model.orderInput.buyLimitPercent">
+                                  [(ngModel)]="orderForm.buyLimitPercent">
                             <option [value]="0">--</option>
                             <option [value]="1">+1%</option>
                             <option [value]="0.1">+0.1%</option>
@@ -129,9 +130,10 @@
                 <table style="font-size: 0.95rem;">
                   <!-- Quote asset balance. -->
                   <tr>
-                    <th>{{model.quoteAsset}} Balance</th>
-                    <td *ngIf="balances[model.quoteAsset]">
-                      {{balances[model.quoteAsset].free | number:".8-8"}}
+                    <th>{{orderFormSettings.quoteAsset}} Balance</th>
+                    <td *ngIf="balances[orderFormSettings.quoteAsset]">
+                      {{balances[orderFormSettings.quoteAsset].free |
+                      number:".8-8"}}
                     </td>
                   </tr>
                   <tr>
@@ -144,7 +146,8 @@
                   <tr>
                     <th>Last</th>
                     <td>
-                      {{(binance.lastPriceMap[model.symbol] | number:".8-8")
+                      {{(binance.lastPriceMap[orderFormSettings.symbol] |
+                      number:".8-8")
                       ||
                       '--'}}
                     </td>
@@ -152,42 +155,44 @@
 
                   <tr>
                     <th>Bid</th>
-                    <td>{{(bidAskMap[model.symbol] &&
-                      bidAskMap[model.symbol].bid
+                    <td>{{(bidAskMap[orderFormSettings.symbol] &&
+                      bidAskMap[orderFormSettings.symbol].bid
                       | number:".8-8") || '--' }}
                     </td>
                   </tr>
                   <tr>
                     <th>Ask</th>
-                    <td>{{(bidAskMap[model.symbol] &&
-                      bidAskMap[model.symbol].ask
+                    <td>{{(bidAskMap[orderFormSettings.symbol] &&
+                      bidAskMap[orderFormSettings.symbol].ask
                       | number:".8-8") || '--' }}
                     </td>
                   </tr>
 
-                  <tr *ngIf="model.symbol">
+                  <tr *ngIf="orderFormSettings.symbol">
                     <th>Min. Notional</th>
                     <td>
-                      {{binance.symbolMap[model.symbol] &&
-                      binance.symbolMap[model.symbol].minNotional || "--"}}
+                      {{binance.symbolMap[orderFormSettings.symbol] &&
+                      binance.symbolMap[orderFormSettings.symbol].minNotional ||
+                      "--"}}
                     </td>
                   </tr>
                   <tr>
                     <th>Min. Quantity</th>
-                    <td>{{binance.symbolMap[model.symbol] &&
-                      binance.symbolMap[model.symbol].minQuantity || "--"}}
+                    <td>{{binance.symbolMap[orderFormSettings.symbol] &&
+                      binance.symbolMap[orderFormSettings.symbol].minQuantity ||
+                      "--"}}
                     </td>
                   </tr>
 
-                  <tr *ngIf="model.symbol">
+                  <tr *ngIf="orderFormSettings.symbol">
                     <th>Tick Size</th>
-                    <td>{{binance.symbolMap[model.symbol].tickSize |
+                    <td>{{binance.symbolMap[orderFormSettings.symbol].tickSize |
                       number:".8-8"}}
                     </td>
                   </tr>
                   <tr>
                     <th>Step Size</th>
-                    <td>{{binance.symbolMap[model.symbol].stepSize |
+                    <td>{{binance.symbolMap[orderFormSettings.symbol].stepSize |
                       number:".3-8"}}
                     </td>
                   </tr>
@@ -205,54 +210,57 @@
       <div class="col">
         <div class="card">
           <div class="card-body">
-            <div class="form-row mb-2">
-              <div class="form-group col">
-                <button type="button"
-                        class="wrapper-button"
-                        (click)="model.orderInput.trailingStopEnabled = !model.orderInput.trailingStopEnabled">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox"
-                           name="trailingStopEnabled"
-                           (click)="$event.stopPropagation()"
-                           [(ngModel)]="model.orderInput.trailingStopEnabled">
-                    <label class="form-check-label">Trailing
-                      Stop</label>
-                  </div>
-                </button>
+            <form [formGroup]="trailingStopForm">
+              <div class="form-row mb-2">
+                <div class="form-group col">
+                  <button type="button"
+                          class="wrapper-button"
+                          (click)="trailingStopForm.get('enabled').setValue(!trailingStopForm.get('enabled').value)"
+                  >
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox"
+                             name="trailingStopEnabled"
+                             formControlName="enabled"
+                      >
+                      <label class="form-check-label">Trailing
+                        Stop</label>
+                    </div>
+                  </button>
 
-                <div class="input-group"
-                     style="width: 100%;">
-                  <input type="number" class="form-control"
-                         step="0.1"
-                         title="Stop percent"
-                         placeholder="Percent..."
-                         name="trailingStopPercent"
-                         [disabled]="!model.orderInput.trailingStopEnabled"
-                         [(ngModel)]="model.orderInput.trailingStopPercent">
-                  <div class="input-group-append">
-                    <span class="input-group-text">%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group col">
-                <label>Deviation</label>
-                <div class="input-group"
-                     style="width: 100%;">
-                  <input type="number" class="form-control"
-                         title="Deviation"
-                         step="0.1"
-                         placeholder="Deviation..."
-                         name="trailingStopDeviation"
-                         [disabled]="!model.orderInput.trailingStopEnabled"
-                         [(ngModel)]="model.orderInput.trailingStopDeviation">
-                  <div class="input-group-append">
-                    <span class="input-group-text">%</span>
+                  <div class="input-group"
+                       style="width: 100%;">
+                    <input type="number" class="form-control"
+                           step="0.1"
+                           title="Stop percent"
+                           placeholder="Percent..."
+                           name="trailingStopPercent"
+                           formControlName="percent"
+                    >
+                    <div class="input-group-append">
+                      <span class="input-group-text">%</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-            </div>
+                <div class="form-group col">
+                  <label>Deviation</label>
+                  <div class="input-group"
+                       style="width: 100%;">
+                    <input type="number" class="form-control"
+                           title="Deviation"
+                           step="0.1"
+                           placeholder="Deviation..."
+                           name="trailingStopDeviation"
+                           formControlName="deviation"
+                    >
+                    <div class="input-group-append">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -264,19 +272,20 @@
               <div class="form-group col">
                 <button type="button"
                         class="wrapper-button"
-                        (click)="model.orderInput.stopLossEnabled = !model.orderInput.stopLossEnabled">
+                        (click)="orderFormSettings.stopLossEnabled = !orderFormSettings.stopLossEnabled; saveState()">
                   <div class="form-check">
                     <input class="form-check-input" type="checkbox"
-                           (click)="$event.stopPropagation();"
-                           [(ngModel)]="model.orderInput.stopLossEnabled">
+                           (click)="$event.stopPropagation(); saveState();"
+                           [(ngModel)]="orderFormSettings.stopLossEnabled">
                     <label class="form-check-label">Stop Loss</label>
                   </div>
                 </button>
                 <div class="input-group">
                   <input type="number" step="0.1" class="form-control"
                          placeholder="Percent..."
-                         [disabled]="!model.orderInput.stopLossEnabled"
-                         [(ngModel)]="model.orderInput.stopLossPercent">
+                         (change)="saveState()"
+                         [disabled]="!orderFormSettings.stopLossEnabled"
+                         [(ngModel)]="orderFormSettings.stopLossPercent">
                   <div class="input-group-append">
                     <div class="input-group-text">%</div>
                   </div>
@@ -286,11 +295,11 @@
               <div class="form-group col">
                 <button type="button"
                         class="wrapper-button"
-                        (click)="model.orderInput.limitSellEnabled = !model.orderInput.limitSellEnabled">
+                        (click)="orderFormSettings.limitSellEnabled = !orderFormSettings.limitSellEnabled; saveState()">
                   <div class="form-check">
                     <input class="form-check-input" type="checkbox"
-                           (click)="$event.stopPropagation()"
-                           [(ngModel)]="model.orderInput.limitSellEnabled">
+                           (click)="$event.stopPropagation(); saveState();"
+                           [(ngModel)]="orderFormSettings.limitSellEnabled">
                     <label class="form-check-label">Quick Sell</label>
                   </div>
                 </button>
@@ -299,9 +308,10 @@
                          title="Stop percent"
                          placeholder="Percent..."
                          step="0.1"
-                         [value]="model.orderInput.limitSellPercent"
-                         [disabled]="!model.orderInput.limitSellEnabled"
-                         [(ngModel)]="model.orderInput.limitSellPercent">
+                         (change)="saveState();"
+                         [value]="orderFormSettings.limitSellPercent"
+                         [disabled]="!orderFormSettings.limitSellEnabled"
+                         [(ngModel)]="orderFormSettings.limitSellPercent">
                   <div class="input-group-append">
                     <div class="input-group-text">%</div>
                   </div>

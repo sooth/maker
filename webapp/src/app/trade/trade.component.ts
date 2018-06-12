@@ -24,11 +24,31 @@ import * as $ from "jquery";
 import {round8, roundx} from "../utils";
 import {ConfigService} from "../config.service";
 import {MakerService} from "../maker.service";
+import {Logger, LoggerService} from "../logger.service";
+import {FormBuilder, FormGroup} from "@angular/forms";
 
 declare var window: any;
 
+/**
+ * The interface for the parts of the order form that should be saved between
+ * trades and reloads.
+ */
+interface OrderFormSettingsModel {
+    quoteAsset: string;
+    symbol: string;
+    priceSource: PriceSource;
+    balancePercent: number;
+    stopLossEnabled: boolean;
+    stopLossPercent: number;
+    trailingStopEnabled: boolean;
+    trailingStopPercent: number;
+    trailingStopDeviation: number;
+    limitSellEnabled: boolean;
+    limitSellPercent: number;
+}
+
 interface SavedState {
-    model: any;
+    orderFormSettings: OrderFormSettingsModel;
 }
 
 @Component({
@@ -43,50 +63,29 @@ export class TradeComponent implements OnInit, OnDestroy {
 
     bidAskMap: { [key: string]: { bid: number, ask: number } } = {};
 
-    model: {
-        quoteAsset: string;
-        symbol: string;
-        orderInput: {
-            amount: number;
-            quoteAmount: number;
-            buyLimitPercent: number;
-            priceSource: PriceSource;
-
-            stopLossEnabled: boolean;
-            stopLossPercent: number;
-
-            trailingStopEnabled: boolean;
-            trailingStopPercent: number;
-            trailingStopDeviation: number;
-
-            // Quick sell parameters. If turned on, a limit sell will be placed
-            // immediately on fill.
-            limitSellEnabled: boolean;
-            limitSellPercent: number;
-
-            quoteAssetPercent: number;
-        };
-    } = {
+    orderFormSettings: OrderFormSettingsModel = {
         quoteAsset: "BTC",
         symbol: "ETHBTC",
-        orderInput: {
-            amount: null,
-            quoteAmount: null,
-            buyLimitPercent: null,
-            priceSource: PriceSource.BEST_BID,
+        priceSource: PriceSource.BEST_BID,
+        balancePercent: null,
+        stopLossEnabled: false,
+        stopLossPercent: 1,
+        trailingStopEnabled: false,
+        trailingStopPercent: 1,
+        trailingStopDeviation: 0.25,
+        limitSellEnabled: false,
+        limitSellPercent: 0.1,
+    };
 
-            stopLossEnabled: false,
-            stopLossPercent: 1,
-
-            trailingStopEnabled: false,
-            trailingStopPercent: 1,
-            trailingStopDeviation: 0.25,
-
-            limitSellEnabled: false,
-            limitSellPercent: 0.1,
-
-            quoteAssetPercent: 10,
-        },
+    // Parts of the order form that don't persist.
+    orderForm: {
+        amount: number;
+        quoteAmount: number;
+        buyLimitPercent: number;
+    } = {
+        amount: null,
+        quoteAmount: null,
+        buyLimitPercent: null,
     };
 
     balances: { [key: string]: Balance } = {};
@@ -99,19 +98,59 @@ export class TradeComponent implements OnInit, OnDestroy {
 
     private subscriptions: Subscription[] = [];
 
+    private logger: Logger = null;
+
+    trailingStopForm: FormGroup;
+
     constructor(private api: BinanceApiService,
                 public binance: BinanceService,
                 private maker: MakerService,
                 private config: ConfigService,
+                private formBuilder: FormBuilder,
+                logger: LoggerService,
     ) {
+        this.logger = logger.getLogger("trade-component");
+
     }
 
     ngOnInit() {
         this.config.loadConfig().subscribe(() => {
             this.balancePercents = this.config.getBalancePercents();
-        });
+            this.orderFormSettings.balancePercent = this.balancePercents[0];
+            this.reloadState();
 
-        this.reloadState();
+            // Setup the trailing stop reactive form. It might be more work than
+            // its worth for the reactive vs template form, at least for this use
+            // case.
+            this.trailingStopForm = this.formBuilder.group({
+                enabled: [{
+                    value: this.orderFormSettings.trailingStopEnabled,
+                    disabled: false,
+                }],
+                percent: [{
+                    value: this.orderFormSettings.trailingStopPercent,
+                    disabled: !this.orderFormSettings.trailingStopEnabled,
+                }],
+                deviation: [{
+                    value: this.orderFormSettings.trailingStopDeviation,
+                    disabled: !this.orderFormSettings.trailingStopEnabled,
+                }],
+            });
+            s = this.trailingStopForm.valueChanges.subscribe((data) => {
+                this.orderFormSettings.trailingStopEnabled = data.enabled;
+                this.orderFormSettings.trailingStopPercent = data.percent;
+                this.orderFormSettings.trailingStopDeviation = data.deviation;
+                if (data.enabled) {
+                    this.trailingStopForm.controls.percent.enable({emitEvent: false});
+                    this.trailingStopForm.controls.deviation.enable({emitEvent: false});
+                } else {
+                    this.trailingStopForm.controls.percent.disable({emitEvent: false});
+                    this.trailingStopForm.controls.deviation.disable({emitEvent: false});
+                }
+                this.saveState();
+            });
+            this.subscriptions.push(s);
+        });
 
         this.binance.isReady$.pipe(switchMap(() => {
             return this.updateAccountInfo();
@@ -131,6 +170,7 @@ export class TradeComponent implements OnInit, OnDestroy {
             this.onAggTrade(trade);
         });
         this.subscriptions.push(s);
+
 
         Mousetrap.bind("/", () => {
             window.scrollTo(0, 0);
@@ -158,8 +198,9 @@ export class TradeComponent implements OnInit, OnDestroy {
     }
 
     private saveState() {
+        console.log("Saving state.");
         const state: SavedState = {
-            model: this.model,
+            orderFormSettings: this.orderFormSettings,
         };
         localStorage.setItem(this.localStorageKey, JSON.stringify(state));
     }
@@ -167,12 +208,13 @@ export class TradeComponent implements OnInit, OnDestroy {
     private reloadState() {
         const rawState = localStorage.getItem(this.localStorageKey);
         if (!rawState) {
+            this.logger.log("No saved state in local storage.");
             return;
         }
         try {
             const savedState: SavedState = JSON.parse(rawState);
-            if (savedState.model) {
-                Object.assign(this.model, savedState.model);
+            if (savedState.orderFormSettings) {
+                Object.assign(this.orderFormSettings, savedState.orderFormSettings);
             }
         } catch (err) {
             console.log("error: failed to restore saved status:");
@@ -193,21 +235,23 @@ export class TradeComponent implements OnInit, OnDestroy {
 
     changeSymbol(symbol: string = null) {
         if (symbol != null) {
-            this.model.symbol = symbol;
+            this.orderFormSettings.symbol = symbol;
         } else {
-            symbol = this.model.symbol;
+            symbol = this.orderFormSettings.symbol;
         }
-        if (!this.model.symbol) {
+
+        if (!symbol) {
             this.saveState();
             return;
         }
-        this.api.getPriceTicker(this.model.symbol)
+
+        this.api.getPriceTicker(symbol)
                 .subscribe((ticker: PriceTicker) => {
                     this.binance.lastPriceMap[ticker.symbol] = ticker.price;
                     this.updateOrderFormAssetAmount();
                 });
 
-        this.api.getBookTicker(this.model.symbol)
+        this.api.getBookTicker(symbol)
                 .subscribe((ticker) => {
                     this.bidAskMap[symbol] = {
                         bid: ticker.bidPrice,
@@ -216,12 +260,12 @@ export class TradeComponent implements OnInit, OnDestroy {
                 });
 
         /** TODO: This is just for the order info page, unsubscribe when done. */
-        this.binance.subscribeToTradeStream(this.model.symbol);
+        this.binance.subscribeToTradeStream(symbol);
 
         if (this.depthSubscription) {
             this.depthSubscription.unsubscribe();
         }
-        this.depthSubscription = this.binance.subscribeToDepth(this.model.symbol)
+        this.depthSubscription = this.binance.subscribeToDepth(symbol)
                 .subscribe((depth) => {
                     this.bidAskMap[depth.symbol] = {
                         bid: depth.bids[0].price,
@@ -233,39 +277,39 @@ export class TradeComponent implements OnInit, OnDestroy {
     }
 
     private onAggTrade(trade: AggTrade) {
-        if (trade.symbol === this.model.symbol) {
+        if (trade.symbol === this.orderFormSettings.symbol) {
             this.updateOrderFormAssetAmount();
         }
     }
 
     updateOrderFormAssetAmount() {
-        if (!this.balances[this.model.quoteAsset]) {
+        if (!this.balances[this.orderFormSettings.quoteAsset]) {
             return;
         }
-        const symbol = this.model.symbol;
-        const available = this.balances[this.model.quoteAsset].free;
-        const portion = round8(available * this.model.orderInput.quoteAssetPercent / 100);
+        const symbol = this.orderFormSettings.symbol;
+        const available = this.balances[this.orderFormSettings.quoteAsset].free;
+        const portion = round8(available * this.orderFormSettings.balancePercent / 100);
         const symbolInfo = this.binance.symbolMap[symbol];
         const stepSize = symbolInfo.stepSize;
-        const lastTradePrice = this.binance.lastPriceMap[this.model.symbol];
+        const lastTradePrice = this.binance.lastPriceMap[this.orderFormSettings.symbol];
         const amount = roundx(portion / lastTradePrice, 1 / stepSize);
-        this.model.orderInput.quoteAmount = portion;
-        this.model.orderInput.amount = amount;
+        this.orderForm.quoteAmount = portion;
+        this.orderForm.amount = amount;
     }
 
     makeOrder() {
         const options: TradeOptions = {
-            symbol: this.model.symbol,
-            quantity: this.model.orderInput.amount,
-            priceSource: this.model.orderInput.priceSource,
-            priceAdjustment: this.model.orderInput.buyLimitPercent,
-            stopLossEnabled: this.model.orderInput.stopLossEnabled,
-            stopLossPercent: this.model.orderInput.stopLossPercent,
-            limitSellEnabled: this.model.orderInput.limitSellEnabled,
-            limitSellPercent: this.model.orderInput.limitSellPercent,
-            trailingStopEnabled: this.model.orderInput.trailingStopEnabled,
-            trailingStopPercent: this.model.orderInput.trailingStopPercent,
-            trailingStopDeviation: this.model.orderInput.trailingStopDeviation,
+            symbol: this.orderFormSettings.symbol,
+            quantity: this.orderForm.amount,
+            priceSource: this.orderFormSettings.priceSource,
+            priceAdjustment: this.orderForm.buyLimitPercent,
+            stopLossEnabled: this.orderFormSettings.stopLossEnabled,
+            stopLossPercent: this.orderFormSettings.stopLossPercent,
+            limitSellEnabled: this.orderFormSettings.limitSellEnabled,
+            limitSellPercent: this.orderFormSettings.limitSellPercent,
+            trailingStopEnabled: this.orderFormSettings.trailingStopEnabled,
+            trailingStopPercent: this.orderFormSettings.trailingStopPercent,
+            trailingStopDeviation: this.orderFormSettings.trailingStopDeviation,
         };
         this.binance.openTrade(options);
     }
