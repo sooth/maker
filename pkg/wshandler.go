@@ -52,8 +52,12 @@ func (h *UserWebSocketHandler) writeLoop(ws *websocket.Conn, writeChannel chan i
 		if message == nil {
 			break
 		}
-		err := ws.WriteJSON(message)
+		buf, err := json.Marshal(message)
 		if err != nil {
+			log.WithError(err).Error("Failed to encode message to JSON.")
+			continue
+		}
+		if err := ws.WriteMessage(websocket.TextMessage, buf); err != nil {
 			log.Printf("error: failed to write to websocket: %v", err)
 			return
 		}
