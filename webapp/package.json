@@ -5,8 +5,8 @@
   "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --port 4300",
-    "start-noprogress": "ng serve --port 4300 --progress=false --proxy-config proxy-dev.conf.json",
+    "start": "./node_modules/.bin/ng serve --port 4300 --proxy-config proxy-dev.conf.json",
+    "start-noprogress": "./node_modules/.bin/ng serve --port 4300 --progress=false --proxy-config proxy-dev.conf.json",
     "build": "ng build --prod",
     "test": "ng test",
     "lint": "ng lint",
