@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/crankykernel/cryptotrader"
   packages = ["binance"]
-  revision = "62fb2e8a792153abb0b23edb7ee7a6ae9808339f"
+  revision = "19cc58cf97231454cb6f6ab7171431179a0a3f60"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -85,8 +85,8 @@
 [[projects]]
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
-  revision = "323a32be5a2421b8c7087225079c6c900ec397cd"
-  version = "v1.7.0"
+  revision = "25ecb14adfc7543176f7d85291ec7dba82c6f7e4"
+  version = "v1.9.0"
 
 [[projects]]
   branch = "master"
@@ -170,7 +170,7 @@
     "unix",
     "windows"
   ]
-  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
+  revision = "56ede360ec1c541828fb88741b3f1049406d28f5"
 
 [[projects]]
   name = "golang.org/x/text"
