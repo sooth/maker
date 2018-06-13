@@ -181,6 +181,7 @@ func (s *TradeService) checkTrailingStop(trade *Trade, lastTrade *binance.Stream
 				trade.State.Symbol, trade.State.ProfitPercent,
 				trade.State.TrailingStop.Percent)
 			trade.State.TrailingStop.Activated = true
+			s.BroadcastTradeUpdate(trade)
 		}
 	}
 

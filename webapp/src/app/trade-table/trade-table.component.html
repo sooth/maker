@@ -209,6 +209,18 @@
               <th>Deviation</th>
               <td>{{trade.TrailingStop.Deviation}}</td>
             </tr>
+            <tr>
+              <th>Activated</th>
+              <td>
+                {{trade.TrailingStop && trade.TrailingStop.Activated || "--"}}
+              </td>
+            </tr>
+            <tr>
+              <th>Triggered</th>
+              <td>
+                {{trade.TrailingStop && trade.TrailingStop.Triggered || "--"}}
+              </td>
+            </tr>
           </table>
 
         </td>

@@ -194,6 +194,8 @@ export interface TradeState {
         Enabled: boolean;
         Percent: number;
         Deviation: number;
+        Activated: boolean;
+        Triggered: boolean;
     };
     EffectiveBuyPrice: number;
     Profit: number;
