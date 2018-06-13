@@ -53,6 +53,37 @@ type ApplicationContext struct {
 	OpenBrowser           bool
 }
 
+func restoreTrades(tradeService *TradeService) {
+	binanceRestClient := getBinanceRestClient()
+	tradeStates, err := DbRestoreTradeState()
+	if err != nil {
+		log.Fatalf("error: failed to restore trade state: %v", err)
+	}
+	for _, state := range (tradeStates) {
+		trade := NewTradeWithState(state)
+		tradeService.RestoreTrade(trade)
+
+		if trade.State.Status == TradeStatusPendingSell {
+			orderStatus, err := binanceRestClient.GetOrderByOrderId(
+				trade.State.Symbol, trade.State.SellOrderId)
+			if err != nil {
+				log.WithError(err).Errorf(
+					"Failed to find existing order %d for %s.",
+					trade.State.SellOrderId, trade.State.Symbol)
+			} else {
+				if orderStatus.Status == binance.OrderStatusCanceled {
+					log.WithFields(log.Fields{
+						"symbol":  state.Symbol,
+						"tradeId": state.LocalID,
+					}).Infof("Outstanding sell order has been canceled.")
+					trade.State.Status = TradeStatusWatching
+				}
+			}
+		}
+	}
+	log.Printf("Restored %d trade states.", len(tradeService.TradesByClientID))
+}
+
 func ServerMain() {
 
 	log.SetLevel(log.LogLevelDebug)
@@ -73,14 +104,7 @@ func ServerMain() {
 	tradeService := NewTradeService(applicationContext)
 	applicationContext.TradeService = tradeService
 
-	tradeStates, err := DbRestoreTradeState()
-	if err != nil {
-		log.Fatalf("error: failed to restore trade state: %v", err)
-	}
-	for _, state := range (tradeStates) {
-		tradeService.RestoreTrade(NewTradeWithState(state))
-	}
-	log.Printf("Restored %d trade states.", len(tradeService.TradesByClientID))
+	restoreTrades(tradeService)
 
 	applicationContext.BinanceUserDataStream = NewBinanceUserDataStream()
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
@@ -107,7 +131,6 @@ func ServerMain() {
 
 	router.HandleFunc("/api/binance/buy", postBuyHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
-	router.HandleFunc("/api/binance/sell", postSellHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/sell", deleteSellHandler(tradeService)).Methods("DELETE")
 
 	router.HandleFunc("/api/binance/trade/{tradeId}/stopLoss",
