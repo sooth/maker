@@ -491,7 +491,7 @@ func (s *TradeService) DoLimitSell(trade *Trade, percent float64) error {
 		"fixedPrice": fixedPrice,
 		"symbol":     trade.State.Symbol,
 		"tradeId":    trade.State.LocalID,
-	}).Debugf("Posting sell order.", trade.State.Symbol)
+	}).Debugf("Posting sell order.")
 
 	order := binance.OrderParameters{
 		Symbol:           trade.State.Symbol,
