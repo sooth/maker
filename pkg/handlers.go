@@ -26,7 +26,6 @@ import (
 	"strconv"
 	"github.com/crankykernel/cryptotrader/binance"
 	"fmt"
-	"io"
 	"github.com/gobuffalo/packr"
 )
 
@@ -260,7 +259,13 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 		response, err := getBinanceRestClient().CancelOrder(trade.State.Symbol,
 			trade.State.SellOrderId)
 		if err != nil {
-			log.Printf("error: failed to post order: %v", err)
+			log.WithError(err).WithFields(log.Fields{
+				"symbol":      trade.State.Symbol,
+				"tradeId":     tradeId,
+				"sellOrderId": trade.State.SellOrderId,
+			}).Error("Failed to cancel sell order.")
+			writeJsonError(w, http.StatusBadRequest,
+				fmt.Sprintf("Failed to cancel sell order: %s", string(err.Error())))
 			return
 		}
 
@@ -392,94 +397,6 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		writeJsonResponse(w, http.StatusOK, BuyOrderResponse{
 			TradeID: tradeId,
 		})
-	}
-}
-
-func postSellHandler(tradeService *TradeService) http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		params := binance.OrderParameters{
-			Side: binance.OrderSideSell,
-		}
-
-		var tradeId string
-
-		for key := range r.Form {
-			var err error
-			var val = r.FormValue(key)
-			switch key {
-			case "trade_id":
-				tradeId = val
-			case "price":
-				params.Price, err = strconv.ParseFloat(val, 64)
-			case "quantity":
-				params.Quantity, err = strconv.ParseFloat(val, 64)
-			case "symbol":
-				params.Symbol = val
-			case "type":
-				params.Type = binance.OrderType(val)
-			case "timeInForce":
-				params.TimeInForce = binance.TimeInForce(val)
-			}
-			if err != nil {
-				log.Printf("error: failed to convert order: %v", err)
-				return
-			}
-		}
-
-		orderId, err := tradeService.MakeOrderID()
-		if err != nil {
-			log.WithError(err).Errorf("Failed to create order ID.")
-			writeJsonError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		params.NewClientOrderId = orderId
-
-		if tradeId != "" {
-			trade := tradeService.FindTradeByLocalID(tradeId)
-			if trade == nil {
-				log.Printf("error: failed to find trade with id %s", tradeId)
-			} else {
-				tradeService.AddClientOrderId(trade, params.NewClientOrderId, false)
-			}
-		} else {
-			log.Printf("error: no trade id provided")
-			writeBadRequestError(w)
-			return
-		}
-
-		log.WithFields(log.Fields{
-			"tradeId":       tradeId,
-			"symbol":        params.Symbol,
-			"price":         params.Price,
-			"quantity":      params.Quantity,
-			"type":          params.Type,
-			"clientOrderId": params.NewClientOrderId,
-		}).Infof("Posting SELL order for %s", params.Symbol)
-
-		response, err := getBinanceRestClient().PostOrder(params)
-		if err != nil {
-			log.Printf("error: failed to post order: %v", err)
-			switch err := err.(type) {
-			case *binance.RestApiError:
-				for key, val := range response.Header {
-					w.Header()[key] = val
-				}
-				w.WriteHeader(response.StatusCode)
-				w.Write(err.Body)
-			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("%v", err)))
-			}
-			return
-		}
-
-		for key, val := range response.Header {
-			w.Header()[key] = val
-		}
-		w.WriteHeader(response.StatusCode)
-		io.Copy(w, response.Body)
 	}
 }
 
