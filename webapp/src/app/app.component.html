@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top top-nav">
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top top-nav">
   <span class="navbar-brand">Binance Maker</span>
   <button class="navbar-toggler" type="button" data-toggle="collapse"
           data-target="#navbarSupportedContent"
@@ -24,8 +24,68 @@
           <i class="fa fa-cog"></i>
         </a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link" style="outline: none;" href="javascript:void(0);"
+           data-toggle="modal"
+           data-target="#aboutModal"><i
+            class="fa fa-question"></i></a>
+      </li>
     </ul>
   </div>
 </nav>
 
 <router-outlet></router-outlet>
+
+<!-- Modal -->
+<div class="modal fade" id="aboutModal" tabindex="-1" role="dialog"
+     aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Contact</h5>
+        <button type="button" class="close" data-dismiss="modal"
+                aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <dl>
+          <dt>News</dt>
+          <dd><a href="https://steemit.com/@makervision" target="_blank">https://steemit.com/@makervision</a>
+          </dd>
+          <dt>Issue Tracker</dt>
+          <dd><a href="https://github.com/crankykernel/maker/issues"
+                 target="_blank"><i
+              class="fab fa-github"></i> GitHub</a></dd>
+          <dt></dt>
+          <dt>Email</dt>
+          <dd><a href="mailto:thecrankykernel@gmail.com">thecrankykernel@gmail.com</a>
+          </dd>
+          <dt>Twitter</dt>
+          <dd><a href="https://twitter.com/crankykernel"
+                 target="_blank">@crankykernel</a></dd>
+          <dt>Telegram</dt>
+          <dd><a href="https://t.me/crankykernel">@crankykernel</a></dd>
+
+          <dt>Donations</dt>
+          <dd>
+            LTC: Lf2RrK8zTyvzpUxcrXABtXF94h6tE3Sknz
+            <br/>
+            ETH: 0xeb0cde70c44d1f9c19761cffcbc8333c43225c00
+            <br/>
+            DOGE: D9HYSuSvMwKt6S9w75uX1btUMn4hbeKFQh
+          </dd>
+        </dl>
+
+        <a href="https://www.binance.com/?ref=20697299">Signup for Binance</a>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-block"
+                data-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
