@@ -16,6 +16,7 @@
 import {Component, EventEmitter, OnInit, Output} from "@angular/core";
 import {MakerService, TradeMap, TradeState, TradeStatus} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
+import {ToastrService} from "../toastr.service";
 
 @Component({
     selector: "app-trade-table",
@@ -35,6 +36,7 @@ export class TradeTableComponent implements OnInit {
     @Output() symbolClickHandler: EventEmitter<any> = new EventEmitter();
 
     constructor(public maker: MakerService,
+                private toastr: ToastrService,
                 logger: LoggerService) {
         this.logger = logger.getLogger("TradeTableComponent");
     }
@@ -139,7 +141,10 @@ export class TradeTableComponent implements OnInit {
     }
 
     cancelSell(trade: TradeState) {
-        this.maker.cancelSell(trade);
+        this.maker.cancelSell(trade).subscribe(() => {
+        }, (error) => {
+            this.toastr.error(`Failed to cancel sell order: ${error.error.message}`);
+        });
     }
 
     limitSell(trade: TradeState, percent: number) {

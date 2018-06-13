@@ -21,11 +21,13 @@ import {
     AggTrade,
     BinanceApiService,
     buildAggTradeFromStream,
+    CancelOrderResponse,
     RawStreamAccountInfo,
     StreamAggTrade
 } from "./binance-api.service";
 import {HttpClient, HttpParams} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
+import {Observable} from "rxjs";
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -114,11 +116,8 @@ export class MakerService {
         });
     }
 
-    cancelSell(trade: TradeState) {
-        this.binanceApi.cancelSellOrder(trade.LocalID).subscribe((response) => {
-        }, (error) => {
-            console.log("Failed to cancel buy order: " + JSON.stringify(error));
-        });
+    cancelSell(trade: TradeState): Observable<CancelOrderResponse> {
+        return this.binanceApi.cancelSellOrder(trade.LocalID);
     }
 
     limitSell(trade: TradeState, percent: number) {
