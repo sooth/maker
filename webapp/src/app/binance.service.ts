@@ -18,33 +18,26 @@ import {
     AggTrade,
     BinanceApiService,
     buildTickerFromStream,
-    BuyOrderOptions,
     Depth,
     ExchangeInfo,
     makeDepthFromStream,
-    OrderType,
     PriceTicker,
-    SymbolInfo,
-    TimeInForce
+    SymbolInfo
 } from "./binance-api.service";
 import {roundx} from "./utils";
 import {map, multicast, refCount, switchMap, take, tap} from "rxjs/operators";
 import {Observable, Subject, Subscription} from "rxjs";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Logger, LoggerService} from "./logger.service";
-import {of} from "rxjs/index";
-import {throwError} from "rxjs/internal/observable/throwError";
 import {HttpClient} from "@angular/common/http";
 import {MakerService} from "./maker.service";
 import {MakerApiService} from "./maker-api.service";
+import {ToastrService} from "./toastr.service";
 
 /**
  * Enum of types that can be used as a price source.
  */
 export enum PriceSource {
-    /** Price is fixed by an outside source, the user, etc. */
-    MANUAL = "MANUAL",
-
     /** The price of the last trade is used. */
     LAST_PRICE = "LAST_PRICE",
 
@@ -92,6 +85,7 @@ export class BinanceService {
     constructor(private api: BinanceApiService,
                 private maker: MakerService,
                 private makerApi: MakerApiService,
+                private toastr: ToastrService,
                 http: HttpClient,
                 logger: LoggerService) {
 
@@ -135,16 +129,8 @@ export class BinanceService {
         this.lastPriceMap[trade.symbol] = trade.price;
     }
 
-    postBuyOrder(symbol: string, price: number, quantity: number,
-                 body?: TradeOptions) {
-        const options: BuyOrderOptions = {
-            symbol: symbol,
-            type: OrderType.LIMIT,
-            timeInForce: TimeInForce.GTC,
-            quantity: quantity,
-            price: price.toFixed(8),
-        };
-        return this.api.postBuyOrder(options, body);
+    postBuyOrder(body: OpenTradeOptions) {
+        return this.api.postBuyOrder(body);
     }
 
     /**
@@ -160,27 +146,6 @@ export class BinanceService {
         const tickSize = symbolInfo.tickSize;
         const adjustedPrice = roundx(limitPrice, 1 / tickSize);
         return adjustedPrice;
-    }
-
-    /**
-     * Opens a new trade and sends off the buy order.
-     */
-    openTrade(options: TradeOptions, onError: any = null) {
-        this.getPrice(options.symbol, options.priceSource, options.price)
-                .pipe(switchMap((price: number) => {
-                    const adjustedPrice = this.adjustPrice(options.symbol,
-                            price, options.priceAdjustment);
-                    return this.postBuyOrder(options.symbol,
-                            adjustedPrice, options.quantity, options);
-                })).subscribe(() => {
-            console.log("Buy order successfully posted.");
-        }, (error) => {
-            console.log("failed to place order:");
-            console.log(JSON.stringify(error));
-            if (onError) {
-                onError(error);
-            }
-        });
     }
 
     subscribeToTradeStream(symbol: string) {
@@ -252,29 +217,9 @@ export class BinanceService {
         }));
     }
 
-    getPrice(symbol: string, priceSource: PriceSource, price: number = null): Observable<number> {
-        if (priceSource === PriceSource.LAST_PRICE) {
-            const lastPrice = this.lastPriceMap[symbol];
-            return of(lastPrice);
-        } else if (priceSource === PriceSource.BEST_BID) {
-            return this.api.getBookTicker(symbol)
-                    .pipe(map((ticker) => {
-                        return ticker.bidPrice;
-                    }));
-        } else if (priceSource === PriceSource.BEST_ASK) {
-            return this.api.getBookTicker(symbol)
-                    .pipe(map((ticker) => {
-                        return ticker.askPrice;
-                    }));
-        } else if (priceSource === PriceSource.MANUAL) {
-            return of(price);
-        }
-        return throwError("unknown price source");
-    }
-
 }
 
-export interface TradeOptions {
+export interface OpenTradeOptions {
     symbol: string;
     quantity: number;
 

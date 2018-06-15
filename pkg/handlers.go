@@ -280,6 +280,10 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 
 	type BuyOrderRequestBody struct {
+		Symbol      string      `json:"symbol"`
+		Quantity    float64     `json:"quantity"`
+		PriceSource PriceSource `json:"priceSource"`
+
 		LimitSellEnabled bool    `json:"limitSellEnabled"`
 		LimitSellPercent float64 `json:"limitSellPercent"`
 
@@ -294,37 +298,10 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		params := binance.OrderParameters{
-			Side: binance.OrderSideBuy,
+			Side:        binance.OrderSideBuy,
+			Type:        binance.OrderTypeLimit,
+			TimeInForce: binance.TimeInForceGTC,
 		}
-
-		for key := range r.Form {
-			var err error
-			var val = r.FormValue(key)
-			switch key {
-			case "price":
-				params.Price, err = strconv.ParseFloat(val, 64)
-			case "quantity":
-				params.Quantity, err = strconv.ParseFloat(val, 64)
-			case "symbol":
-				params.Symbol = val
-			case "type":
-				params.Type = binance.OrderType(val)
-			case "timeInForce":
-				params.TimeInForce = binance.TimeInForce(val)
-			}
-			if err != nil {
-				log.Printf("error: failed to convert order: %v", err)
-				return
-			}
-		}
-
-		orderId, err := tradeService.MakeOrderID()
-		if err != nil {
-			log.WithError(err).Errorf("Failed to create order ID.")
-			writeJsonError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		params.NewClientOrderId = orderId
 
 		var requestBody BuyOrderRequestBody
 		decoder := json.NewDecoder(r.Body)
@@ -334,9 +311,53 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
+		// Validate price source.
+		switch requestBody.PriceSource {
+		case PriceSourceLast:
+		case PriceSourceBestBid:
+		case PriceSourceBaskAsk:
+		case "":
+			writeJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
+			return
+		default:
+			writeJsonError(w, http.StatusBadRequest,
+				fmt.Sprintf("invalid value for priceSource: %v", requestBody.PriceSource))
+			return
+		}
+
+		params.Symbol = requestBody.Symbol
+		params.Quantity = requestBody.Quantity
+
+		orderId, err := tradeService.MakeOrderID()
+		if err != nil {
+			log.WithError(err).Errorf("Failed to create order ID.")
+			writeJsonError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		params.NewClientOrderId = orderId
+
 		trade := NewTrade()
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
+
+		buyService := NewBinanceBuyService()
+
+		params.Price, err = buyService.GetPrice(params.Symbol, requestBody.PriceSource)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"priceSource": requestBody.PriceSource,
+				"symbol":      params.Symbol,
+			}).Error("Failed to get buy price.")
+			writeJsonError(w, http.StatusInternalServerError,
+				fmt.Sprintf("Failed to get price: %v", err))
+			return
+		}
+
+		log.WithFields(log.Fields{
+			"symbol":      params.Symbol,
+			"priceSource": requestBody.PriceSource,
+			"price":       params.Price,
+		}).Debug("Got purchase price for symbol.")
 
 		if requestBody.StopLossEnabled {
 			trade.SetStopLoss(requestBody.StopLossEnabled,

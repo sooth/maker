@@ -18,47 +18,13 @@ import {HttpClient, HttpHeaders, HttpParams} from "@angular/common/http";
 import * as hmacSHA256 from "crypto-js/hmac-sha256";
 import * as hex from "crypto-js/enc-hex";
 import {catchError, map} from "rxjs/operators";
-import {ToastrService} from "./toastr.service";
 import {Observable} from "rxjs";
 import {throwError} from "rxjs/internal/observable/throwError";
-import {TradeOptions} from "./binance.service";
+import {OpenTradeOptions} from "./binance.service";
 import {Observer} from "rxjs/Observer";
 
 const API_ROOT = "/proxy/binance";
 const STREAM_ROOT = "wss://stream.binance.com:9443";
-
-export enum Side {
-    BUY = "BUY",
-    SELL = "SELL",
-}
-
-export enum TimeInForce {
-    GTC = "GTC",
-}
-
-export enum OrderType {
-    LIMIT = "LIMIT",
-    MARKET = "MARKET",
-}
-
-export enum OrderStatus {
-    NEW = "NEW",
-    PARTIALLY_FILLED = "PARTIALLY_FILLED",
-    FILLED = "FILLED",
-    CANCELED = "CANCELED",
-    PENDING_CANCEL = "PENDING_CANCEL",
-    REJECTED = "REJECTED",
-    EXPIRED = "EXPIRED",
-}
-
-export interface BuyOrderOptions {
-    symbol: string;
-    type: OrderType;
-    quantity: number;
-    price?: number | string;
-    timeInForce?: TimeInForce;
-    newClientOrderId?: string;
-}
 
 @Injectable()
 export class BinanceApiService {
@@ -108,8 +74,8 @@ export class BinanceApiService {
         params?: HttpParams;
         headers?: HttpHeaders;
     }, body: any = null) {
-        const headers = options.headers || new HttpHeaders();
-        const params = options.params || new HttpParams();
+        const headers = options && options.headers || new HttpHeaders();
+        const params = options && options.params || new HttpParams();
         return this.http.post(path, body, {
             params: params,
             headers: headers,
@@ -170,24 +136,9 @@ export class BinanceApiService {
         );
     }
 
-    postBuyOrder(options: BuyOrderOptions, body: TradeOptions = null): Observable<BuyOrderResponse> {
+    postBuyOrder(body: OpenTradeOptions = null): Observable<BuyOrderResponse> {
         const endpoint = "/api/binance/buy";
-        let params = new HttpParams()
-                .set("symbol", options.symbol)
-                .set("type", options.type)
-                .set("quantity", `${options.quantity}`);
-        if (options.timeInForce != null) {
-            params = params.set("timeInForce", options.timeInForce);
-        }
-        if (options.price != null) {
-            params = params.set("price", `${options.price}`);
-        }
-        if (options.newClientOrderId) {
-            params = params.set("newClientOrderId", options.newClientOrderId);
-        }
-        return <Observable<BuyOrderResponse>>this.post(endpoint, {
-            params: params,
-        }, body);
+        return <Observable<BuyOrderResponse>>this.post(endpoint, null, body);
     }
 
     cancelSellOrder(tradeId: string): Observable<CancelOrderResponse> {

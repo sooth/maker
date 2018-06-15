@@ -16,7 +16,7 @@
 import {Component, OnDestroy, OnInit} from "@angular/core";
 import {AccountInfo, AggTrade, Balance, BinanceApiService, PriceTicker} from "../binance-api.service";
 import {Observable} from "rxjs";
-import {BinanceService, PriceSource, TradeOptions} from "../binance.service";
+import {BinanceService, PriceSource, OpenTradeOptions} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
 import {Subscription} from "rxjs/Subscription";
 import * as Mousetrap from "mousetrap";
@@ -26,6 +26,7 @@ import {ConfigService} from "../config.service";
 import {MakerService} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {FormBuilder, FormGroup} from "@angular/forms";
+import {ToastrService} from "../toastr.service";
 
 declare var window: any;
 
@@ -107,6 +108,7 @@ export class TradeComponent implements OnInit, OnDestroy {
                 private maker: MakerService,
                 private config: ConfigService,
                 private formBuilder: FormBuilder,
+                private toastr: ToastrService,
                 logger: LoggerService,
     ) {
         this.logger = logger.getLogger("trade-component");
@@ -298,7 +300,7 @@ export class TradeComponent implements OnInit, OnDestroy {
     }
 
     makeOrder() {
-        const options: TradeOptions = {
+        const options: OpenTradeOptions = {
             symbol: this.orderFormSettings.symbol,
             quantity: this.orderForm.amount,
             priceSource: this.orderFormSettings.priceSource,
@@ -311,6 +313,11 @@ export class TradeComponent implements OnInit, OnDestroy {
             trailingStopPercent: this.orderFormSettings.trailingStopPercent,
             trailingStopDeviation: this.orderFormSettings.trailingStopDeviation,
         };
-        this.binance.openTrade(options);
+        this.binance.postBuyOrder(options).subscribe(() => {
+        }, (error) => {
+            console.log("failed to place order:");
+            console.log(JSON.stringify(error));
+            this.toastr.error(error.error.message, "Fail to make order");
+        });
     }
 }
