@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/crankykernel/cryptotrader"
   packages = ["binance"]
-  revision = "e5d14ed0fec92c0ecbe2c1e1a0b9711be2bd12d2"
+  revision = "8a2072ff3d4456884ee26b4d57d62c4d478876e2"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
