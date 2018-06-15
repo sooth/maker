@@ -28,6 +28,7 @@ import (
 	"sync"
 	"path/filepath"
 	"os"
+	"time"
 )
 
 var ServerFlags struct {
@@ -59,24 +60,89 @@ func restoreTrades(tradeService *TradeService) {
 	if err != nil {
 		log.Fatalf("error: failed to restore trade state: %v", err)
 	}
+
+	tradeHistoryCache := map[string][]binance.TradeResponse{}
+
 	for _, state := range (tradeStates) {
 		trade := NewTradeWithState(state)
 		tradeService.RestoreTrade(trade)
 
+		if trade.State.Status == TradeStatusPendingBuy {
+			order, err := binanceRestClient.GetOrderByOrderId(
+				trade.State.Symbol, trade.State.BuyOrderId)
+			if err != nil {
+				log.WithError(err).Error("Failed to get order by ID.")
+			}
+			switch order.Status {
+			case binance.OrderStatusNew:
+				// No change.
+			default:
+				log.WithFields(log.Fields{
+					"tradeId":     trade.State.LocalID,
+					"orderStatus": order.Status,
+					"symbol":      trade.State.Symbol,
+					"tradeStatus": trade.State.Status,
+				}).Warnf("Don't know how to restore pending buy trade.")
+			}
+		}
+
 		if trade.State.Status == TradeStatusPendingSell {
-			orderStatus, err := binanceRestClient.GetOrderByOrderId(
+			order, err := binanceRestClient.GetOrderByOrderId(
 				trade.State.Symbol, trade.State.SellOrderId)
 			if err != nil {
 				log.WithError(err).Errorf(
 					"Failed to find existing order %d for %s.",
 					trade.State.SellOrderId, trade.State.Symbol)
 			} else {
-				if orderStatus.Status == binance.OrderStatusCanceled {
+				if order.Status == binance.OrderStatusNew {
+					// Unchanged.
+				} else if order.Status == binance.OrderStatusCanceled {
 					log.WithFields(log.Fields{
 						"symbol":  state.Symbol,
 						"tradeId": state.LocalID,
 					}).Infof("Outstanding sell order has been canceled.")
 					trade.State.Status = TradeStatusWatching
+				} else if order.Status == binance.OrderStatusFilled {
+					trades := tradeHistoryCache[state.Symbol]
+					if trades == nil {
+						trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)
+						if err != nil {
+							log.Errorf("Failed to get trades: %v", err)
+						}
+						tradeHistoryCache[state.Symbol] = trades
+					}
+					for _, _trade := range trades {
+						if _trade.OrderID == state.SellOrderId {
+							fill := OrderFill{
+								Price:            _trade.Price,
+								Quantity:         _trade.Quantity,
+								CommissionAmount: _trade.Commission,
+								CommissionAsset:  _trade.CommissionAsset,
+							}
+							trade.DoAddSellFill(fill)
+						}
+					}
+					if trade.State.SellFillQuantity != trade.State.BuyFillQuantity {
+						log.WithFields(log.Fields{
+							"buyQuantity":  trade.State.BuyFillQuantity,
+							"sellQuantity": trade.State.SellFillQuantity,
+						}).Warnf("Order is filled but sell quantity != buy quantity.")
+					} else {
+						closeTime := time.Unix(0, order.TimeMillis*int64(time.Millisecond))
+						log.WithFields(log.Fields{
+							"symbol":    trade.State.Symbol,
+							"closeTime": closeTime,
+							"tradeId":   trade.State.LocalID,
+						}).Infof("Closing trade.")
+						tradeService.CloseTrade(trade, TradeStatusDone, closeTime)
+					}
+				} else {
+					log.WithFields(log.Fields{
+						"symbol":      state.Symbol,
+						"tradeId":     state.LocalID,
+						"orderStatus": order.Status,
+					}).Warnf("Don't know how to restore trade in status %v: %s",
+						order.Status, log.ToJson(order))
 				}
 			}
 		}

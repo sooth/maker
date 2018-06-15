@@ -431,13 +431,25 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.State.SellOrder.Quantity = report.Quantity
 			trade.State.SellOrder.Price = report.Price
 		case binance.OrderStatusPartiallyFilled:
-			trade.AddSellFill(report)
+			fill := OrderFill{
+				Price:            report.LastExecutedPrice,
+				Quantity:         report.LastExecutedQuantity,
+				CommissionAsset:  report.CommissionAsset,
+				CommissionAmount: report.CommissionAmount,
+			}
+			trade.DoAddSellFill(fill)
 			if trade.State.SellOrder.Status != binance.OrderStatusFilled {
 				trade.State.SellOrder.Status = report.CurrentOrderStatus
 			}
 		case binance.OrderStatusFilled:
+			fill := OrderFill{
+				Price:            report.LastExecutedPrice,
+				Quantity:         report.LastExecutedQuantity,
+				CommissionAsset:  report.CommissionAsset,
+				CommissionAmount: report.CommissionAmount,
+			}
+			trade.DoAddSellFill(fill)
 			trade.State.Status = TradeStatusDone
-			trade.AddSellFill(report)
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		case binance.OrderStatusCanceled:
 			trade.State.Status = TradeStatusWatching
@@ -463,6 +475,16 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	}
 
 	s.BroadcastTradeUpdate(trade)
+}
+
+func (s *TradeService) CloseTrade(trade *Trade, status TradeStatus, closeTime time.Time) {
+	if closeTime.IsZero() {
+		closeTime = time.Now()
+	}
+	trade.State.Status = status
+	trade.State.CloseTime = &closeTime
+	s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
+	DbUpdateTrade(trade)
 }
 
 func (s *TradeService) TriggerLimitSell(trade *Trade) {

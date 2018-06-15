@@ -191,13 +191,7 @@ func (t *Trade) AddBuyFill(report ExecutionReport) {
 	t.UpdateBuyState()
 }
 
-func (t *Trade) AddSellFill(report ExecutionReport) {
-	fill := OrderFill{
-		Price:            report.LastExecutedPrice,
-		Quantity:         report.LastExecutedQuantity,
-		CommissionAsset:  report.CommissionAsset,
-		CommissionAmount: report.CommissionAmount,
-	}
+func (t *Trade) DoAddSellFill(fill OrderFill) {
 	t.State.SellSideFills = append(t.State.SellSideFills, fill)
 	t.UpdateSellState()
 }
