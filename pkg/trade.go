@@ -219,13 +219,10 @@ func (t *Trade) UpdateSellState() {
 		t.State.AverageSellPrice = round8(totalPrice / quantity)
 		t.State.SellFillQuantity = round8(quantity)
 		t.State.SellCost = round8(cost)
-
-		if t.State.Status == TradeStatusDone {
-			t.State.Profit = t.State.SellCost - t.State.BuyCost
-			t.State.ProfitPercent = t.State.Profit / t.State.BuyCost * 100
-			t.State.Profit = round8(t.State.Profit)
-			t.State.ProfitPercent = round8(t.State.ProfitPercent)
-		}
+		t.State.Profit = t.State.SellCost - t.State.BuyCost
+		t.State.ProfitPercent = t.State.Profit / t.State.BuyCost * 100
+		t.State.Profit = round8(t.State.Profit)
+		t.State.ProfitPercent = round8(t.State.ProfitPercent)
 	}
 }
 
