@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/crankykernel/maker/pkg/log"
 	"time"
+	"github.com/crankykernel/maker/pkg/idgenerator"
 )
 
 type TradeEventType string
@@ -47,7 +48,7 @@ type TradeService struct {
 	// trade as a key is created for each client ID associated with the trade.
 	TradesByClientID map[string]*Trade
 
-	idGenerator *IdGenerator
+	idGenerator *idgenerator.IdGenerator
 
 	subscribers map[chan TradeEvent]bool
 	lock        sync.RWMutex
@@ -63,7 +64,7 @@ func NewTradeService(applicationContext *ApplicationContext) *TradeService {
 	tradeService := &TradeService{
 		TradesByLocalID:      make(map[string]*Trade),
 		TradesByClientID:     make(map[string]*Trade),
-		idGenerator:          NewIdGenerator(),
+		idGenerator:          idgenerator.NewIdGenerator(),
 		subscribers:          make(map[chan TradeEvent]bool),
 		applicationContext:   applicationContext,
 		binanceStreamManager: applicationContext.BinanceStreamManager,
