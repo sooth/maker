@@ -16,14 +16,9 @@
 package pkg
 
 import "fmt"
-import "github.com/crankykernel/cryptotrader/binance"
-
-type PriceSource string
-
-const (
-	PriceSourceLast    PriceSource = "LAST_PRICE";
-	PriceSourceBestBid PriceSource = "BEST_BID";
-	PriceSourceBaskAsk PriceSource = "BEST_ASK";
+import (
+	"github.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/maker/pkg/maker"
 )
 
 type BinanceBuyService struct {
@@ -36,22 +31,22 @@ func NewBinanceBuyService() *BinanceBuyService {
 	}
 }
 
-func (s *BinanceBuyService) GetPrice(symbol string, priceSource PriceSource) (float64, error) {
-	if priceSource == PriceSourceLast {
+func (s *BinanceBuyService) GetPrice(symbol string, priceSource maker.PriceSource) (float64, error) {
+	if priceSource == maker.PriceSourceLast {
 		ticker, err := s.anonymousClient.GetPriceTicker(symbol)
 		if err != nil {
 			return 0, err
 		}
 		return ticker.Price, nil
-	} else if priceSource == PriceSourceBaskAsk || priceSource == PriceSourceBestBid {
+	} else if priceSource == maker.PriceSourceBaskAsk || priceSource == maker.PriceSourceBestBid {
 		ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
 		if err != nil {
 			return 0, err
 		}
 		switch priceSource {
-		case PriceSourceBestBid:
+		case maker.PriceSourceBestBid:
 			return ticker.BidPrice, nil
-		case PriceSourceBaskAsk:
+		case maker.PriceSourceBaskAsk:
 			return ticker.AskPrice, nil
 		}
 	}

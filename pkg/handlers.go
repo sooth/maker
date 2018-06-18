@@ -17,16 +17,18 @@ package pkg
 
 import (
 	"net/http"
+	"fmt"
+	"io/ioutil"
+	"encoding/json"
+	"strconv"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"gopkg.in/yaml.v2"
-	"encoding/json"
 	"github.com/crankykernel/maker/pkg/log"
-	"strconv"
 	"github.com/crankykernel/cryptotrader/binance"
-	"fmt"
 	"github.com/gobuffalo/packr"
+	"github.com/crankykernel/maker/pkg/handlers"
+	"github.com/crankykernel/maker/pkg/maker"
 )
 
 func writeJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) error {
@@ -273,27 +275,7 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
-
-	type BuyOrderResponse struct {
-		TradeID string `json:"trade_id""`
-	}
-
-	type BuyOrderRequestBody struct {
-		Symbol      string      `json:"symbol"`
-		Quantity    float64     `json:"quantity"`
-		PriceSource PriceSource `json:"priceSource"`
-
-		LimitSellEnabled bool    `json:"limitSellEnabled"`
-		LimitSellPercent float64 `json:"limitSellPercent"`
-
-		StopLossEnabled bool    `json:"stopLossEnabled"`
-		StopLossPercent float64 `json:"stopLossPercent"`
-
-		TrailingStopEnabled   bool    `json:"trailingStopEnabled"`
-		TrailingStopPercent   float64 `json:"trailingStopPercent"`
-		TrailingStopDeviation float64 `json:"trailingStopDeviation"`
-	}
+func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
@@ -303,7 +285,7 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			TimeInForce: binance.TimeInForceGTC,
 		}
 
-		var requestBody BuyOrderRequestBody
+		var requestBody handlers.BuyOrderRequest
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&requestBody); err != nil {
 			log.Printf("error: failed to decode request body: %v", err)
@@ -313,9 +295,9 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 		// Validate price source.
 		switch requestBody.PriceSource {
-		case PriceSourceLast:
-		case PriceSourceBestBid:
-		case PriceSourceBaskAsk:
+		case maker.PriceSourceLast:
+		case maker.PriceSourceBestBid:
+		case maker.PriceSourceBaskAsk:
 		case "":
 			writeJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
 			return
@@ -415,7 +397,7 @@ func postBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			"tradeId": tradeId,
 		}).Debugf("Decoded BUY response: %s", log.ToJson(buyResponse))
 
-		writeJsonResponse(w, http.StatusOK, BuyOrderResponse{
+		writeJsonResponse(w, http.StatusOK, handlers.BuyOrderResponse{
 			TradeID: tradeId,
 		})
 	}
