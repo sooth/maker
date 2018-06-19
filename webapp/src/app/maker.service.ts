@@ -75,6 +75,7 @@ export class MakerService {
                     this.binanceAccountInfo$.next(accountInfo);
                     break;
                 default:
+                    this.logger.log(`Unhandled message type: ${message.messageType}`);
                     break;
             }
         };

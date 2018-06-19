@@ -20,6 +20,7 @@ import (
 	"github.com/gorilla/websocket"
 	"encoding/json"
 	"github.com/crankykernel/maker/pkg/log"
+	"github.com/crankykernel/cryptotrader/binance"
 )
 
 // This handler implements the read-only websocket that all clients connect
@@ -46,7 +47,7 @@ func (h *UserWebSocketHandler) readLoop(ws *websocket.Conn, doneChannel chan boo
 	log.Debugf("User WebSocket readLoop exiting.")
 }
 
-func (h *UserWebSocketHandler) writeLoop(ws *websocket.Conn, writeChannel chan interface{}) {
+func (h *UserWebSocketHandler) writeLoop(ws *websocket.Conn, writeChannel chan *MakerMessage) {
 	for {
 		message := <-writeChannel
 		if message == nil {
@@ -87,7 +88,7 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	binanceUserStreamChannel := h.appContext.BinanceUserDataStream.Subscribe()
 	defer h.appContext.BinanceUserDataStream.Unsubscribe(binanceUserStreamChannel)
 
-	writeChannel := make(chan interface{})
+	writeChannel := make(chan *MakerMessage)
 
 	go h.readLoop(ws, doneChannel)
 	go h.writeLoop(ws, writeChannel)
@@ -114,44 +115,44 @@ Loop:
 		case binanceUserEvent := <-binanceUserStreamChannel:
 			switch binanceUserEvent.EventType {
 			case EventTypeExecutionReport:
-				message := map[string]interface{}{
-					"messageType":            "binanceExecutionReport",
-					"binanceExecutionReport": binanceUserEvent.ExecutionReport,
-				}
-				writeChannel <- message
+				// Do nothing.
 			case EventTypeOutboundAccountInfo:
-				message := map[string]interface{}{
-					"messageType":                "binanceOutboundAccountInfo",
-					"binanceOutboundAccountInfo": binanceUserEvent.OutboundAccountInfo,
+				message := MakerMessage{
+					Type:                       MakerMessageTypeBinanceAccountInfo,
+					BinanceOutboundAccountInfo: &binanceUserEvent.OutboundAccountInfo,
 				}
-				writeChannel <- message
+				writeChannel <- &message
 			default:
 				log.WithFields(log.Fields{
 					"eventType": binanceUserEvent.EventType,
 				}).Info("Ignoring binance user stream event.")
 			}
 		case trade := <-binanceTradeStreamChannel:
-			message := map[string]interface{}{
-				"messageType":     "binanceAggTrade",
-				"binanceAggTrade": trade,
+			message := MakerMessage{
+				Type:            MakerMessageTypeBinanceAggTrade,
+				BinanceAggTrade: trade,
 			}
-			writeChannel <- message
+			writeChannel <- &message
 		case trade := <-tradeChannel:
-			message := map[string]interface{}{}
-
+			var message *MakerMessage
 			switch trade.EventType {
 			case TradeEventTypeUpdate:
-				message["messageType"] = "trade"
-				message["trade"] = trade.TradeState
+				message = &MakerMessage{
+					Type:  MakerMessageTypeTrade,
+					Trade: trade.TradeState,
+				}
 			case TradeEventTypeArchive:
-				message["messageType"] = "tradeArchived"
-				message["tradeId"] = trade.TradeID
+				message = &MakerMessage{
+					Type:    MakerMessageTypeTradeArchived,
+					TradeID: trade.TradeID,
+				}
 			default:
 				log.Printf("ERROR: Unknown trade server event type: %s",
 					trade.EventType)
-				continue
 			}
-			writeChannel <- message
+			if message != nil {
+				writeChannel <- message
+			}
 		}
 	}
 
@@ -159,3 +160,18 @@ Loop:
 
 	log.Debugf("User WebSocket closed.")
 }
+
+type MakerMessage struct {
+	Type                       MakerMessageType             `json:"messageType"`
+	Trade                      *TradeState                  `json:"trade,omitempty"`
+	TradeID                    string                       `json:"tradeId,omitempty"`
+	BinanceAggTrade            *binance.StreamAggTrade      `json:"binanceAggTrade,omitempty"`
+	BinanceOutboundAccountInfo *binance.OutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
+}
+
+type MakerMessageType string
+
+const MakerMessageTypeTradeArchived MakerMessageType = "tradeArchived"
+const MakerMessageTypeTrade MakerMessageType = "trade"
+const MakerMessageTypeBinanceAggTrade MakerMessageType = "binanceAggTrade"
+const MakerMessageTypeBinanceAccountInfo MakerMessageType = "binanceOutboundAccountInfo"
