@@ -34,6 +34,7 @@ import * as fontawesome from "@fortawesome/fontawesome";
 import * as faCog from "@fortawesome/fontawesome-free-solid/faCog";
 import * as faQuestion from "@fortawesome/fontawesome-free-solid/faQuestion";
 import {HttpClientModule} from "@angular/common/http";
+import { HistoryComponent } from './history/history.component';
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
@@ -47,6 +48,7 @@ fontawesome.library.add(faQuestion);
         WithQuoteAssetPipe,
         TradeTableComponent,
         ConfigComponent,
+        HistoryComponent,
     ],
     imports: [
         // Angular modules.

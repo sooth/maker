@@ -18,6 +18,7 @@ import {RouterModule, Routes} from "@angular/router";
 import {TradeComponent} from "./trade/trade.component";
 import {ConfigComponent} from "./config/config.component";
 import {BinanceConfigGuard} from "../binance-config.guard";
+import {HistoryComponent} from './history/history.component';
 
 const routes: Routes = [
     {
@@ -30,6 +31,13 @@ const routes: Routes = [
     {
         path: "config",
         component: ConfigComponent,
+    },
+    {
+        path: "history",
+        component: HistoryComponent,
+        canActivate: [
+            BinanceConfigGuard,
+        ]
     },
     {
         path: "",
