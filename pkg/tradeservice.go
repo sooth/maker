@@ -24,6 +24,7 @@ import (
 	"github.com/crankykernel/maker/pkg/log"
 	"time"
 	"github.com/crankykernel/maker/pkg/idgenerator"
+	"github.com/crankykernel/maker/pkg/maker"
 )
 
 type TradeEventType string
@@ -35,18 +36,18 @@ const (
 
 type TradeEvent struct {
 	EventType  TradeEventType
-	TradeState *TradeState
+	TradeState *maker.TradeState
 	TradeID    string
 }
 
 type TradeService struct {
 	// TradesByClientID by local ID. This map should only contain a single instance of
 	// each trade.
-	TradesByLocalID map[string]*Trade
+	TradesByLocalID map[string]*maker.Trade
 
 	// TradesByClientID by client ID. This will contain multiple instances of the same
 	// trade as a key is created for each client ID associated with the trade.
-	TradesByClientID map[string]*Trade
+	TradesByClientID map[string]*maker.Trade
 
 	idGenerator *idgenerator.IdGenerator
 
@@ -62,8 +63,8 @@ type TradeService struct {
 
 func NewTradeService(applicationContext *ApplicationContext) *TradeService {
 	tradeService := &TradeService{
-		TradesByLocalID:      make(map[string]*Trade),
-		TradesByClientID:     make(map[string]*Trade),
+		TradesByLocalID:      make(map[string]*maker.Trade),
+		TradesByClientID:     make(map[string]*maker.Trade),
 		idGenerator:          idgenerator.NewIdGenerator(),
 		subscribers:          make(map[chan TradeEvent]bool),
 		applicationContext:   applicationContext,
@@ -100,8 +101,8 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 		if trade.State.Symbol == lastTrade.Symbol {
 
 			switch trade.State.Status {
-			case TradeStatusPendingSell:
-			case TradeStatusWatching:
+			case maker.TradeStatusPendingSell:
+			case maker.TradeStatusWatching:
 			default:
 				continue
 			}
@@ -122,10 +123,10 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 	}
 }
 
-func (s *TradeService) checkStopLoss(trade *Trade, lastTrade *binance.StreamAggTrade) {
+func (s *TradeService) checkStopLoss(trade *maker.Trade, lastTrade *binance.StreamAggTrade) {
 	switch trade.State.Status {
-	case TradeStatusPendingSell:
-	case TradeStatusWatching:
+	case maker.TradeStatusPendingSell:
+	case maker.TradeStatusWatching:
 	default:
 		return
 	}
@@ -137,7 +138,7 @@ func (s *TradeService) checkStopLoss(trade *Trade, lastTrade *binance.StreamAggT
 			"symbol": trade.State.Symbol,
 			"loss":   trade.State.ProfitPercent,
 		}).Infof("Stop Loss: Triggering market sell.")
-		if trade.State.Status == TradeStatusPendingSell {
+		if trade.State.Status == maker.TradeStatusPendingSell {
 			s.CancelSell(trade)
 		}
 		trade.State.StopLoss.Triggered = true
@@ -145,10 +146,10 @@ func (s *TradeService) checkStopLoss(trade *Trade, lastTrade *binance.StreamAggT
 	}
 }
 
-func (s *TradeService) checkTrailingStop(trade *Trade, lastTrade *binance.StreamAggTrade) {
+func (s *TradeService) checkTrailingStop(trade *maker.Trade, lastTrade *binance.StreamAggTrade) {
 	switch trade.State.Status {
-	case TradeStatusPendingSell:
-	case TradeStatusWatching:
+	case maker.TradeStatusPendingSell:
+	case maker.TradeStatusWatching:
 	default:
 		return
 	}
@@ -188,10 +189,10 @@ func (s *TradeService) checkTrailingStop(trade *Trade, lastTrade *binance.Stream
 
 }
 
-func (s *TradeService) GetAllTrades() []*Trade {
+func (s *TradeService) GetAllTrades() []*maker.Trade {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	trades := []*Trade{}
+	trades := []*maker.Trade{}
 	for _, trade := range s.TradesByLocalID {
 		trades = append(trades, trade)
 	}
@@ -221,7 +222,7 @@ func (s *TradeService) broadcastTradeEvent(tradeEvent TradeEvent) {
 	}
 }
 
-func (s *TradeService) BroadcastTradeUpdate(trade *Trade) {
+func (s *TradeService) BroadcastTradeUpdate(trade *maker.Trade) {
 	tradeEvent := TradeEvent{
 		EventType:  TradeEventTypeUpdate,
 		TradeState: &trade.State,
@@ -237,21 +238,21 @@ func (s *TradeService) BroadcastTradeArchived(tradeId string) {
 	s.broadcastTradeEvent(tradeEvent)
 }
 
-func (s *TradeService) FindTradeByLocalID(localId string) *Trade {
+func (s *TradeService) FindTradeByLocalID(localId string) *maker.Trade {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.TradesByLocalID[localId]
 }
 
-func (s *TradeService) AbandonTrade(trade *Trade) {
+func (s *TradeService) AbandonTrade(trade *maker.Trade) {
 	if !trade.IsDone() {
-		trade.State.Status = TradeStatusAbandoned
+		trade.State.Status = maker.TradeStatusAbandoned
 		DbUpdateTrade(trade)
 		s.BroadcastTradeUpdate(trade)
 	}
 }
 
-func (s *TradeService) ArchiveTrade(trade *Trade) error {
+func (s *TradeService) ArchiveTrade(trade *maker.Trade) error {
 	if trade.IsDone() {
 		if err := DbArchiveTrade(trade); err != nil {
 			return err
@@ -263,7 +264,7 @@ func (s *TradeService) ArchiveTrade(trade *Trade) error {
 	return fmt.Errorf("archive not allowed in state %s", trade.State.Status)
 }
 
-func (s *TradeService) AddClientOrderId(trade *Trade, orderId string, locked bool) {
+func (s *TradeService) AddClientOrderId(trade *maker.Trade, orderId string, locked bool) {
 	log.Printf("Adding clientOrderID %s to trade %s", orderId, trade.State.LocalID)
 	trade.AddClientOrderID(orderId)
 	if !locked {
@@ -276,7 +277,7 @@ func (s *TradeService) AddClientOrderId(trade *Trade, orderId string, locked boo
 	DbUpdateTrade(trade)
 }
 
-func (s *TradeService) RestoreTrade(trade *Trade) {
+func (s *TradeService) RestoreTrade(trade *maker.Trade) {
 	s.TradesByLocalID[trade.State.LocalID] = trade
 	for clientOrderId := range trade.State.ClientOrderIDs {
 		s.TradesByClientID[clientOrderId] = trade
@@ -284,7 +285,7 @@ func (s *TradeService) RestoreTrade(trade *Trade) {
 	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
 }
 
-func (s *TradeService) AddNewTrade(trade *Trade) (string) {
+func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
 	if trade.State.LocalID == "" {
 		localId, err := s.idGenerator.GetID(nil)
 		if err != nil {
@@ -292,7 +293,7 @@ func (s *TradeService) AddNewTrade(trade *Trade) (string) {
 		}
 		trade.State.LocalID = localId.String()
 	}
-	trade.State.Status = TradeStatusNew
+	trade.State.Status = maker.TradeStatusNew
 
 	s.lock.Lock()
 	s.TradesByLocalID[trade.State.LocalID] = trade
@@ -316,7 +317,7 @@ func (s *TradeService) AddNewTrade(trade *Trade) (string) {
 	return trade.State.LocalID
 }
 
-func (s *TradeService) RemoveTrade(trade *Trade) {
+func (s *TradeService) RemoveTrade(trade *maker.Trade) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	delete(s.TradesByLocalID, trade.State.LocalID)
@@ -329,13 +330,13 @@ func (s *TradeService) RemoveTrade(trade *Trade) {
 	}
 }
 
-func (s *TradeService) FailTrade(trade *Trade) {
-	trade.State.Status = TradeStatusFailed
+func (s *TradeService) FailTrade(trade *maker.Trade) {
+	trade.State.Status = maker.TradeStatusFailed
 	DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
 
-func (s *TradeService) FindTradeForReport(report ExecutionReport) *Trade {
+func (s *TradeService) FindTradeForReport(report binance.StreamOrderUpdate) *maker.Trade {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	if trade, ok := s.TradesByClientID[report.ClientOrderID]; ok {
@@ -387,17 +388,17 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.State.BuyOrder.Quantity = report.Quantity
 			trade.State.BuyOrder.Price = report.Price
 			trade.State.BuyOrderId = report.OrderID
-			if trade.State.Status == TradeStatusNew {
-				trade.State.Status = TradeStatusPendingBuy
+			if trade.State.Status == maker.TradeStatusNew {
+				trade.State.Status = maker.TradeStatusPendingBuy
 			}
 			if trade.State.LastBuyStatus == "" {
 				trade.State.LastBuyStatus = report.CurrentOrderStatus
 			}
 		case binance.OrderStatusCanceled:
 			if trade.State.BuyFillQuantity == 0 {
-				trade.State.Status = TradeStatusCanceled
+				trade.State.Status = maker.TradeStatusCanceled
 			} else {
-				trade.State.Status = TradeStatusWatching
+				trade.State.Status = maker.TradeStatusWatching
 			}
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
 		case binance.OrderStatusPartiallyFilled:
@@ -407,7 +408,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.AddBuyFill(report)
 		case binance.OrderStatusFilled:
 			trade.AddBuyFill(report)
-			trade.State.Status = TradeStatusWatching
+			trade.State.Status = maker.TradeStatusWatching
 			if trade.State.LimitSell.Enabled {
 				s.TriggerLimitSell(trade)
 			}
@@ -416,12 +417,12 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	case binance.OrderSideSell:
 		switch report.CurrentOrderStatus {
 		case binance.OrderStatusNew:
-			if trade.State.Status == TradeStatusDone {
+			if trade.State.Status == maker.TradeStatusDone {
 				// Sometimes we get the fill before the new.
 				break
 			}
 			trade.State.SellOrderId = report.OrderID
-			trade.State.Status = TradeStatusPendingSell
+			trade.State.Status = maker.TradeStatusPendingSell
 			switch trade.State.SellOrder.Status {
 			case binance.OrderStatusPartiallyFilled:
 			case binance.OrderStatusFilled:
@@ -432,7 +433,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.State.SellOrder.Quantity = report.Quantity
 			trade.State.SellOrder.Price = report.Price
 		case binance.OrderStatusPartiallyFilled:
-			fill := OrderFill{
+			fill := maker.OrderFill{
 				Price:            report.LastExecutedPrice,
 				Quantity:         report.LastExecutedQuantity,
 				CommissionAsset:  report.CommissionAsset,
@@ -443,17 +444,17 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 				trade.State.SellOrder.Status = report.CurrentOrderStatus
 			}
 		case binance.OrderStatusFilled:
-			fill := OrderFill{
+			fill := maker.OrderFill{
 				Price:            report.LastExecutedPrice,
 				Quantity:         report.LastExecutedQuantity,
 				CommissionAsset:  report.CommissionAsset,
 				CommissionAmount: report.CommissionAmount,
 			}
 			trade.DoAddSellFill(fill)
-			trade.State.Status = TradeStatusDone
+			trade.State.Status = maker.TradeStatusDone
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		case binance.OrderStatusCanceled:
-			trade.State.Status = TradeStatusWatching
+			trade.State.Status = maker.TradeStatusWatching
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		default:
 			log.Printf("ERROR: Unhandled order status state %s for sell side.",
@@ -463,11 +464,11 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	}
 
 	switch trade.State.Status {
-	case TradeStatusDone:
+	case maker.TradeStatusDone:
 		fallthrough
-	case TradeStatusCanceled:
+	case maker.TradeStatusCanceled:
 		fallthrough
-	case TradeStatusFailed:
+	case maker.TradeStatusFailed:
 		trade.State.CloseTime = &event.EventTime
 		s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
 		fallthrough
@@ -478,7 +479,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	s.BroadcastTradeUpdate(trade)
 }
 
-func (s *TradeService) CloseTrade(trade *Trade, status TradeStatus, closeTime time.Time) {
+func (s *TradeService) CloseTrade(trade *maker.Trade, status maker.TradeStatus, closeTime time.Time) {
 	if closeTime.IsZero() {
 		closeTime = time.Now()
 	}
@@ -488,11 +489,11 @@ func (s *TradeService) CloseTrade(trade *Trade, status TradeStatus, closeTime ti
 	DbUpdateTrade(trade)
 }
 
-func (s *TradeService) TriggerLimitSell(trade *Trade) {
+func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
 	s.DoLimitSell(trade, trade.State.LimitSell.Percent)
 }
 
-func (s *TradeService) DoLimitSell(trade *Trade, percent float64) error {
+func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 	tickSize, err := s.binanceExchangeInfo.GetTickSize(trade.State.Symbol)
 	if err != nil {
 		log.Printf("ERROR: Failed to get tick size for %s: %v: Limit sell not posted.", err)
@@ -545,7 +546,7 @@ func (s *TradeService) DoLimitSell(trade *Trade, percent float64) error {
 	return nil
 }
 
-func (s *TradeService) UpdateStopLoss(trade *Trade, enable bool, percent float64) {
+func (s *TradeService) UpdateStopLoss(trade *maker.Trade, enable bool, percent float64) {
 	trade.SetStopLoss(enable, percent)
 	DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
@@ -560,14 +561,14 @@ func (s *TradeService) MakeOrderID() (string, error) {
 	return orderId.String(), nil
 }
 
-func (s *TradeService) UpdateTrailingStop(trade *Trade, enable bool,
+func (s *TradeService) UpdateTrailingStop(trade *maker.Trade, enable bool,
 	percent float64, deviation float64) {
 	trade.SetTrailingStop(enable, percent, deviation)
 	DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
 
-func (s *TradeService) CancelSell(trade *Trade) error {
+func (s *TradeService) CancelSell(trade *maker.Trade) error {
 	log.Printf("Cancelling sell order: symbol=%s; orderId=%d",
 		trade.State.Symbol, trade.State.SellOrderId)
 	_, err := getBinanceRestClient().CancelOrder(
@@ -575,7 +576,7 @@ func (s *TradeService) CancelSell(trade *Trade) error {
 	return err
 }
 
-func (s *TradeService) MarketSell(trade *Trade, locked bool) error {
+func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
 		log.Printf("ERROR: Failed to generate clientOrderId: %v", err)

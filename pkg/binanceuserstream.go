@@ -33,42 +33,11 @@ const (
 	EventTypeOutboundAccountInfo StreamEventType = "outboundAccountInfo"
 )
 
-type ExecutionReport struct {
-	EventType                string
-	EventTimeMillis          int64
-	Symbol                   string
-	ClientOrderID            string
-	Side                     binance.OrderSide
-	OrderType                string
-	TimeInForce              string
-	Quantity                 float64
-	Price                    float64
-	StopPrice                float64
-	IcebergQuantity          float64
-	OriginalClientOrderID    string
-	CurrentExecutionType     binance.OrderStatus
-	CurrentOrderStatus       binance.OrderStatus
-	OrderRejectReason        string
-	OrderID                  int64
-	LastExecutedQuantity     float64
-	CumulativeFilledQuantity float64
-	LastExecutedPrice        float64
-	CommissionAmount         float64
-	CommissionAsset          string
-	TransactionTimeMillis    int64
-	TradeID                  int64
-	IsWorking                bool
-	IsMaker                  bool
-
-	Ignore0 int64       `json:"-"`
-	Ignore1 interface{} `json:"-"`
-}
-
 type UserStreamEvent struct {
 	EventType           StreamEventType
 	EventTime           time.Time
 	OutboundAccountInfo binance.OutboundAccountInfo
-	ExecutionReport     ExecutionReport
+	ExecutionReport     binance.StreamOrderUpdate
 	Raw                 []byte
 }
 
@@ -216,7 +185,7 @@ Start:
 				}
 				streamEvent.EventType = StreamEventType(orderUpdate.EventType)
 				streamEvent.EventTime = time.Unix(0, orderUpdate.EventTimeMillis*int64(time.Millisecond))
-				streamEvent.ExecutionReport = ExecutionReport(orderUpdate)
+				streamEvent.ExecutionReport = orderUpdate
 			case strings.HasPrefix(string(message), `{"e":"outboundAccountInfo",`):
 				if err := json.Unmarshal(message, &streamEvent.OutboundAccountInfo); err != nil {
 					log.Printf("error: failed to decode outputAccountInfo event")

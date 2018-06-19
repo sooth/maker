@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"github.com/crankykernel/maker/pkg/log"
 	"github.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/maker/pkg/maker"
 )
 
 // This handler implements the read-only websocket that all clients connect
@@ -163,7 +164,7 @@ Loop:
 
 type MakerMessage struct {
 	Type                       MakerMessageType             `json:"messageType"`
-	Trade                      *TradeState                  `json:"trade,omitempty"`
+	Trade                      *maker.TradeState            `json:"trade,omitempty"`
 	TradeID                    string                       `json:"tradeId,omitempty"`
 	BinanceAggTrade            *binance.StreamAggTrade      `json:"binanceAggTrade,omitempty"`
 	BinanceOutboundAccountInfo *binance.OutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`

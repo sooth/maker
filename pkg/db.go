@@ -21,6 +21,7 @@ import (
 	"time"
 	"encoding/json"
 	"github.com/crankykernel/maker/pkg/log"
+	"github.com/crankykernel/maker/pkg/maker"
 )
 
 var db *sql.DB
@@ -113,7 +114,7 @@ func DbSaveBinanceRawExecutionReport(event *UserStreamEvent) error {
 	return nil
 }
 
-func DbSaveTrade(trade *Trade) error {
+func DbSaveTrade(trade *maker.Trade) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -128,7 +129,7 @@ func DbSaveTrade(trade *Trade) error {
 	return err
 }
 
-func DbUpdateTrade(trade *Trade) error {
+func DbUpdateTrade(trade *maker.Trade) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -147,7 +148,7 @@ func DbUpdateTrade(trade *Trade) error {
 	return err
 }
 
-func DbArchiveTrade(trade *Trade) error {
+func DbArchiveTrade(trade *maker.Trade) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -162,13 +163,13 @@ func DbArchiveTrade(trade *Trade) error {
 	return err
 }
 
-func DbRestoreTradeState() ([]TradeState, error) {
+func DbRestoreTradeState() ([]maker.TradeState, error) {
 	rows, err := db.Query(`select id, data from binance_trade where archived = 0`)
 	if err != nil {
 		return nil, err
 	}
 
-	tradeStates := []TradeState{}
+	tradeStates := []maker.TradeState{}
 
 	for rows.Next() {
 		var localId string
@@ -176,7 +177,7 @@ func DbRestoreTradeState() ([]TradeState, error) {
 		if err := rows.Scan(&localId, &data); err != nil {
 			return nil, err
 		}
-		var tradeState TradeState
+		var tradeState maker.TradeState
 		if err := json.Unmarshal([]byte(data), &tradeState); err != nil {
 			return nil, err
 		}

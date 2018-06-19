@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"os"
 	"time"
+	"github.com/crankykernel/maker/pkg/maker"
 )
 
 var ServerFlags struct {
@@ -64,10 +65,10 @@ func restoreTrades(tradeService *TradeService) {
 	tradeHistoryCache := map[string][]binance.TradeResponse{}
 
 	for _, state := range (tradeStates) {
-		trade := NewTradeWithState(state)
+		trade := maker.NewTradeWithState(state)
 		tradeService.RestoreTrade(trade)
 
-		if trade.State.Status == TradeStatusPendingBuy {
+		if trade.State.Status == maker.TradeStatusPendingBuy {
 			order, err := binanceRestClient.GetOrderByOrderId(
 				trade.State.Symbol, trade.State.BuyOrderId)
 			if err != nil {
@@ -86,7 +87,7 @@ func restoreTrades(tradeService *TradeService) {
 			}
 		}
 
-		if trade.State.Status == TradeStatusPendingSell {
+		if trade.State.Status == maker.TradeStatusPendingSell {
 			order, err := binanceRestClient.GetOrderByOrderId(
 				trade.State.Symbol, trade.State.SellOrderId)
 			if err != nil {
@@ -101,7 +102,7 @@ func restoreTrades(tradeService *TradeService) {
 						"symbol":  state.Symbol,
 						"tradeId": state.LocalID,
 					}).Infof("Outstanding sell order has been canceled.")
-					trade.State.Status = TradeStatusWatching
+					trade.State.Status = maker.TradeStatusWatching
 				} else if order.Status == binance.OrderStatusFilled {
 					trades := tradeHistoryCache[state.Symbol]
 					if trades == nil {
@@ -113,7 +114,7 @@ func restoreTrades(tradeService *TradeService) {
 					}
 					for _, _trade := range trades {
 						if _trade.OrderID == state.SellOrderId {
-							fill := OrderFill{
+							fill := maker.OrderFill{
 								Price:            _trade.Price,
 								Quantity:         _trade.Quantity,
 								CommissionAmount: _trade.Commission,
@@ -134,7 +135,7 @@ func restoreTrades(tradeService *TradeService) {
 							"closeTime": closeTime,
 							"tradeId":   trade.State.LocalID,
 						}).Infof("Closing trade.")
-						tradeService.CloseTrade(trade, TradeStatusDone, closeTime)
+						tradeService.CloseTrade(trade, maker.TradeStatusDone, closeTime)
 					}
 				} else {
 					log.WithFields(log.Fields{

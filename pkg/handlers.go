@@ -318,7 +318,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		}
 		params.NewClientOrderId = orderId
 
-		trade := NewTrade()
+		trade := maker.NewTrade()
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
 
@@ -429,7 +429,7 @@ func limitSellHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
-		if trade.State.Status == TradeStatusPendingSell {
+		if trade.State.Status == maker.TradeStatusPendingSell {
 			log.Printf("Cancelling existing sell order.");
 			tradeService.CancelSell(trade)
 		}
@@ -454,7 +454,7 @@ func marketSellHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
-		if trade.State.Status == TradeStatusPendingSell {
+		if trade.State.Status == maker.TradeStatusPendingSell {
 			log.Printf("Cancelling existing sell order.");
 			tradeService.CancelSell(trade)
 		}

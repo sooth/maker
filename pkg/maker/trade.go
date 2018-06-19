@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package pkg
+package maker
 
 import (
 	"time"
@@ -180,7 +180,7 @@ func (t *Trade) SetTrailingStop(enable bool, percent float64, deviation float64)
 	t.State.TrailingStop.Deviation = deviation
 }
 
-func (t *Trade) AddBuyFill(report ExecutionReport) {
+func (t *Trade) AddBuyFill(report binance.StreamOrderUpdate) {
 	fill := OrderFill{
 		Price:            report.LastExecutedPrice,
 		Quantity:         report.LastExecutedQuantity,
