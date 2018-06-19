@@ -21,6 +21,7 @@ import (
 	"github.com/crankykernel/maker/pkg/log"
 	"github.com/crankykernel/maker/pkg/config"
 	"encoding/json"
+	"github.com/crankykernel/maker/pkg/handlers"
 )
 
 func savePreferencesHandler(w http.ResponseWriter, r *http.Request) {
@@ -86,14 +87,14 @@ func binanceTestHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := client.GetAccount()
 	if err != nil {
 		log.WithError(err).Warn("Binance account authentication test failed.")
-		writeJsonResponse(w, http.StatusOK, map[string]interface{}{
+		handlers.WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
 			"ok":    false,
 			"error": err.Error(),
 		})
 		return
 	}
 
-	writeJsonResponse(w, http.StatusOK, map[string]interface{}{
+	handlers.WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
 		"ok": true,
 	})
 }

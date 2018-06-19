@@ -13,20 +13,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Component, OnDestroy, OnInit} from "@angular/core";
-import {AccountInfo, AggTrade, Balance, BinanceApiService, PriceTicker} from "../binance-api.service";
+import {
+    AfterViewInit,
+    Component,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from "@angular/core";
+import {
+    AccountInfo,
+    AggTrade,
+    Balance,
+    BinanceApiService,
+    PriceTicker
+} from "../binance-api.service";
 import {Observable} from "rxjs";
-import {BinanceService, PriceSource, OpenTradeOptions} from "../binance.service";
+import {
+    BinanceService,
+    OpenTradeOptions,
+    PriceSource
+} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
 import {Subscription} from "rxjs/Subscription";
 import * as Mousetrap from "mousetrap";
 import * as $ from "jquery";
 import {round8, roundx} from "../utils";
 import {ConfigService} from "../config.service";
-import {MakerService} from "../maker.service";
+import {MakerService, TradeMap} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {FormBuilder, FormGroup} from "@angular/forms";
 import {ToastrService} from "../toastr.service";
+import {TradeTableComponent} from '../trade-table/trade-table.component';
 
 declare var window: any;
 
@@ -56,7 +73,7 @@ interface SavedState {
     templateUrl: "./trade.component.html",
     styleUrls: ["./trade.component.scss"]
 })
-export class TradeComponent implements OnInit, OnDestroy {
+export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     private localStorageKey = "binance.trade.component";
 
@@ -93,8 +110,6 @@ export class TradeComponent implements OnInit, OnDestroy {
 
     private depthSubscription: Subscription = null;
 
-    private userDataStreamSubscription: Subscription = null;
-
     balancePercents: number[] = [];
 
     private subscriptions: Subscription[] = [];
@@ -102,6 +117,8 @@ export class TradeComponent implements OnInit, OnDestroy {
     private logger: Logger = null;
 
     trailingStopForm: FormGroup;
+
+    @ViewChild(TradeTableComponent) private tradeTable: TradeTableComponent;
 
     constructor(private api: BinanceApiService,
                 public binance: BinanceService,
@@ -112,7 +129,6 @@ export class TradeComponent implements OnInit, OnDestroy {
                 logger: LoggerService,
     ) {
         this.logger = logger.getLogger("trade-component");
-
     }
 
     ngOnInit() {
@@ -121,9 +137,9 @@ export class TradeComponent implements OnInit, OnDestroy {
             this.orderFormSettings.balancePercent = this.balancePercents[0];
             this.reloadState();
 
-            // Setup the trailing stop reactive form. It might be more work than
-            // its worth for the reactive vs template form, at least for this use
-            // case.
+            // Setup the trailing stop reactive form. It might be more work
+            // than its worth for the reactive vs template form, at least for
+            // this use case.
             this.trailingStopForm = this.formBuilder.group({
                 enabled: [{
                     value: this.orderFormSettings.trailingStopEnabled,
@@ -173,19 +189,34 @@ export class TradeComponent implements OnInit, OnDestroy {
         });
         this.subscriptions.push(s);
 
-
         Mousetrap.bind("/", () => {
             window.scrollTo(0, 0);
             $("#symbolInput").focus();
         });
     }
 
+    ngAfterViewInit() {
+        this.binance.isReady$.subscribe(() => {
+            let s = this.maker.onTradeUpdate.subscribe((tradeMap: TradeMap) => {
+                setTimeout(() => {
+                    this.tradeTable.onTradeMapUpdate(tradeMap);
+                    console.log(this.tradeTable);
+                }, 0);
+            });
+            this.subscriptions.push(s);
+
+            s = this.maker.binanceAggTrades$.subscribe((aggTrade) => {
+                setTimeout(() => {
+                    this.tradeTable.onAggTrade(aggTrade);
+                }, 0);
+            });
+            this.subscriptions.push(s);
+        });
+    }
+
     ngOnDestroy() {
         if (this.depthSubscription) {
             this.depthSubscription.unsubscribe();
-        }
-        if (this.userDataStreamSubscription) {
-            this.userDataStreamSubscription.unsubscribe();
         }
         for (const sub of this.subscriptions) {
             sub.unsubscribe();

@@ -9,16 +9,18 @@
       <label class="form-check-label">JSON</label>
     </div>
 
-    <button type="button"
-            class="btn btn-sm btn-secondary dropdown-toggle"
-            data-toggle="dropdown">
-      Archive
-    </button>
-    <div class="dropdown-menu">
-      <a href="javascript:void(0);" class="dropdown-item"
-         (click)="archiveAll()">All</a>
-      <a href="javascript:void(0);" class="dropdown-item"
-         (click)="archiveCanceledFailed()">Canceled/Failed</a>
+    <div *ngIf="showArchiveButtons">
+      <button type="button"
+              class="btn btn-sm btn-secondary dropdown-toggle"
+              data-toggle="dropdown">
+        Archive
+      </button>
+      <div class="dropdown-menu">
+        <a href="javascript:void(0);" class="dropdown-item"
+           (click)="archiveAll()">All</a>
+        <a href="javascript:void(0);" class="dropdown-item"
+           (click)="archiveCanceledFailed()">Canceled/Failed</a>
+      </div>
     </div>
 
   </div>
@@ -31,7 +33,7 @@
         <th>Current</th>
         <th>Sell</th>
         <th>Stops</th>
-        <th>Actions</th>
+        <th *ngIf="showTradeButtons">Actions</th>
         <th *ngIf="showJson" colspan="2">JSON</th>
       </tr>
       <tr *ngFor="let trade of trades" [ngClass]="trade.__rowClassName">
@@ -218,14 +220,17 @@
             <tr>
               <th>Triggered</th>
               <td>
-                {{trade.TrailingStop && trade.TrailingStop.Triggered || "--"}}
+                <span *ngIf="trade && trade.TrailingStop">
+                  {{trade.TrailingStop && trade.TrailingStop.Triggered || "--"}}
+                </span>
+                <span *ngIf="!(trade && trade.TrailingStop)">--</span>
               </td>
             </tr>
           </table>
 
         </td>
 
-        <td style="width: 130px;" tabindex="-1">
+        <td *ngIf="showTradeButtons" style="width: 130px;" tabindex="-1">
           <div class="row button-bar">
             <div class="col-12">
               <button type="button"

@@ -325,7 +325,7 @@
     </div>
 
     <div class="mt-2">
-      <app-trade-table
+      <app-trade-table [showTradeButtons]="true" [showArchiveButtons]="true"
           (symbolClickHandler)="changeSymbol($event)"></app-trade-table>
     </div>
 

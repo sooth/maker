@@ -31,13 +31,6 @@ import (
 	"github.com/crankykernel/maker/pkg/maker"
 )
 
-func writeJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	encoder := json.NewEncoder(w)
-	return encoder.Encode(body)
-}
-
 func writeBadRequestError(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 }
@@ -50,7 +43,7 @@ func writeJsonError(w http.ResponseWriter, statusCode int, message string) error
 	if message != "" {
 		body["message"] = message
 	}
-	return writeJsonResponse(w, statusCode, body)
+	return handlers.WriteJsonResponse(w, statusCode, body)
 }
 
 func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
@@ -229,7 +222,7 @@ func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
-		writeJsonResponse(w, http.StatusOK, response)
+		handlers.WriteJsonResponse(w, http.StatusOK, response)
 	}
 }
 
@@ -271,7 +264,7 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
-		writeJsonResponse(w, http.StatusOK, response)
+		handlers.WriteJsonResponse(w, http.StatusOK, response)
 	}
 }
 
@@ -397,7 +390,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			"tradeId": tradeId,
 		}).Debugf("Decoded BUY response: %s", log.ToJson(buyResponse))
 
-		writeJsonResponse(w, http.StatusOK, handlers.BuyOrderResponse{
+		handlers.WriteJsonResponse(w, http.StatusOK, handlers.BuyOrderResponse{
 			TradeID: tradeId,
 		})
 	}

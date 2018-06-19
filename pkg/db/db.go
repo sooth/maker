@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package pkg
+package db
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/crankykernel/maker/pkg/log"
 	"github.com/crankykernel/maker/pkg/maker"
+	"strings"
 )
 
 var db *sql.DB
@@ -99,13 +100,13 @@ func DbOpen() {
 	}
 }
 
-func DbSaveBinanceRawExecutionReport(event *UserStreamEvent) error {
+func DbSaveBinanceRawExecutionReport(timestamp time.Time, event []byte) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	_, err = tx.Exec(`insert into binance_raw_execution_report (timestamp, report) values (?, ?)`,
-		formatTimestamp(event.EventTime), event.Raw)
+		formatTimestamp(timestamp), event)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -196,4 +197,45 @@ func formatJson(val interface{}) (string, error) {
 		return "", err
 	}
 	return string(buf), nil
+}
+
+type TradeQueryOptions struct {
+	IsClosed bool
+}
+
+func DbQueryTrades(options TradeQueryOptions) ([]maker.TradeState, error) {
+
+	where := []string{}
+
+	if options.IsClosed {
+		where = append(where, fmt.Sprintf("json_extract(binance_trade.data, '$.CloseTime') != ''"))
+	}
+
+	sql := "select id, data from binance_trade"
+	if len(where) > 0 {
+		sql = fmt.Sprintf("%s WHERE %s", sql, strings.Join(where, "AND "))
+	}
+
+	log.Println(sql)
+
+	rows, err := db.Query(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	tradeStates := []maker.TradeState{}
+
+	for rows.Next() {
+		var localId string
+		var data string
+		if err := rows.Scan(&localId, &data); err != nil {
+			return nil, err
+		}
+		var tradeState maker.TradeState
+		if err := json.Unmarshal([]byte(data), &tradeState); err != nil {
+			return nil, err
+		}
+		tradeStates = append(tradeStates, tradeState)
+	}
+	return tradeStates, nil
 }

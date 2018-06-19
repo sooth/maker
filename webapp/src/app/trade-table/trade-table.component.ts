@@ -13,10 +13,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Component, EventEmitter, OnInit, Output} from "@angular/core";
-import {MakerService, TradeMap, TradeState, TradeStatus} from "../maker.service";
+import {Component, EventEmitter, Input, OnInit, Output} from "@angular/core";
+import {
+    MakerService,
+    TradeMap,
+    TradeState,
+    TradeStatus
+} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
+import {AggTrade} from '../binance-api.service';
 
 @Component({
     selector: "app-trade-table",
@@ -35,6 +41,10 @@ export class TradeTableComponent implements OnInit {
 
     @Output() symbolClickHandler: EventEmitter<any> = new EventEmitter();
 
+    @Input() showArchiveButtons: boolean = true;
+
+    @Input() showTradeButtons: boolean = false;
+
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
                 logger: LoggerService) {
@@ -42,98 +52,53 @@ export class TradeTableComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.maker.onTradeUpdate.subscribe((tradeMap: TradeMap) => {
-            const trades: AppTradeState[] = [];
-            for (const tradeId of Object.keys(tradeMap)) {
-                const trade: TradeState = tradeMap[tradeId];
-                const appTradeState = <AppTradeState>trade;
-                appTradeState.__rowClassName = this.getRowClass(trade);
-                appTradeState.__canArchive = this.canArchive(trade);
-                appTradeState.__canSell = this.canSell(trade);
-                appTradeState.__canAbandon = this.canAbandon(trade);
-                trades.push(appTradeState);
-            }
-            this.trades = trades.sort((a, b) => {
-                return new Date(b.OpenTime).getTime() -
-                        new Date(a.OpenTime).getTime();
-            });
-        });
+    }
 
-        this.maker.binanceAggTrades$.subscribe((aggTrade) => {
-            for (const trade of this.trades) {
-                if (trade.Symbol === aggTrade.symbol) {
-                    switch (trade.Status) {
-                        case TradeStatus.DONE:
-                        case TradeStatus.FAILED:
-                        case TradeStatus.CANCELED:
-                            break;
-                        default:
-                            trade.LastPrice = aggTrade.price;
-                            this.updateProfit(trade, aggTrade.price);
-                            trade.__rowClassName = this.getRowClass(trade);
-                    }
+    /**
+     * Called by parent component to update the list of trades.
+     *
+     * This variation takes a map of trades keyed by ID.
+     */
+    onTradeMapUpdate(tradeMap: TradeMap) {
+        const trades: AppTradeState[] = [];
+        for (const tradeId of Object.keys(tradeMap)) {
+            trades.push(toAppTradeState(tradeMap[tradeId]));
+        }
+        this.trades = this.sortTrades(trades);
+    }
+
+    onTradesUpdate(trades: TradeState[]) {
+        this.trades = this.sortTrades(trades.map((trade: TradeState): AppTradeState => {
+            return toAppTradeState(trade);
+        }));
+    }
+
+    private sortTrades(trades: AppTradeState[]): AppTradeState[] {
+        return trades.sort((a, b) => {
+            return new Date(b.OpenTime).getTime() -
+                    new Date(a.OpenTime).getTime();
+        });
+    }
+
+    onAggTrade(aggTrade: AggTrade) {
+        for (const trade of this.trades) {
+            if (trade.Symbol === aggTrade.symbol) {
+                switch (trade.Status) {
+                    case TradeStatus.DONE:
+                    case TradeStatus.FAILED:
+                    case TradeStatus.CANCELED:
+                        break;
+                    default:
+                        trade.LastPrice = aggTrade.price;
+                        this.updateProfit(trade, aggTrade.price);
+                        trade.__rowClassName = getRowClass(trade);
                 }
             }
-        });
+        }
     }
 
     onSymbolClick(symbol: string) {
         this.symbolClickHandler.emit(symbol);
-    }
-
-    private canArchive(trade: AppTradeState): boolean {
-        switch (trade.Status) {
-            case TradeStatus.DONE:
-            case TradeStatus.CANCELED:
-            case TradeStatus.FAILED:
-            case TradeStatus.ABANDONED:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private canSell(trade: AppTradeState): boolean {
-        switch (trade.Status) {
-            case TradeStatus.WATCHING:
-            case TradeStatus.PENDING_SELL:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private canAbandon(trade: AppTradeState): boolean {
-        switch (trade.Status) {
-            case TradeStatus.DONE:
-            case TradeStatus.CANCELED:
-            case TradeStatus.FAILED:
-            case TradeStatus.ABANDONED:
-                return false;
-            default:
-                return true;
-        }
-    }
-
-    getRowClass(trade: AppTradeState): string {
-        switch (trade.Status) {
-            case TradeStatus.CANCELED:
-            case TradeStatus.FAILED:
-                return "table-secondary";
-            case TradeStatus.DONE:
-                if (trade.ProfitPercent > 0) {
-                    return "bg-success";
-                }
-                return "bg-warning";
-            case TradeStatus.NEW:
-            case TradeStatus.PENDING_BUY:
-                return "table-info";
-            default:
-                if (trade.ProfitPercent > 0) {
-                    return "table-success";
-                }
-                return "table-warning";
-        }
     }
 
     cancelBuy(trade: TradeState) {
@@ -207,4 +172,69 @@ export interface AppTradeState extends TradeState {
 
     /** The percent off from the purchase price. */
     buyPercentOffsetPercent?: number;
+}
+
+export function toAppTradeState(trade: TradeState): AppTradeState {
+    const appTradeState = <AppTradeState>trade;
+    appTradeState.__rowClassName = getRowClass(trade);
+    appTradeState.__canArchive = canArchive(trade);
+    appTradeState.__canSell = canSell(trade);
+    appTradeState.__canAbandon = canAbandon(trade);
+    return appTradeState;
+}
+
+function canArchive(trade: AppTradeState): boolean {
+    switch (trade.Status) {
+        case TradeStatus.DONE:
+        case TradeStatus.CANCELED:
+        case TradeStatus.FAILED:
+        case TradeStatus.ABANDONED:
+            return true;
+        default:
+            return false;
+    }
+}
+
+function canSell(trade: AppTradeState): boolean {
+    switch (trade.Status) {
+        case TradeStatus.WATCHING:
+        case TradeStatus.PENDING_SELL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+function canAbandon(trade: AppTradeState): boolean {
+    switch (trade.Status) {
+        case TradeStatus.DONE:
+        case TradeStatus.CANCELED:
+        case TradeStatus.FAILED:
+        case TradeStatus.ABANDONED:
+            return false;
+        default:
+            return true;
+    }
+}
+
+function getRowClass(trade: AppTradeState): string {
+    switch (trade.Status) {
+        case TradeStatus.CANCELED:
+        case TradeStatus.FAILED:
+        case TradeStatus.ABANDONED:
+            return "table-secondary";
+        case TradeStatus.DONE:
+            if (trade.ProfitPercent > 0) {
+                return "bg-success";
+            }
+            return "bg-warning";
+        case TradeStatus.NEW:
+        case TradeStatus.PENDING_BUY:
+            return "table-info";
+        default:
+            if (trade.ProfitPercent > 0) {
+                return "table-success";
+            }
+            return "table-warning";
+    }
 }

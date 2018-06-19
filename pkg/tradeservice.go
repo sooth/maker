@@ -25,6 +25,7 @@ import (
 	"time"
 	"github.com/crankykernel/maker/pkg/idgenerator"
 	"github.com/crankykernel/maker/pkg/maker"
+	"github.com/crankykernel/maker/pkg/db"
 )
 
 type TradeEventType string
@@ -246,15 +247,14 @@ func (s *TradeService) FindTradeByLocalID(localId string) *maker.Trade {
 
 func (s *TradeService) AbandonTrade(trade *maker.Trade) {
 	if !trade.IsDone() {
-		trade.State.Status = maker.TradeStatusAbandoned
-		DbUpdateTrade(trade)
+		s.CloseTrade(trade, maker.TradeStatusAbandoned, time.Now())
 		s.BroadcastTradeUpdate(trade)
 	}
 }
 
 func (s *TradeService) ArchiveTrade(trade *maker.Trade) error {
 	if trade.IsDone() {
-		if err := DbArchiveTrade(trade); err != nil {
+		if err := db.DbArchiveTrade(trade); err != nil {
 			return err
 		}
 		s.RemoveTrade(trade)
@@ -274,7 +274,7 @@ func (s *TradeService) AddClientOrderId(trade *maker.Trade, orderId string, lock
 	if !locked {
 		s.lock.Unlock()
 	}
-	DbUpdateTrade(trade)
+	db.DbUpdateTrade(trade)
 }
 
 func (s *TradeService) RestoreTrade(trade *maker.Trade) {
@@ -306,7 +306,7 @@ func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
 	}
 	s.lock.Unlock()
 
-	if err := DbSaveTrade(trade); err != nil {
+	if err := db.DbSaveTrade(trade); err != nil {
 		log.Printf("error: failed to save trade to database: %v", err)
 	}
 	log.Println(util.ToJson(trade.State))
@@ -331,8 +331,7 @@ func (s *TradeService) RemoveTrade(trade *maker.Trade) {
 }
 
 func (s *TradeService) FailTrade(trade *maker.Trade) {
-	trade.State.Status = maker.TradeStatusFailed
-	DbUpdateTrade(trade)
+	s.CloseTrade(trade, maker.TradeStatusFailed, time.Now())
 	s.BroadcastTradeUpdate(trade)
 }
 
@@ -373,6 +372,10 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	trade := s.FindTradeForReport(report)
 	if trade == nil {
 		log.Errorf("Failed to find trade for execution report: %s", log.ToJson(report))
+		return
+	}
+
+	if trade.IsDone() {
 		return
 	}
 
@@ -473,7 +476,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 		s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
 		fallthrough
 	default:
-		DbUpdateTrade(trade)
+		db.DbUpdateTrade(trade)
 	}
 
 	s.BroadcastTradeUpdate(trade)
@@ -486,7 +489,7 @@ func (s *TradeService) CloseTrade(trade *maker.Trade, status maker.TradeStatus, 
 	trade.State.Status = status
 	trade.State.CloseTime = &closeTime
 	s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
-	DbUpdateTrade(trade)
+	db.DbUpdateTrade(trade)
 }
 
 func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
@@ -542,13 +545,13 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"symbol":          trade.State.Symbol,
 		"tradeId":         trade.State.LocalID,
 	}).Info("Sell order posted.")
-	DbUpdateTrade(trade)
+	db.DbUpdateTrade(trade)
 	return nil
 }
 
 func (s *TradeService) UpdateStopLoss(trade *maker.Trade, enable bool, percent float64) {
 	trade.SetStopLoss(enable, percent)
-	DbUpdateTrade(trade)
+	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
 
@@ -564,7 +567,7 @@ func (s *TradeService) MakeOrderID() (string, error) {
 func (s *TradeService) UpdateTrailingStop(trade *maker.Trade, enable bool,
 	percent float64, deviation float64) {
 	trade.SetTrailingStop(enable, percent, deviation)
-	DbUpdateTrade(trade)
+	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
 
@@ -594,7 +597,7 @@ func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 	}
 	_, err = getBinanceRestClient().PostOrder(order)
 	if err == nil {
-		DbUpdateTrade(trade)
+		db.DbUpdateTrade(trade)
 	}
 	return err
 }

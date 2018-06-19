@@ -30,6 +30,8 @@ import (
 	"os"
 	"time"
 	"github.com/crankykernel/maker/pkg/maker"
+	"github.com/crankykernel/maker/pkg/handlers"
+	"github.com/crankykernel/maker/pkg/db"
 )
 
 var ServerFlags struct {
@@ -57,7 +59,7 @@ type ApplicationContext struct {
 
 func restoreTrades(tradeService *TradeService) {
 	binanceRestClient := getBinanceRestClient()
-	tradeStates, err := DbRestoreTradeState()
+	tradeStates, err := db.DbRestoreTradeState()
 	if err != nil {
 		log.Fatalf("error: failed to restore trade state: %v", err)
 	}
@@ -166,7 +168,7 @@ func ServerMain() {
 	applicationContext := &ApplicationContext{}
 	applicationContext.BinanceStreamManager = NewBinanceStreamManager()
 
-	DbOpen()
+	db.DbOpen()
 
 	tradeService := NewTradeService(applicationContext)
 	applicationContext.TradeService = tradeService
@@ -183,7 +185,7 @@ func ServerMain() {
 			case event := <-userStreamChannel:
 				switch event.EventType {
 				case EventTypeExecutionReport:
-					if err := DbSaveBinanceRawExecutionReport(event); err != nil {
+					if err := db.DbSaveBinanceRawExecutionReport(event.EventTime, event.Raw); err != nil {
 						log.Println(err)
 					}
 					tradeService.OnExecutionReport(event)
@@ -212,6 +214,9 @@ func ServerMain() {
 		archiveTradeHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/trade/{tradeId}/abandon",
 		abandonTradeHandler(tradeService)).Methods("POST")
+
+	router.HandleFunc("/api/trade/query", handlers.QueryTradesHandler).
+		Methods("GET")
 
 	router.HandleFunc("/api/binance/account/test",
 		binanceTestHandler).Methods("GET")

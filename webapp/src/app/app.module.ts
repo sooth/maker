@@ -34,7 +34,16 @@ import * as fontawesome from "@fortawesome/fontawesome";
 import * as faCog from "@fortawesome/fontawesome-free-solid/faCog";
 import * as faQuestion from "@fortawesome/fontawesome-free-solid/faQuestion";
 import {HttpClientModule} from "@angular/common/http";
-import { HistoryComponent } from './history/history.component';
+import {HistoryComponent} from './history/history.component';
+
+import {
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatTableModule
+} from "@angular/material";
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
@@ -58,6 +67,13 @@ fontawesome.library.add(faQuestion);
         ReactiveFormsModule,
         BrowserAnimationsModule,
         HttpClientModule,
+
+        MatButtonModule,
+        MatPaginatorModule,
+        MatTableModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSortModule,
     ],
     providers: [
         BinanceService,
