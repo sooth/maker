@@ -2,6 +2,22 @@ table {
   width: 100%;
 }
 
+td {
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.875rem;
+  font-weight: bold;
+
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.mat-header-row {
+  height: auto;
+}
+
 .mat-form-field {
   font-size: 12px;
   width: 100%;

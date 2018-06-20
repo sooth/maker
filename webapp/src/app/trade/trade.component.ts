@@ -44,6 +44,7 @@ import {Logger, LoggerService} from "../logger.service";
 import {FormBuilder, FormGroup} from "@angular/forms";
 import {ToastrService} from "../toastr.service";
 import {TradeTableComponent} from '../trade-table/trade-table.component';
+import {ActivatedRoute, Router} from '@angular/router';
 
 declare var window: any;
 
@@ -112,7 +113,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     balancePercents: number[] = [];
 
-    private subscriptions: Subscription[] = [];
+    private subs: Subscription[] = [];
 
     private logger: Logger = null;
 
@@ -126,6 +127,8 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 private config: ConfigService,
                 private formBuilder: FormBuilder,
                 private toastr: ToastrService,
+                private route: ActivatedRoute,
+                private router: Router,
                 logger: LoggerService,
     ) {
         this.logger = logger.getLogger("trade-component");
@@ -167,7 +170,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
                 this.saveState();
             });
-            this.subscriptions.push(s);
+            this.subs.push(s);
         });
 
         this.binance.isReady$.pipe(switchMap(() => {
@@ -179,15 +182,29 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         }, () => {
         });
 
+        if (this.route.snapshot.params.symbol) {
+            this.orderFormSettings.symbol = this.route.snapshot.params.symbol;
+            console.log(`Initialized symbol to ${this.orderFormSettings.symbol}`);
+        }
+
+        this.binance.isReady$.subscribe(() => {
+            this.route.params.subscribe((params) => {
+                const newSymbol = params.symbol;
+                if (newSymbol && newSymbol != this.orderFormSettings.symbol) {
+                    this.changeSymbol(newSymbol);
+                }
+            })
+        });
+
         let s = this.maker.binanceAccountInfo$.subscribe((accountInfo) => {
             this.updateBalances(accountInfo);
         });
-        this.subscriptions.push(s);
+        this.subs.push(s);
 
         s = this.binance.aggTradeStream$.subscribe((trade) => {
             this.onAggTrade(trade);
         });
-        this.subscriptions.push(s);
+        this.subs.push(s);
 
         Mousetrap.bind("/", () => {
             window.scrollTo(0, 0);
@@ -197,20 +214,19 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     ngAfterViewInit() {
         this.binance.isReady$.subscribe(() => {
-            let s = this.maker.onTradeUpdate.subscribe((tradeMap: TradeMap) => {
+            let s = this.maker.tradeMap$.subscribe((tradeMap: TradeMap) => {
                 setTimeout(() => {
                     this.tradeTable.onTradeMapUpdate(tradeMap);
-                    console.log(this.tradeTable);
                 }, 0);
             });
-            this.subscriptions.push(s);
+            this.subs.push(s);
 
             s = this.maker.binanceAggTrades$.subscribe((aggTrade) => {
                 setTimeout(() => {
                     this.tradeTable.onAggTrade(aggTrade);
                 }, 0);
             });
-            this.subscriptions.push(s);
+            this.subs.push(s);
         });
     }
 
@@ -218,7 +234,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         if (this.depthSubscription) {
             this.depthSubscription.unsubscribe();
         }
-        for (const sub of this.subscriptions) {
+        for (const sub of this.subs) {
             sub.unsubscribe();
         }
     }
@@ -267,11 +283,14 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     changeSymbol(symbol: string = null) {
+
         if (symbol != null) {
             this.orderFormSettings.symbol = symbol;
         } else {
             symbol = this.orderFormSettings.symbol;
         }
+
+        this.router.navigate(["/trade", {symbol: symbol}])
 
         if (!symbol) {
             this.saveState();

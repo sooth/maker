@@ -19,11 +19,19 @@ import {TradeComponent} from "./trade/trade.component";
 import {ConfigComponent} from "./config/config.component";
 import {BinanceConfigGuard} from "../binance-config.guard";
 import {HistoryComponent} from './history/history.component';
+import {TradeDetailComponent} from './trade-detail/trade-detail.component';
 
 const routes: Routes = [
     {
         path: "trade",
         component: TradeComponent,
+        canActivate: [
+            BinanceConfigGuard,
+        ]
+    },
+    {
+        path: "trade/:tradeId",
+        component: TradeDetailComponent,
         canActivate: [
             BinanceConfigGuard,
         ]

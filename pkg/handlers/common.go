@@ -26,4 +26,3 @@ func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) 
 	encoder := json.NewEncoder(w)
 	return encoder.Encode(body)
 }
-

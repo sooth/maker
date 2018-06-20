@@ -67,4 +67,7 @@ export class HistoryComponent implements OnInit, AfterViewInit {
         }
     }
 
+    onPage(event) {
+        console.log(event);
+    }
 }

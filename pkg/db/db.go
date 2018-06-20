@@ -199,6 +199,23 @@ func formatJson(val interface{}) (string, error) {
 	return string(buf), nil
 }
 
+func DbGetTradeByID(tradeId string) (*maker.TradeState, error) {
+	row := db.QueryRow(
+		`select data from binance_trade where id = ?`,
+		tradeId)
+	var data string
+	err := row.Scan(&data)
+	if err != nil {
+		return nil, err
+	}
+	var tradeState maker.TradeState
+	err = json.Unmarshal([]byte(data), &tradeState)
+	if err != nil {
+		return nil, err
+	}
+	return &tradeState, nil
+}
+
 type TradeQueryOptions struct {
 	IsClosed bool
 }

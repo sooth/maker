@@ -215,8 +215,10 @@ func ServerMain() {
 	router.HandleFunc("/api/binance/trade/{tradeId}/abandon",
 		abandonTradeHandler(tradeService)).Methods("POST")
 
-	router.HandleFunc("/api/trade/query", handlers.QueryTradesHandler).
+	router.HandleFunc("/api/trade/query", handlers.QueryTrades).
 		Methods("GET")
+	router.HandleFunc("/api/trade/{tradeId}",
+		handlers.GetTrade).Methods("GET")
 
 	router.HandleFunc("/api/binance/account/test",
 		binanceTestHandler).Methods("GET")

@@ -42,8 +42,10 @@ export class MakerService {
 
     public tradeMap: TradeMap = {};
 
-    public onTradeUpdate: BehaviorSubject<TradeMap> =
+    public tradeMap$: BehaviorSubject<TradeMap> =
             new BehaviorSubject(this.tradeMap);
+
+    public trade$: Subject<TradeState> = new Subject();
 
     public binanceAggTrades$: Subject<AggTrade> = new Subject();
 
@@ -67,7 +69,7 @@ export class MakerService {
                     break;
                 case MakerMessageType.TRADE_ARCHIVED:
                     delete(this.tradeMap[message.tradeId]);
-                    this.onTradeUpdate.next(this.tradeMap);
+                    this.tradeMap$.next(this.tradeMap);
                     break;
                 case MakerMessageType.BINANCE_OUTBOUND_ACCOUNT_INFO:
                     const accountInfo = AccountInfo.fromStream(
@@ -83,7 +85,8 @@ export class MakerService {
 
     private onTrade(trade: TradeState) {
         this.tradeMap[trade.LocalID] = trade;
-        this.onTradeUpdate.next(this.tradeMap);
+        this.tradeMap$.next(this.tradeMap);
+        this.trade$.next(trade);
     }
 
     public updateStopLoss(trade: TradeState, enable: boolean, percent: number) {

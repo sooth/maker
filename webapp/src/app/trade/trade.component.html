@@ -192,9 +192,13 @@
                   </tr>
                   <tr>
                     <th>Step Size</th>
-                    <td>{{binance.symbolMap[orderFormSettings.symbol].stepSize |
+                    <td *ngIf="orderFormSettings.symbol && binance.symbolMap[orderFormSettings.symbol]; else other">
+                      {{binance.symbolMap[orderFormSettings.symbol].stepSize |
                       number:".3-8"}}
                     </td>
+                    <ng-template #other>
+                      <td>--</td>
+                    </ng-template>
                   </tr>
 
                 </table>
@@ -210,7 +214,7 @@
       <div class="col">
         <div class="card">
           <div class="card-body">
-            <form [formGroup]="trailingStopForm">
+            <form *ngIf="trailingStopForm" [formGroup]="trailingStopForm">
               <div class="form-row mb-2">
                 <div class="form-group col">
                   <button type="button"
@@ -325,8 +329,8 @@
     </div>
 
     <div class="mt-2">
-      <app-trade-table [showTradeButtons]="true" [showArchiveButtons]="true"
-          (symbolClickHandler)="changeSymbol($event)"></app-trade-table>
+      <app-trade-table [showTradeButtons]="true"
+                       [showArchiveButtons]="true"></app-trade-table>
     </div>
 
   </div>

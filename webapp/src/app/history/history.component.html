@@ -4,11 +4,11 @@
     <div class="col">
       <mat-form-field>
         <input matInput (keyup)="applyFilter($event.target.value)"
-               placeholder="Filter">
+               placeholder="Filter...">
       </mat-form-field>
     </div>
     <div class="col">
-      <mat-paginator [pageSizeOptions]="[25, 50, 100]"></mat-paginator>
+      <mat-paginator [pageSizeOptions]="[25, 50, 100]" (page)="onPage($event);"></mat-paginator>
     </div>
   </div>
 
@@ -23,7 +23,8 @@
         <td mat-cell *matCellDef="let row">
           {{row.CloseTime | date:"LLL dd HH:mm:ss"}}
           <br/>
-          <span style="font-size: 0.75rem">{{row.LocalID}}</span>
+          <span style="font-size: 0.75rem"><a
+              [routerLink]="['/trade', row.LocalID]">{{row.LocalID}}</a></span>
         </td>
       </ng-container>
 

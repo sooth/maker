@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Component, Input, OnInit} from "@angular/core";
+import {Component, EventEmitter, Input, OnInit, Output} from "@angular/core";
 import {
     MakerService,
     TradeMap,
@@ -23,20 +23,29 @@ import {
 import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
 import {AggTrade} from '../binance-api.service';
-import {Trade} from '../trade';
+import {
+    AppTradeState, getRowClass,
+    toAppTradeState
+} from '../trade-table/trade-table.component';
 
 @Component({
-    selector: "app-trade-table",
-    templateUrl: "./trade-table.component.html",
-    styleUrls: ["./trade-table.component.scss"]
+    selector: "[app-trade-table-row]",
+    templateUrl: "./trade-table-row.component.html",
+    styleUrls: ["./trade-table-row.component.scss"]
 })
-export class TradeTableComponent implements OnInit {
+export class TradeTableRowComponent implements OnInit {
 
     TradeStatus = TradeStatus;
 
     trades: AppTradeState[] = [];
 
     private logger: Logger = null;
+
+    showJson = false;
+
+    @Input("trade") trade: AppTradeState = null;
+
+    @Output() symbolClickHandler: EventEmitter<any> = new EventEmitter();
 
     @Input() showArchiveButtons: boolean = true;
 
@@ -45,7 +54,7 @@ export class TradeTableComponent implements OnInit {
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
                 logger: LoggerService) {
-        this.logger = logger.getLogger("TradeTableComponent");
+        this.logger = logger.getLogger("TradeTableRowComponent");
     }
 
     ngOnInit() {
@@ -84,11 +93,10 @@ export class TradeTableComponent implements OnInit {
                     case TradeStatus.DONE:
                     case TradeStatus.FAILED:
                     case TradeStatus.CANCELED:
-                    case TradeStatus.ABANDONED:
                         break;
                     default:
                         trade.LastPrice = aggTrade.price;
-                        Trade.updateProfit(trade, aggTrade.price);
+                        this.updateProfit(trade, aggTrade.price);
                         trade.__rowClassName = getRowClass(trade);
                 }
             }
@@ -122,7 +130,7 @@ export class TradeTableComponent implements OnInit {
         this.maker.abandonTrade(trade);
     }
 
-    archiveAllClosed() {
+    archiveAll() {
         for (const trade of this.trades) {
             switch (trade.Status) {
                 case TradeStatus.FAILED:
@@ -145,81 +153,15 @@ export class TradeTableComponent implements OnInit {
         }
     }
 
-}
+    private updateProfit(trade: AppTradeState, lastPrice: number) {
+        if (trade.BuyFillQuantity > 0) {
+            const profit = lastPrice * (1 - trade.Fee) - trade.EffectiveBuyPrice;
+            trade.ProfitPercent = profit / trade.EffectiveBuyPrice * 100;
+        }
 
-export interface AppTradeState extends TradeState {
-    __rowClassName?: string;
-    __canArchive?: boolean;
-    __canSell?: boolean;
-    __canAbandon?: boolean;
-    __isOpen?: boolean;
-
-    /** The percent off from the purchase price. */
-    buyPercentOffsetPercent?: number;
-}
-
-export function toAppTradeState(trade: TradeState): AppTradeState {
-    const appTradeState = <AppTradeState>trade;
-    appTradeState.__rowClassName = getRowClass(trade);
-    appTradeState.__canArchive = canArchive(trade);
-    appTradeState.__canSell = canSell(trade);
-    appTradeState.__canAbandon = canAbandon(trade);
-    appTradeState.__isOpen = Trade.isOpen(trade);
-    return appTradeState;
-}
-
-export function canArchive(trade: AppTradeState): boolean {
-    switch (trade.Status) {
-        case TradeStatus.DONE:
-        case TradeStatus.CANCELED:
-        case TradeStatus.FAILED:
-        case TradeStatus.ABANDONED:
-            return true;
-        default:
-            return false;
-    }
-}
-
-export function canSell(trade: AppTradeState): boolean {
-    switch (trade.Status) {
-        case TradeStatus.WATCHING:
-        case TradeStatus.PENDING_SELL:
-            return true;
-        default:
-            return false;
-    }
-}
-
-export function canAbandon(trade: AppTradeState): boolean {
-    switch (trade.Status) {
-        case TradeStatus.DONE:
-        case TradeStatus.CANCELED:
-        case TradeStatus.FAILED:
-        case TradeStatus.ABANDONED:
-            return false;
-        default:
-            return true;
-    }
-}
-
-export function getRowClass(trade: AppTradeState): string {
-    switch (trade.Status) {
-        case TradeStatus.CANCELED:
-        case TradeStatus.FAILED:
-        case TradeStatus.ABANDONED:
-            return "table-secondary";
-        case TradeStatus.DONE:
-            if (trade.ProfitPercent > 0) {
-                return "bg-success";
-            }
-            return "bg-warning";
-        case TradeStatus.NEW:
-        case TradeStatus.PENDING_BUY:
-            return "table-info";
-        default:
-            if (trade.ProfitPercent > 0) {
-                return "table-success";
-            }
-            return "table-warning";
+        // Calculate the percent different between our buy price and the
+        // current price.
+        const diffFromBuyPrice = trade.BuyOrder.Price - lastPrice;
+        trade.buyPercentOffsetPercent = diffFromBuyPrice / lastPrice * 100;
     }
 }

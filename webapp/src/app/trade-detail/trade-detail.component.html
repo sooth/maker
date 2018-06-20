@@ -1,0 +1,22 @@
+<div class="container">
+
+  <div *ngIf="trade" class="card mt-2">
+    <div class="card-header">
+      <b>Trade</b>
+    </div>
+    <table *ngIf="trade" class="table table-sm" style="margin-bottom: 0;">
+      <tr app-trade-table-row [trade]="trade"
+          [ngClass]="trade.__rowClassName"></tr>
+    </table>
+  </div>
+
+  <div *ngIf="trade" class="card mt-2">
+    <div class="card-header">
+      <b>Raw JSON</b>
+    </div>
+    <div class="card-body" style="background-color: lightgray">
+      <pre>{{trade | json}}</pre>
+    </div>
+  </div>
+
+</div>

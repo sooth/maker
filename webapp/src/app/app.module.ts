@@ -44,6 +44,8 @@ import {
     MatSortModule,
     MatTableModule
 } from "@angular/material";
+import {TradeDetailComponent} from './trade-detail/trade-detail.component';
+import {TradeTableRowComponent} from './trade-table-row/trade-table-row.component';
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
@@ -56,8 +58,10 @@ fontawesome.library.add(faQuestion);
         StopLossFormComponent,
         WithQuoteAssetPipe,
         TradeTableComponent,
+        TradeTableRowComponent,
         ConfigComponent,
         HistoryComponent,
+        TradeDetailComponent,
     ],
     imports: [
         // Angular modules.
@@ -68,6 +72,7 @@ fontawesome.library.add(faQuestion);
         BrowserAnimationsModule,
         HttpClientModule,
 
+        // Angular Material modules.
         MatButtonModule,
         MatPaginatorModule,
         MatTableModule,
