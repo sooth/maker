@@ -20,6 +20,6 @@ type PriceSource string
 const (
 	PriceSourceLast    PriceSource = "LAST_PRICE";
 	PriceSourceBestBid PriceSource = "BEST_BID";
-	PriceSourceBaskAsk PriceSource = "BEST_ASK";
+	PriceSourceBestAsk PriceSource = "BEST_ASK";
 )
 
