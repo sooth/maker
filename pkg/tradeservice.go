@@ -18,7 +18,6 @@ package pkg
 import (
 	"github.com/crankykernel/cryptotrader/binance"
 	"sync"
-	"github.com/jasonish/evebox/util"
 	"math"
 	"fmt"
 	"github.com/crankykernel/maker/pkg/log"
@@ -309,7 +308,6 @@ func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
 	if err := db.DbSaveTrade(trade); err != nil {
 		log.Printf("error: failed to save trade to database: %v", err)
 	}
-	log.Println(util.ToJson(trade.State))
 
 	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
 	s.BroadcastTradeUpdate(trade)
@@ -335,7 +333,7 @@ func (s *TradeService) FailTrade(trade *maker.Trade) {
 	s.BroadcastTradeUpdate(trade)
 }
 
-func (s *TradeService) FindTradeForReport(report binance.StreamOrderUpdate) *maker.Trade {
+func (s *TradeService) FindTradeForReport(report binance.StreamExecutionReport) *maker.Trade {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	if trade, ok := s.TradesByClientID[report.ClientOrderID]; ok {
@@ -582,7 +580,7 @@ func (s *TradeService) CancelSell(trade *maker.Trade) error {
 func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
-		log.Printf("ERROR: Failed to generate clientOrderId: %v", err)
+		log.WithError(err).Errorf("Failed to generate order ID")
 		return err
 	}
 

@@ -36,8 +36,8 @@ const (
 type UserStreamEvent struct {
 	EventType           StreamEventType
 	EventTime           time.Time
-	OutboundAccountInfo binance.OutboundAccountInfo
-	ExecutionReport     binance.StreamOrderUpdate
+	OutboundAccountInfo binance.StreamOutboundAccountInfo
+	ExecutionReport     binance.StreamExecutionReport
 	Raw                 []byte
 }
 
@@ -179,7 +179,7 @@ Start:
 
 			switch {
 			case strings.HasPrefix(string(message), `{"e":"executionReport",`):
-				var orderUpdate binance.StreamOrderUpdate
+				var orderUpdate binance.StreamExecutionReport
 				if err := json.Unmarshal(message, &orderUpdate); err != nil {
 					log.Printf("error: failed to decode executionReport event")
 				}

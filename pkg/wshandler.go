@@ -163,11 +163,11 @@ Loop:
 }
 
 type MakerMessage struct {
-	Type                       MakerMessageType             `json:"messageType"`
-	Trade                      *maker.TradeState            `json:"trade,omitempty"`
-	TradeID                    string                       `json:"tradeId,omitempty"`
-	BinanceAggTrade            *binance.StreamAggTrade      `json:"binanceAggTrade,omitempty"`
-	BinanceOutboundAccountInfo *binance.OutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
+	Type                       MakerMessageType                   `json:"messageType"`
+	Trade                      *maker.TradeState                  `json:"trade,omitempty"`
+	TradeID                    string                             `json:"tradeId,omitempty"`
+	BinanceAggTrade            *binance.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
+	BinanceOutboundAccountInfo *binance.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
 }
 
 type MakerMessageType string

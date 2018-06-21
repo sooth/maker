@@ -290,7 +290,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		switch requestBody.PriceSource {
 		case maker.PriceSourceLast:
 		case maker.PriceSourceBestBid:
-		case maker.PriceSourceBaskAsk:
+		case maker.PriceSourceBestAsk:
 		case "":
 			writeJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
 			return
@@ -363,17 +363,16 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 		response, err := getBinanceRestClient().PostOrder(params)
 		if err != nil {
-			log.Printf("error: failed to post order: %v", err)
+			log.WithError(err).
+				Errorf("Failed to post buy order.")
 			switch err := err.(type) {
 			case *binance.RestApiError:
-				for key, val := range response.Header {
-					w.Header()[key] = val
-				}
+				log.Debugf("Forwarding Binance error repsonse.")
 				w.WriteHeader(response.StatusCode)
 				w.Write(err.Body)
 			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("%v", err)))
+				handlers.WriteJsonResponse(w, http.StatusInternalServerError,
+					err.Error())
 			}
 			if trade != nil {
 				tradeService.FailTrade(trade)

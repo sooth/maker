@@ -38,7 +38,7 @@ func (s *BinanceBuyService) GetPrice(symbol string, priceSource maker.PriceSourc
 			return 0, err
 		}
 		return ticker.Price, nil
-	} else if priceSource == maker.PriceSourceBaskAsk || priceSource == maker.PriceSourceBestBid {
+	} else if priceSource == maker.PriceSourceBestAsk || priceSource == maker.PriceSourceBestBid {
 		ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
 		if err != nil {
 			return 0, err
@@ -46,7 +46,7 @@ func (s *BinanceBuyService) GetPrice(symbol string, priceSource maker.PriceSourc
 		switch priceSource {
 		case maker.PriceSourceBestBid:
 			return ticker.BidPrice, nil
-		case maker.PriceSourceBaskAsk:
+		case maker.PriceSourceBestAsk:
 			return ticker.AskPrice, nil
 		}
 	}

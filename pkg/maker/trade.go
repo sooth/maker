@@ -180,7 +180,7 @@ func (t *Trade) SetTrailingStop(enable bool, percent float64, deviation float64)
 	t.State.TrailingStop.Deviation = deviation
 }
 
-func (t *Trade) AddBuyFill(report binance.StreamOrderUpdate) {
+func (t *Trade) AddBuyFill(report binance.StreamExecutionReport) {
 	fill := OrderFill{
 		Price:            report.LastExecutedPrice,
 		Quantity:         report.LastExecutedQuantity,
