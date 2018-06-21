@@ -38,10 +38,6 @@
   version = "1.2.0"
 
 [[constraint]]
-  name = "github.com/jasonish/evebox"
-  version = "0.9.1"
-
-[[constraint]]
   name = "github.com/mattn/go-sqlite3"
   version = "1.7.0"
 

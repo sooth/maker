@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/crankykernel/cryptotrader"
   packages = ["binance"]
-  revision = "8a2072ff3d4456884ee26b4d57d62c4d478876e2"
+  revision = "eabda03111c3bd5035c5a787aabeeb8cb0f31e36"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -61,26 +61,10 @@
   version = "v1.0"
 
 [[projects]]
-  name = "github.com/jasonish/evebox"
-  packages = [
-    "exiter",
-    "log",
-    "util"
-  ]
-  revision = "159961ea42de2b3267da699ec59eadb8d48187c5"
-  version = "0.9.1"
-
-[[projects]]
   name = "github.com/magiconair/properties"
   packages = ["."]
   revision = "c2353362d570a7bfa228149c62842019201cfb71"
   version = "v1.8.0"
-
-[[projects]]
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
 
 [[projects]]
   name = "github.com/mattn/go-sqlite3"
@@ -161,7 +145,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "a8fb68e7206f8c78be19b432c58eb52a6aa34462"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
@@ -170,7 +154,7 @@
     "unix",
     "windows"
   ]
-  revision = "8014b7b116a67fea23fbb82cd834c9ad656ea44b"
+  revision = "ad87a3a340fa7f3bed189293fbfa7a9b7e021ae1"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -194,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e67e042a58818d6ce22b9bc43295a846a0d8e7732acfd2e3662abd72d49bcc49"
+  inputs-digest = "e262837452b138d67afe36a8c4b1ea8c858f904ac9607e2404b4e65702417483"
   solver-name = "gps-cdcl"
   solver-version = 1
