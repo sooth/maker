@@ -23,7 +23,7 @@ import (
 )
 
 type BinanceStreamManager struct {
-	fatLock                        sync.Mutex
+	mutex                          sync.Mutex
 	tradeStreamCount               map[string]uint
 	tradeStreamUnsubscribeChannels map[string]chan bool
 	tradeStreamSubscriptions       map[chan *binance.StreamAggTrade]bool
@@ -37,53 +37,65 @@ func NewBinanceStreamManager() *BinanceStreamManager {
 	}
 }
 
+func (m *BinanceStreamManager) lock() {
+	m.mutex.Lock()
+}
+
+func (m *BinanceStreamManager) unlock() {
+	m.mutex.Unlock()
+}
+
 func (m *BinanceStreamManager) SubscribeTrades() chan *binance.StreamAggTrade {
-	m.fatLock.Lock()
-	defer m.fatLock.Unlock()
+	m.lock()
 	channel := make(chan *binance.StreamAggTrade)
 	m.tradeStreamSubscriptions[channel] = true
+	m.unlock()
 	return channel
 }
 
 func (m *BinanceStreamManager) UnsubscribeTrades(channel chan *binance.StreamAggTrade) {
-	m.fatLock.Lock()
-	defer m.fatLock.Unlock()
+	m.lock()
 	m.tradeStreamSubscriptions[channel] = false
 	delete(m.tradeStreamSubscriptions, channel)
+	m.unlock()
 }
 
 func (m *BinanceStreamManager) SubscribeTradeStream(symbol string) {
 	symbol = strings.ToLower(symbol)
-	m.fatLock.Lock()
-	defer m.fatLock.Unlock()
+	m.lock()
 	count, exists := m.tradeStreamCount[symbol]
 	if exists && count > 0 {
 		log.WithFields(log.Fields{
 			"symbol": symbol,
-			"count": count,
+			"count":  count,
 		}).Infof("Trade stream already exists.")
 		m.tradeStreamCount[symbol] += 1
+		m.unlock()
 		return
 	}
 	m.tradeStreamCount[symbol] = 1
-	go m.RunTradeStream(symbol)
+	unsubscribeChannel := make(chan bool)
+	m.tradeStreamUnsubscribeChannels[symbol] = unsubscribeChannel
+	m.unlock()
+	go m.RunTradeStream(symbol, unsubscribeChannel)
 }
 
 func (m *BinanceStreamManager) UnsubscribeTradeStream(symbol string) {
 	symbol = strings.ToLower(symbol)
-	m.fatLock.Lock()
-	defer m.fatLock.Unlock()
+	m.lock()
 	count, exists := m.tradeStreamCount[symbol]
 	if !exists {
+		m.unlock()
 		return
 	}
+	m.unlock()
 	m.tradeStreamCount[symbol] = count - 1
 	if m.tradeStreamCount[symbol] == 0 {
 		m.tradeStreamUnsubscribeChannels[symbol] <- true
 	}
 }
 
-func (m *BinanceStreamManager) RunTradeStream(symbol string) {
+func (m *BinanceStreamManager) RunTradeStream(symbol string, unsubscribe chan bool) {
 	for {
 		log.Printf("Opening trade stream for %s.", symbol)
 		streamClient, err := binance.OpenAggTradeStream(symbol)
@@ -92,16 +104,12 @@ func (m *BinanceStreamManager) RunTradeStream(symbol string) {
 			return
 		}
 
-		m.fatLock.Lock()
-		unsubscribeChannel := make(chan bool)
-		m.tradeStreamUnsubscribeChannels[symbol] = unsubscribeChannel
-		m.fatLock.Unlock()
 		channel := make(chan binance.AggTradeStreamEvent)
 		go streamClient.Subscribe(channel)
 
 		for {
 			select {
-			case <-unsubscribeChannel:
+			case <-unsubscribe:
 				log.Printf("Closing trade subscription for %s.", symbol)
 				streamClient.Close()
 				return
@@ -110,11 +118,11 @@ func (m *BinanceStreamManager) RunTradeStream(symbol string) {
 					log.Printf("failed to read from aggTrade stream: %v", event.Err)
 					return
 				}
-				m.fatLock.Lock()
+				m.lock()
 				for channel := range m.tradeStreamSubscriptions {
 					channel <- event.Trade
 				}
-				m.fatLock.Unlock()
+				m.unlock()
 			}
 		}
 	}
