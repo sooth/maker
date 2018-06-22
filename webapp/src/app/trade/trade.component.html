@@ -88,15 +88,15 @@
                         <input
                             *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
                             type="number" class="form-control" disabled
-                            [value]="binance.lastPriceMap[orderFormSettings.symbol] || null">
+                            [value]="binance.lastPriceMap[orderFormSettings.symbol] && binance.lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
                         <input
                             *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
                             type="number" class="form-control" disabled
-                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid || null">
+                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid.toFixed(8) || null">
                         <input
                             *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
                             type="number" class="form-control" disabled
-                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask || null">
+                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask.toFixed(8) || null">
                         <!-- Disabled for now. -->
                         <div class="input-group-append" hidden>
                           <select class="form-control"

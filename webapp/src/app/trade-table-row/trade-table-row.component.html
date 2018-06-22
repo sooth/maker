@@ -14,7 +14,7 @@
   </span>
 </td>
 
-<!-- Buy status. -->
+<!-- Buy. -->
 <td>
   <table class="table-hover">
     <tr>
@@ -82,23 +82,32 @@
   </table>
 </td>
 
+<ng-template #tdDoubleDash>
+  <td>--</td>
+</ng-template>
+
+<!-- Sell. -->
 <td>
   <table>
     <tr>
       <th>Type</th>
-      <td>{{trade.SellOrder.Type}}</td>
+      <td>{{trade.SellOrder.Type || "--"}}</td>
     </tr>
     <tr>
       <th>Status</th>
-      <td>{{trade.SellOrder.Status}}</td>
+      <td>{{trade.SellOrder.Status || "--"}}</td>
     </tr>
     <tr>
       <th>Price</th>
-      <td>{{trade.SellOrder.Price}}</td>
+      <td *ngIf="trade.SellOrder.Price > 0; else tdDoubleDash">
+        {{trade.SellOrder.Price}}
+      </td>
     </tr>
     <tr>
       <th>Quantity</th>
-      <td>{{trade.SellOrder.Quantity}}</td>
+      <td *ngIf="trade.SellOrder.Quantity > 0; else tdDoubleDash">
+        {{trade.SellOrder.Quantity}}
+      </td>
     </tr>
 
     <tr>
