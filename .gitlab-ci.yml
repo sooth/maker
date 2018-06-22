@@ -18,7 +18,7 @@ before_script:
       echo "Restoring dnf cache."
       cp -a dnf /var/cache/
     fi
-  - yum -y install git make gcc mingw64-gcc zip
+  - yum -y install git make gcc mingw64-gcc mingw32-gcc zip
   - yum -y install go nodejs npm
 
 cache:
@@ -40,6 +40,7 @@ build:
     (cd webapp && make install-deps)
     GOOS=linux GOARCH=amd64 make dist
     CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 make dist
+    CC=i686-w64-mingw32-gcc GOOS=windows GOARCH=386 make dist
 
     cp dist/*.zip ${CI_PROJECT_DIR}
 
