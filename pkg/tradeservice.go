@@ -504,6 +504,25 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 	price := trade.State.EffectiveBuyPrice * (1 + (percent / 100)) * (1 + trade.State.Fee)
 	fixedPrice := roundx(price, 1/tickSize)
 
+	if fixedPrice <= trade.State.EffectiveBuyPrice {
+		tickSize, err := s.binanceExchangeInfo.GetTickSize(trade.State.Symbol)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"symbol": trade.State.Symbol,
+			}).Error("Failed to get tick size for price adjustment.")
+		} else {
+			newPrice := fixedPrice + tickSize
+			log.WithFields(log.Fields{
+				"tickSize":          tickSize,
+				"symbol":            trade.State.Symbol,
+				"limitSellPrice":    fixedPrice,
+				"effectiveBuyPrice": trade.State.EffectiveBuyPrice,
+				"newPrice":          newPrice,
+			}).Warnf("Sell price <= effective buy price, incrementing by tick size.")
+			fixedPrice = newPrice
+		}
+	}
+
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
 		log.Printf("ERROR: Failed to generate clientOrderId: %v", err)
@@ -516,7 +535,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"fixedPrice": fixedPrice,
 		"symbol":     trade.State.Symbol,
 		"tradeId":    trade.State.LocalID,
-	}).Debugf("Posting sell order.")
+	}).Debugf("Posting limit sell order.")
 
 	order := binance.OrderParameters{
 		Symbol:           trade.State.Symbol,
