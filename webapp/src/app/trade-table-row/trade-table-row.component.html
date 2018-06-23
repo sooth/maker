@@ -100,7 +100,7 @@
     <tr>
       <th>Price</th>
       <td *ngIf="trade.SellOrder.Price > 0; else tdDoubleDash">
-        {{trade.SellOrder.Price}}
+        {{trade.SellOrder.Price | number:".8-8"}}
       </td>
     </tr>
     <tr>
