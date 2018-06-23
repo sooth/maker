@@ -28,6 +28,7 @@ import {
 import {HttpClient, HttpParams} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
 import {Observable} from "rxjs";
+import {ToastrService} from './toastr.service';
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -55,6 +56,7 @@ export class MakerService {
 
     constructor(private http: HttpClient,
                 logger: LoggerService,
+                private toastr: ToastrService,
                 private binanceApi: BinanceApiService) {
         this.logger = logger.getLogger("maker-service");
         this.webSocket = new MakerWebSocket();
@@ -134,6 +136,7 @@ export class MakerService {
             }
         }, (error) => {
             this.logger.log("Limit sell error: " + JSON.stringify(error));
+            this.toastr.error(error.error, "Failed to post sell order.")
         });
     }
 

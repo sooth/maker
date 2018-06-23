@@ -95,31 +95,8 @@ export class TradeTableComponent implements OnInit {
         }
     }
 
-    cancelBuy(trade: TradeState) {
-        this.maker.cancelBuy(trade);
-    }
-
-    cancelSell(trade: TradeState) {
-        this.maker.cancelSell(trade).subscribe(() => {
-        }, (error) => {
-            this.toastr.error(`Failed to cancel sell order: ${error.error.message}`);
-        });
-    }
-
-    limitSell(trade: TradeState, percent: number) {
-        this.maker.limitSell(trade, percent);
-    }
-
-    marketSell(trade: TradeState) {
-        this.maker.marketSell(trade);
-    }
-
     archive(trade: TradeState) {
         this.maker.archiveTrade(trade);
-    }
-
-    abandon(trade: TradeState) {
-        this.maker.abandonTrade(trade);
     }
 
     archiveAllClosed() {

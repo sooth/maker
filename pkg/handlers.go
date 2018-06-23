@@ -426,7 +426,11 @@ func limitSellHandler(tradeService *TradeService) http.HandlerFunc {
 			tradeService.CancelSell(trade)
 		}
 
-		tradeService.DoLimitSell(trade, percent)
+		err = tradeService.DoLimitSell(trade, percent)
+		if err != nil {
+			log.WithError(err).Error("Limit sell order failed.")
+			handlers.WriteJsonResponse(w, http.StatusBadRequest, err.Error())
+		}
 	}
 }
 
