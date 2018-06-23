@@ -531,8 +531,8 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 	s.AddClientOrderId(trade, clientOrderId, false)
 
 	log.WithFields(log.Fields{
-		"limitPrice": price,
-		"fixedPrice": fixedPrice,
+		"limitPrice": fmt.Sprintf("%.8f", price),
+		"fixedPrice": fmt.Sprintf("%.8f", fixedPrice),
 		"symbol":     trade.State.Symbol,
 		"tradeId":    trade.State.LocalID,
 	}).Debugf("Posting limit sell order.")
