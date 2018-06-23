@@ -494,33 +494,80 @@ func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
 	s.DoLimitSell(trade, trade.State.LimitSell.Percent)
 }
 
-func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
-	tickSize, err := s.binanceExchangeInfo.GetTickSize(trade.State.Symbol)
+func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
+	symbolInfo, err := s.binanceExchangeInfo.GetSymbol(trade.State.Symbol)
 	if err != nil {
-		log.Printf("ERROR: Failed to get tick size for %s: %v: Limit sell not posted.", err)
+		log.WithError(err).WithFields(log.Fields{
+			"symbol": trade.State.Symbol,
+		}).Error("Failed to get info for symbol.")
+		return err
+	}
+
+	quantity := trade.State.BuyFillQuantity
+	fixLotSizeQuantity := roundx(quantity, 1/symbolInfo.StepSize)
+	if quantity != fixLotSizeQuantity {
+		log.WithFields(log.Fields{
+			"quantity":      quantity,
+			"fixedQuantity": fixLotSizeQuantity,
+		}).Info("Quantity adjusted for lot size filter.")
+		quantity = fixLotSizeQuantity
+	}
+
+	clientOrderId, err := s.MakeOrderID()
+	if err != nil {
+		log.WithError(err).Errorf("Failed to generate order ID")
+		return err
+	}
+
+	s.AddClientOrderId(trade, clientOrderId, locked)
+
+	order := binance.OrderParameters{
+		Symbol:           trade.State.Symbol,
+		Side:             binance.OrderSideSell,
+		Type:             binance.OrderTypeMarket,
+		Quantity:         quantity,
+		NewClientOrderId: clientOrderId,
+	}
+	_, err = getBinanceRestClient().PostOrder(order)
+	if err == nil {
+		db.DbUpdateTrade(trade)
+	}
+	return err
+}
+
+func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
+	symbolInfo, err := s.binanceExchangeInfo.GetSymbol(trade.State.Symbol)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"symbol": trade.State.Symbol,
+		}).Error("Failed to get info for symbol.")
 		return err
 	}
 
 	price := trade.State.EffectiveBuyPrice * (1 + (percent / 100)) * (1 + trade.State.Fee)
-	fixedPrice := roundx(price, 1/tickSize)
+	fixedPrice := roundx(price, 1/symbolInfo.TickSize)
 
+	tickSize := symbolInfo.TickSize
 	if fixedPrice <= trade.State.EffectiveBuyPrice {
-		tickSize, err := s.binanceExchangeInfo.GetTickSize(trade.State.Symbol)
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"symbol": trade.State.Symbol,
-			}).Error("Failed to get tick size for price adjustment.")
-		} else {
-			newPrice := fixedPrice + tickSize
-			log.WithFields(log.Fields{
-				"tickSize":          tickSize,
-				"symbol":            trade.State.Symbol,
-				"limitSellPrice":    fixedPrice,
-				"effectiveBuyPrice": trade.State.EffectiveBuyPrice,
-				"newPrice":          newPrice,
-			}).Warnf("Sell price <= effective buy price, incrementing by tick size.")
-			fixedPrice = newPrice
-		}
+		newPrice := fixedPrice + tickSize
+		log.WithFields(log.Fields{
+			"tickSize":          tickSize,
+			"symbol":            trade.State.Symbol,
+			"limitSellPrice":    fixedPrice,
+			"effectiveBuyPrice": trade.State.EffectiveBuyPrice,
+			"newPrice":          newPrice,
+		}).Warnf("Sell price <= effective buy price, incrementing by tick size.")
+		fixedPrice = newPrice
+	}
+
+	quantity := trade.State.BuyFillQuantity
+	fixLotSizeQuantity := roundx(quantity, 1/symbolInfo.StepSize)
+	if quantity != fixLotSizeQuantity {
+		log.WithFields(log.Fields{
+			"quantity":      quantity,
+			"fixedQuantity": fixLotSizeQuantity,
+		}).Info("Quantity adjusted for lot size filter.")
+		quantity = fixLotSizeQuantity
 	}
 
 	clientOrderId, err := s.MakeOrderID()
@@ -535,6 +582,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"fixedPrice": fmt.Sprintf("%.8f", fixedPrice),
 		"symbol":     trade.State.Symbol,
 		"tradeId":    trade.State.LocalID,
+		"quantity":   quantity,
 	}).Debugf("Posting limit sell order.")
 
 	order := binance.OrderParameters{
@@ -542,7 +590,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		Side:             binance.OrderSideSell,
 		Type:             binance.OrderTypeLimit,
 		TimeInForce:      binance.TimeInForceGTC,
-		Quantity:         trade.State.BuyFillQuantity,
+		Quantity:         quantity,
 		Price:            fixedPrice,
 		NewClientOrderId: clientOrderId,
 	}
@@ -593,29 +641,6 @@ func (s *TradeService) CancelSell(trade *maker.Trade) error {
 		trade.State.Symbol, trade.State.SellOrderId)
 	_, err := getBinanceRestClient().CancelOrder(
 		trade.State.Symbol, trade.State.SellOrderId)
-	return err
-}
-
-func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
-	clientOrderId, err := s.MakeOrderID()
-	if err != nil {
-		log.WithError(err).Errorf("Failed to generate order ID")
-		return err
-	}
-
-	s.AddClientOrderId(trade, clientOrderId, locked)
-
-	order := binance.OrderParameters{
-		Symbol:           trade.State.Symbol,
-		Side:             binance.OrderSideSell,
-		Type:             binance.OrderTypeMarket,
-		Quantity:         trade.State.BuyFillQuantity,
-		NewClientOrderId: clientOrderId,
-	}
-	_, err = getBinanceRestClient().PostOrder(order)
-	if err == nil {
-		db.DbUpdateTrade(trade)
-	}
 	return err
 }
 

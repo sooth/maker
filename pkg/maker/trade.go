@@ -242,6 +242,7 @@ func (t *Trade) UpdateBuyState() {
 		} else {
 			cost += (fill.Price * fill.Quantity) * (1 + DEFAULT_FEE)
 			lastFee = DEFAULT_FEE
+			quantity = quantity - fill.CommissionAmount
 		}
 	}
 
