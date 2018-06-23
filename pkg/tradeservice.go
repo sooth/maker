@@ -505,6 +505,9 @@ func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 
 	quantity := trade.State.BuyFillQuantity
 	fixLotSizeQuantity := roundx(quantity, 1/symbolInfo.StepSize)
+	if fixLotSizeQuantity > quantity {
+		fixLotSizeQuantity = roundx(quantity-symbolInfo.StepSize, 1/symbolInfo.StepSize)
+	}
 	if quantity != fixLotSizeQuantity {
 		log.WithFields(log.Fields{
 			"quantity":      quantity,
@@ -562,6 +565,9 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 
 	quantity := trade.State.BuyFillQuantity
 	fixLotSizeQuantity := roundx(quantity, 1/symbolInfo.StepSize)
+	if fixLotSizeQuantity > quantity {
+		fixLotSizeQuantity = roundx(quantity-symbolInfo.StepSize, 1/symbolInfo.StepSize)
+	}
 	if quantity != fixLotSizeQuantity {
 		log.WithFields(log.Fields{
 			"quantity":      quantity,
