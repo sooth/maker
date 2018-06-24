@@ -29,7 +29,7 @@ export class Trade {
             trade.ProfitPercent = profit / trade.EffectiveBuyPrice * 100;
         }
 
-        // Calculate the percent different between our buy price and the
+        // Calculate the percent difference between our buy price and the
         // current price.
         const diffFromBuyPrice = trade.BuyOrder.Price - lastPrice;
         trade.buyPercentOffsetPercent = diffFromBuyPrice / lastPrice * 100;

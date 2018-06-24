@@ -19,6 +19,7 @@ import (
 	"time"
 	"math"
 	"github.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/maker/pkg/log"
 )
 
 const TRADE_STATE_VERSION = 1
@@ -49,84 +50,6 @@ type OrderFill struct {
 	Quantity         float64
 	CommissionAsset  string
 	CommissionAmount float64
-}
-
-type TradeStateV0 struct {
-	Version int64
-
-	// Trade ID local to this app. Its actually a ULID, but saved as a string.
-	LocalID string
-
-	Symbol    string
-	OpenTime  time.Time
-	CloseTime *time.Time `json:",omitempty"`
-	Status    TradeStatus
-	Fee       float64
-
-	BuyOrderId int64
-
-	ClientOrderIDs map[string]bool
-
-	BuyOrder BuyOrder
-
-	BuySideFills    []OrderFill `json:",omitempty"`
-	BuyFillQuantity float64
-
-	// The average buy price per unit not accounting for fees.
-	AverageBuyPrice float64
-
-	// The total cost of the buy, including fees.
-	BuyCost float64
-
-	// The buy price per unit accounting for fees.
-	EffectiveBuyPrice float64
-
-	SellOrderId int64
-
-	SellSideFills    []OrderFill `json:",omitempty"`
-	SellFillQuantity float64
-	AverageSellPrice float64
-	SellCost         float64
-
-	StopLoss struct {
-		Enabled   bool
-		Percent   float64
-		Triggered bool
-	}
-
-	LimitSell struct {
-		Enabled bool
-		Percent float64
-	}
-
-	TrailingProfit struct {
-		Enabled   bool
-		Percent   float64
-		Deviation float64
-		Activated bool
-		Price     float64
-		// Set to true when the sell order has been sent.
-		Triggered bool
-	}
-
-	// The profit in units of the quote asset.
-	Profit float64
-
-	// The profit as a percentage (0-100).
-	ProfitPercent float64
-
-	LastBuyStatus binance.OrderStatus
-
-	SellOrder struct {
-		Status   binance.OrderStatus
-		Type     string
-		Quantity float64
-		Price    float64
-	}
-
-	// The last known price for this symbol. Use to estimate profit. Source may
-	// not always be the last price, but could also be the last best bid or ask.
-	LastPrice float64
 }
 
 type TradeState struct {
@@ -292,7 +215,7 @@ func (t *Trade) UpdateSellState() {
 		if fill.CommissionAsset == "BNB" {
 			cost += (fill.Price * fill.Quantity) * (1 - BNB_FEE)
 		} else {
-			cost += (fill.Price * fill.Quantity) * (1 - DEFAULT_FEE)
+			cost += (fill.Price * fill.Quantity) * fill.CommissionAmount
 		}
 	}
 
@@ -308,6 +231,7 @@ func (t *Trade) UpdateSellState() {
 }
 
 func (t *Trade) UpdateBuyState() {
+	log.Println("UpdateBuyState")
 	var cost float64 = 0
 	var totalPrice float64 = 0
 	var quantity float64 = 0
@@ -321,7 +245,7 @@ func (t *Trade) UpdateBuyState() {
 			cost += (fill.Price * fill.Quantity) * (1 + BNB_FEE)
 			lastFee = BNB_FEE
 		} else {
-			cost += (fill.Price * fill.Quantity) * (1 + DEFAULT_FEE)
+			cost += (fill.Price * fill.Quantity)
 			lastFee = DEFAULT_FEE
 			quantity = quantity - fill.CommissionAmount
 		}
@@ -337,6 +261,9 @@ func (t *Trade) UpdateBuyState() {
 		// calculation in profit and losses.
 		t.State.Fee = lastFee
 	}
+
+	log.Printf("BuyCost: %.8f", t.State.BuyCost)
+	log.Printf("Effective buy price: %.8f", t.State.EffectiveBuyPrice)
 }
 
 func round8(val float64) float64 {
