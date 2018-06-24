@@ -20,11 +20,11 @@ import * as $ from "jquery";
 import {MakerService, TradeState, TradeStatus} from '../maker.service';
 
 @Component({
-    selector: 'app-trailingstopform',
-    templateUrl: './trailing-stop-form.component.html',
-    styleUrls: ['./trailing-stop-form.component.scss']
+    selector: 'app-trailingprofitform',
+    templateUrl: './trailing-profit-form.component.html',
+    styleUrls: ['./trailing-profit-form.component.scss']
 })
-export class TrailingStopFormComponent implements OnInit {
+export class TrailingProfitFormComponent implements OnInit {
 
     TradeStatus = TradeStatus;
 
@@ -45,21 +45,21 @@ export class TrailingStopFormComponent implements OnInit {
     }
 
     private buildForm() {
-        if (!this.trade.TrailingStop) {
-            this.trade.TrailingStop.Enabled = false;
-            this.trade.TrailingStop.Percent = 0;
-            this.trade.TrailingStop.Deviation = 0;
+        if (!this.trade.TrailingProfit) {
+            this.trade.TrailingProfit.Enabled = false;
+            this.trade.TrailingProfit.Percent = 0;
+            this.trade.TrailingProfit.Deviation = 0;
         }
         this.form = this.fb.group({
-            enabled: [this.trade.TrailingStop.Enabled,],
-            percent: [this.trade.TrailingStop.Percent, Validators.required,],
-            deviation: [this.trade.TrailingStop.Deviation, Validators.required,],
+            enabled: [this.trade.TrailingProfit.Enabled,],
+            percent: [this.trade.TrailingProfit.Percent, Validators.required,],
+            deviation: [this.trade.TrailingProfit.Deviation, Validators.required,],
         })
     }
 
     onSubmit() {
         const formModel: FormModel = this.form.value;
-        this.maker.updateTrailingStop(this.trade, formModel.enabled,
+        this.maker.updateTrailingProfit(this.trade, formModel.enabled,
                 +formModel.percent, +formModel.deviation);
     }
 

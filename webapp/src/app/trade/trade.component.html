@@ -214,20 +214,20 @@
       <div class="col">
         <div class="card">
           <div class="card-body">
-            <form *ngIf="trailingStopForm" [formGroup]="trailingStopForm">
+            <form *ngIf="trailingProfitForm" [formGroup]="trailingProfitForm">
               <div class="form-row mb-2">
                 <div class="form-group col">
                   <button type="button"
                           class="wrapper-button"
-                          (click)="trailingStopForm.get('enabled').setValue(!trailingStopForm.get('enabled').value)"
+                          (click)="trailingProfitForm.get('enabled').setValue(!trailingProfitForm.get('enabled').value)"
                   >
                     <div class="form-check">
                       <input class="form-check-input" type="checkbox"
-                             name="trailingStopEnabled"
+                             name="trailingProfitEnabled"
                              formControlName="enabled"
                       >
                       <label class="form-check-label">Trailing
-                        Stop</label>
+                        Profit</label>
                     </div>
                   </button>
 
@@ -237,7 +237,7 @@
                            step="0.1"
                            title="Stop percent"
                            placeholder="Percent..."
-                           name="trailingStopPercent"
+                           name="trailingProfitPercent"
                            formControlName="percent"
                     >
                     <div class="input-group-append">
@@ -254,7 +254,7 @@
                            title="Deviation"
                            step="0.1"
                            placeholder="Deviation..."
-                           name="trailingStopDeviation"
+                           name="trailingProfitDeviation"
                            formControlName="deviation"
                     >
                     <div class="input-group-append">
@@ -309,7 +309,7 @@
                 </button>
                 <div class="input-group">
                   <input type="number" class="form-control"
-                         title="Stop percent"
+                         title="Percent"
                          placeholder="Percent..."
                          step="0.1"
                          (change)="saveState();"

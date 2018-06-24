@@ -233,7 +233,7 @@ export interface OpenTradeOptions {
     limitSellEnabled?: boolean;
     limitSellPercent?: number;
 
-    trailingStopEnabled?: boolean;
-    trailingStopPercent?: number;
-    trailingStopDeviation?: number;
+    trailingProfitEnabled?: boolean;
+    trailingProfitPercent?: number;
+    trailingProfitDeviation?: number;
 }

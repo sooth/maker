@@ -116,8 +116,8 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 			if trade.State.StopLoss.Enabled {
 				s.checkStopLoss(trade, lastTrade)
 			}
-			if trade.State.TrailingStop.Enabled {
-				s.checkTrailingStop(trade, lastTrade)
+			if trade.State.TrailingProfit.Enabled {
+				s.checkTrailingProfit(trade, lastTrade)
 			}
 		}
 	}
@@ -146,7 +146,7 @@ func (s *TradeService) checkStopLoss(trade *maker.Trade, lastTrade *binance.Stre
 	}
 }
 
-func (s *TradeService) checkTrailingStop(trade *maker.Trade, lastTrade *binance.StreamAggTrade) {
+func (s *TradeService) checkTrailingProfit(trade *maker.Trade, lastTrade *binance.StreamAggTrade) {
 	switch trade.State.Status {
 	case maker.TradeStatusPendingSell:
 	case maker.TradeStatusWatching:
@@ -154,35 +154,35 @@ func (s *TradeService) checkTrailingStop(trade *maker.Trade, lastTrade *binance.
 		return
 	}
 
-	if trade.State.TrailingStop.Triggered {
+	if trade.State.TrailingProfit.Triggered {
 		return
 	}
 
-	if trade.State.TrailingStop.Activated {
-		if lastTrade.Price > trade.State.TrailingStop.Price {
-			trade.State.TrailingStop.Price = lastTrade.Price
+	if trade.State.TrailingProfit.Activated {
+		if lastTrade.Price > trade.State.TrailingProfit.Price {
+			trade.State.TrailingProfit.Price = lastTrade.Price
 			log.WithFields(log.Fields{
 				"symbol":   trade.State.Symbol,
 				"price-hi": lastTrade.Price,
 			}).Info("Trailing Stop: Increasing high price.")
 		} else {
-			deviation := (lastTrade.Price - trade.State.TrailingStop.Price) /
-				trade.State.TrailingStop.Price * 100
-			log.Printf("%s: TrailingStop Deviation: deviation=%.8f; allowed=%.8f",
-				trade.State.Symbol, deviation, trade.State.TrailingStop.Deviation)
-			if math.Abs(deviation) > trade.State.TrailingStop.Deviation {
-				log.Printf("%s: TrailingStop: Triggering sell: profit=%.8f",
+			deviation := (lastTrade.Price - trade.State.TrailingProfit.Price) /
+				trade.State.TrailingProfit.Price * 100
+			log.Printf("%s: TrailingProfit Deviation: deviation=%.8f; allowed=%.8f",
+				trade.State.Symbol, deviation, trade.State.TrailingProfit.Deviation)
+			if math.Abs(deviation) > trade.State.TrailingProfit.Deviation {
+				log.Printf("%s: TrailingProfit: Triggering sell: profit=%.8f",
 					trade.State.Symbol, trade.State.ProfitPercent)
-				trade.State.TrailingStop.Triggered = true
+				trade.State.TrailingProfit.Triggered = true
 				s.MarketSell(trade, true)
 			}
 		}
 	} else {
-		if trade.State.ProfitPercent > trade.State.TrailingStop.Percent {
+		if trade.State.ProfitPercent > trade.State.TrailingProfit.Percent {
 			log.Printf("%s: Activating trailing stop: profit=%.8f; percent: %.8f",
 				trade.State.Symbol, trade.State.ProfitPercent,
-				trade.State.TrailingStop.Percent)
-			trade.State.TrailingStop.Activated = true
+				trade.State.TrailingProfit.Percent)
+			trade.State.TrailingProfit.Activated = true
 			s.BroadcastTradeUpdate(trade)
 		}
 	}
@@ -257,14 +257,14 @@ func (s *TradeService) ArchiveTrade(trade *maker.Trade) error {
 			return err
 		}
 		s.RemoveTrade(trade)
-		s.BroadcastTradeArchived(trade.State.LocalID)
+		s.BroadcastTradeArchived(trade.State.TradeID)
 		return nil
 	}
 	return fmt.Errorf("archive not allowed in state %s", trade.State.Status)
 }
 
 func (s *TradeService) AddClientOrderId(trade *maker.Trade, orderId string, locked bool) {
-	log.Printf("Adding clientOrderID %s to trade %s", orderId, trade.State.LocalID)
+	log.Printf("Adding clientOrderID %s to trade %s", orderId, trade.State.TradeID)
 	trade.AddClientOrderID(orderId)
 	if !locked {
 		s.lock.Lock()
@@ -277,7 +277,7 @@ func (s *TradeService) AddClientOrderId(trade *maker.Trade, orderId string, lock
 }
 
 func (s *TradeService) RestoreTrade(trade *maker.Trade) {
-	s.TradesByLocalID[trade.State.LocalID] = trade
+	s.TradesByLocalID[trade.State.TradeID] = trade
 	for clientOrderId := range trade.State.ClientOrderIDs {
 		s.TradesByClientID[clientOrderId] = trade
 	}
@@ -285,20 +285,20 @@ func (s *TradeService) RestoreTrade(trade *maker.Trade) {
 }
 
 func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
-	if trade.State.LocalID == "" {
+	if trade.State.TradeID == "" {
 		localId, err := s.idGenerator.GetID(nil)
 		if err != nil {
 			log.Fatalf("error: failed to generate trade id: %v", err)
 		}
-		trade.State.LocalID = localId.String()
+		trade.State.TradeID = localId.String()
 	}
 	trade.State.Status = maker.TradeStatusNew
 
 	s.lock.Lock()
-	s.TradesByLocalID[trade.State.LocalID] = trade
+	s.TradesByLocalID[trade.State.TradeID] = trade
 	for clientOrderId := range trade.State.ClientOrderIDs {
 		log.WithFields(log.Fields{
-			"tradeId":       trade.State.LocalID,
+			"tradeId":       trade.State.TradeID,
 			"clientOrderId": clientOrderId,
 		}).Debugf("Recording clientOrderId for new trade.")
 		s.TradesByClientID[clientOrderId] = trade
@@ -312,16 +312,16 @@ func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
 	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
 	s.BroadcastTradeUpdate(trade)
 
-	return trade.State.LocalID
+	return trade.State.TradeID
 }
 
 func (s *TradeService) RemoveTrade(trade *maker.Trade) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	delete(s.TradesByLocalID, trade.State.LocalID)
+	delete(s.TradesByLocalID, trade.State.TradeID)
 	for clientId := range trade.State.ClientOrderIDs {
 		log.WithFields(log.Fields{
-			"tradeId":       trade.State.LocalID,
+			"tradeId":       trade.State.TradeID,
 			"clientOrderId": clientId,
 		}).Debugf("Removing trade from clientOrderId map.")
 		delete(s.TradesByClientID, clientId)
@@ -378,7 +378,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	}
 
 	log.WithFields(log.Fields{
-		"tradeId": trade.State.LocalID,
+		"tradeId": trade.State.TradeID,
 	}).Debugf("Received execution report: %s", log.ToJson(report))
 
 	switch report.Side {
@@ -587,7 +587,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"limitPrice": fmt.Sprintf("%.8f", price),
 		"fixedPrice": fmt.Sprintf("%.8f", fixedPrice),
 		"symbol":     trade.State.Symbol,
-		"tradeId":    trade.State.LocalID,
+		"tradeId":    trade.State.TradeID,
 		"quantity":   quantity,
 	}).Debugf("Posting limit sell order.")
 
@@ -614,7 +614,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"limitPrice":      price,
 		"fixedPrice":      fixedPrice,
 		"symbol":          trade.State.Symbol,
-		"tradeId":         trade.State.LocalID,
+		"tradeId":         trade.State.TradeID,
 	}).Info("Sell order posted.")
 	db.DbUpdateTrade(trade)
 	return nil
@@ -635,9 +635,9 @@ func (s *TradeService) MakeOrderID() (string, error) {
 	return orderId.String(), nil
 }
 
-func (s *TradeService) UpdateTrailingStop(trade *maker.Trade, enable bool,
+func (s *TradeService) UpdateTrailingProfit(trade *maker.Trade, enable bool,
 	percent float64, deviation float64) {
-	trade.SetTrailingStop(enable, percent, deviation)
+	trade.SetTrailingProfit(enable, percent, deviation)
 	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }

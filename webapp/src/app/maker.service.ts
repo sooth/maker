@@ -86,7 +86,7 @@ export class MakerService {
     }
 
     private onTrade(trade: TradeState) {
-        this.tradeMap[trade.LocalID] = trade;
+        this.tradeMap[trade.TradeID] = trade;
         this.tradeMap$.next(this.tradeMap);
         this.trade$.next(trade);
     }
@@ -95,20 +95,20 @@ export class MakerService {
         const params = new HttpParams()
                 .set("enable", String(enable))
                 .set("percent", percent.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.LocalID}/stopLoss`, null, {
+        this.http.post(`/api/binance/trade/${trade.TradeID}/stopLoss`, null, {
             params: params,
         }).subscribe((response) => {
             console.log(response);
         });
     }
 
-    public updateTrailingStop(trade: TradeState, enable: boolean,
+    public updateTrailingProfit(trade: TradeState, enable: boolean,
                               percent: number, deviation: number) {
         const params = new HttpParams()
                 .set("enable", String(enable))
                 .set("percent", percent.toFixed(8))
                 .set("deviation", deviation.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.LocalID}/trailingStop`, null, {
+        this.http.post(`/api/binance/trade/${trade.TradeID}/trailingProfit`, null, {
             params: params,
         }).subscribe((response) => {
             console.log(response);
@@ -116,19 +116,19 @@ export class MakerService {
     }
 
     cancelBuy(trade: TradeState) {
-        this.binanceApi.cancelBuy(trade.LocalID).subscribe((response) => {
+        this.binanceApi.cancelBuy(trade.TradeID).subscribe((response) => {
         }, (error) => {
             console.log("Failed to cancel buy order: " + JSON.stringify(error));
         });
     }
 
     cancelSell(trade: TradeState): Observable<CancelOrderResponse> {
-        return this.binanceApi.cancelSellOrder(trade.LocalID);
+        return this.binanceApi.cancelSellOrder(trade.TradeID);
     }
 
     limitSell(trade: TradeState, percent: number) {
         const params = new HttpParams().set("percent", percent.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.LocalID}/limitSell`, null, {
+        this.http.post(`/api/binance/trade/${trade.TradeID}/limitSell`, null, {
             params: params,
         }).subscribe((response) => {
             if (response) {
@@ -141,13 +141,13 @@ export class MakerService {
     }
 
     marketSell(trade: TradeState) {
-        this.http.post(`/api/binance/trade/${trade.LocalID}/marketSell`, null, {}).subscribe((response) => {
+        this.http.post(`/api/binance/trade/${trade.TradeID}/marketSell`, null, {}).subscribe((response) => {
             console.log(response);
         });
     }
 
     archiveTrade(trade: TradeState) {
-        this.http.post(`/api/binance/trade/${trade.LocalID}/archive`, null, {})
+        this.http.post(`/api/binance/trade/${trade.TradeID}/archive`, null, {})
                 .subscribe(() => {
                 }, (error) => {
                     this.logger.log("Failed to archive trade: " + JSON.stringify(error));
@@ -155,7 +155,7 @@ export class MakerService {
     }
 
     abandonTrade(trade: TradeState) {
-        this.http.post(`/api/binance/trade/${trade.LocalID}/abandon`, null, {})
+        this.http.post(`/api/binance/trade/${trade.TradeID}/abandon`, null, {})
                 .subscribe(() => {
                 }, (error) => {
                     this.logger.log("Failed to abandon trade: " + JSON.stringify(error));
@@ -175,7 +175,7 @@ export enum TradeStatus {
 }
 
 export interface TradeState {
-    LocalID: string;
+    TradeID: string;
     Symbol: string;
     Status: TradeStatus;
     OpenTime: string; // ISO format.
@@ -196,7 +196,7 @@ export interface TradeState {
         Percent: number;
         Triggered: boolean;
     };
-    TrailingStop: {
+    TrailingProfit: {
         Enabled: boolean;
         Percent: number;
         Deviation: number;

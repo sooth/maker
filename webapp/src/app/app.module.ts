@@ -22,7 +22,6 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {BinanceService} from "./binance.service";
 import {ToastrService} from "./toastr.service";
-import {TrailingStopFormComponent} from "./trailingstopform/trailing-stop-form.component";
 import {StopLossFormComponent} from "./stoplossform/stop-loss-form.component";
 import {WithQuoteAssetPipe} from "./pipes/withquoteasset.pipe";
 import {TradeTableComponent} from "./trade-table/trade-table.component";
@@ -46,6 +45,7 @@ import {
 } from "@angular/material";
 import {TradeDetailComponent} from './trade-detail/trade-detail.component';
 import {TradeTableRowComponent} from './trade-table-row/trade-table-row.component';
+import {TrailingProfitFormComponent} from './trailingprofitform/trailing-profit-form.component';
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
@@ -54,7 +54,7 @@ fontawesome.library.add(faQuestion);
     declarations: [
         AppComponent,
         TradeComponent,
-        TrailingStopFormComponent,
+        TrailingProfitFormComponent,
         StopLossFormComponent,
         WithQuoteAssetPipe,
         TradeTableComponent,

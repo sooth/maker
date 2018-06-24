@@ -51,7 +51,7 @@ export class TradeDetailComponent implements OnInit, OnDestroy {
         this.subs.push(s);
 
         s = this.maker.trade$.subscribe((trade) => {
-            if (this.trade && this.trade.LocalID == trade.LocalID) {
+            if (this.trade && this.trade.TradeID == trade.TradeID) {
                 this.trade = toAppTradeState(trade);
             }
         });

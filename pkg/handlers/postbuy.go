@@ -25,9 +25,9 @@ type BuyOrderRequest struct {
 	LimitSellPercent      float64           `json:"limitSellPercent"`
 	StopLossEnabled       bool              `json:"stopLossEnabled"`
 	StopLossPercent       float64           `json:"stopLossPercent"`
-	TrailingStopEnabled   bool              `json:"trailingStopEnabled"`
-	TrailingStopPercent   float64           `json:"trailingStopPercent"`
-	TrailingStopDeviation float64           `json:"trailingStopDeviation"`
+	TrailingProfitEnabled   bool              `json:"trailingProfitEnabled"`
+	TrailingProfitPercent   float64           `json:"trailingProfitPercent"`
+	TrailingProfitDeviation float64           `json:"trailingProfitDeviation"`
 }
 
 type BuyOrderResponse struct {

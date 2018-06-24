@@ -21,6 +21,8 @@ import (
 	"github.com/crankykernel/cryptotrader/binance"
 )
 
+const TRADE_STATE_VERSION = 1
+
 const DEFAULT_FEE = float64(0.001)
 const BNB_FEE = float64(0.0005)
 
@@ -49,7 +51,9 @@ type OrderFill struct {
 	CommissionAmount float64
 }
 
-type TradeState struct {
+type TradeStateV0 struct {
+	Version int64
+
 	// Trade ID local to this app. Its actually a ULID, but saved as a string.
 	LocalID string
 
@@ -95,13 +99,89 @@ type TradeState struct {
 		Percent float64
 	}
 
-	TrailingStop struct {
+	TrailingProfit struct {
 		Enabled   bool
 		Percent   float64
 		Deviation float64
 		Activated bool
 		Price     float64
 		// Set to true when the sell order has been sent.
+		Triggered bool
+	}
+
+	// The profit in units of the quote asset.
+	Profit float64
+
+	// The profit as a percentage (0-100).
+	ProfitPercent float64
+
+	LastBuyStatus binance.OrderStatus
+
+	SellOrder struct {
+		Status   binance.OrderStatus
+		Type     string
+		Quantity float64
+		Price    float64
+	}
+
+	// The last known price for this symbol. Use to estimate profit. Source may
+	// not always be the last price, but could also be the last best bid or ask.
+	LastPrice float64
+}
+
+type TradeState struct {
+	Version int64
+	// Trade ID local to this app. Its actually a ULID, but saved as a string.
+	TradeID string
+
+	Symbol    string
+	OpenTime  time.Time
+	CloseTime *time.Time `json:",omitempty"`
+	Status    TradeStatus
+	Fee       float64
+
+	BuyOrderId int64
+
+	ClientOrderIDs map[string]bool
+
+	BuyOrder BuyOrder
+
+	BuySideFills    []OrderFill `json:",omitempty"`
+	BuyFillQuantity float64
+
+	// The average buy price per unit not accounting for fees.
+	AverageBuyPrice float64
+
+	// The total cost of the buy, including fees.
+	BuyCost float64
+
+	// The buy price per unit accounting for fees.
+	EffectiveBuyPrice float64
+
+	SellOrderId int64
+
+	SellSideFills    []OrderFill `json:",omitempty"`
+	SellFillQuantity float64
+	AverageSellPrice float64
+	SellCost         float64
+
+	StopLoss struct {
+		Enabled   bool
+		Percent   float64
+		Triggered bool
+	}
+
+	LimitSell struct {
+		Enabled bool
+		Percent float64
+	}
+
+	TrailingProfit struct {
+		Enabled   bool
+		Percent   float64
+		Deviation float64
+		Activated bool
+		Price     float64
 		Triggered bool
 	}
 
@@ -132,6 +212,7 @@ type Trade struct {
 func NewTrade() *Trade {
 	return &Trade{
 		State: TradeState{
+			Version:        TRADE_STATE_VERSION,
 			Status:         TradeStatusNew,
 			Fee:            DEFAULT_FEE,
 			OpenTime:       time.Now(),
@@ -174,10 +255,10 @@ func (t *Trade) SetStopLoss(enable bool, percent float64) {
 	t.State.StopLoss.Percent = percent
 }
 
-func (t *Trade) SetTrailingStop(enable bool, percent float64, deviation float64) {
-	t.State.TrailingStop.Enabled = enable
-	t.State.TrailingStop.Percent = percent
-	t.State.TrailingStop.Deviation = deviation
+func (t *Trade) SetTrailingProfit(enable bool, percent float64, deviation float64) {
+	t.State.TrailingProfit.Enabled = enable
+	t.State.TrailingProfit.Percent = percent
+	t.State.TrailingProfit.Deviation = deviation
 }
 
 func (t *Trade) AddBuyFill(report binance.StreamExecutionReport) {

@@ -59,9 +59,9 @@ interface OrderFormSettingsModel {
     balancePercent: number;
     stopLossEnabled: boolean;
     stopLossPercent: number;
-    trailingStopEnabled: boolean;
-    trailingStopPercent: number;
-    trailingStopDeviation: number;
+    trailingProfitEnabled: boolean;
+    trailingProfitPercent: number;
+    trailingProfitDeviation: number;
     limitSellEnabled: boolean;
     limitSellPercent: number;
 }
@@ -89,9 +89,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         balancePercent: null,
         stopLossEnabled: false,
         stopLossPercent: 1,
-        trailingStopEnabled: false,
-        trailingStopPercent: 1,
-        trailingStopDeviation: 0.25,
+        trailingProfitEnabled: false,
+        trailingProfitPercent: 1,
+        trailingProfitDeviation: 0.25,
         limitSellEnabled: false,
         limitSellPercent: 0.1,
     };
@@ -117,7 +117,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     private logger: Logger = null;
 
-    trailingStopForm: FormGroup;
+    trailingProfitForm: FormGroup;
 
     @ViewChild(TradeTableComponent) private tradeTable: TradeTableComponent;
 
@@ -143,30 +143,30 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             // Setup the trailing stop reactive form. It might be more work
             // than its worth for the reactive vs template form, at least for
             // this use case.
-            this.trailingStopForm = this.formBuilder.group({
+            this.trailingProfitForm = this.formBuilder.group({
                 enabled: [{
-                    value: this.orderFormSettings.trailingStopEnabled,
+                    value: this.orderFormSettings.trailingProfitEnabled,
                     disabled: false,
                 }],
                 percent: [{
-                    value: this.orderFormSettings.trailingStopPercent,
-                    disabled: !this.orderFormSettings.trailingStopEnabled,
+                    value: this.orderFormSettings.trailingProfitPercent,
+                    disabled: !this.orderFormSettings.trailingProfitEnabled,
                 }],
                 deviation: [{
-                    value: this.orderFormSettings.trailingStopDeviation,
-                    disabled: !this.orderFormSettings.trailingStopEnabled,
+                    value: this.orderFormSettings.trailingProfitDeviation,
+                    disabled: !this.orderFormSettings.trailingProfitEnabled,
                 }],
             });
-            s = this.trailingStopForm.valueChanges.subscribe((data) => {
-                this.orderFormSettings.trailingStopEnabled = data.enabled;
-                this.orderFormSettings.trailingStopPercent = data.percent;
-                this.orderFormSettings.trailingStopDeviation = data.deviation;
+            s = this.trailingProfitForm.valueChanges.subscribe((data) => {
+                this.orderFormSettings.trailingProfitEnabled = data.enabled;
+                this.orderFormSettings.trailingProfitPercent = data.percent;
+                this.orderFormSettings.trailingProfitDeviation = data.deviation;
                 if (data.enabled) {
-                    this.trailingStopForm.controls.percent.enable({emitEvent: false});
-                    this.trailingStopForm.controls.deviation.enable({emitEvent: false});
+                    this.trailingProfitForm.controls.percent.enable({emitEvent: false});
+                    this.trailingProfitForm.controls.deviation.enable({emitEvent: false});
                 } else {
-                    this.trailingStopForm.controls.percent.disable({emitEvent: false});
-                    this.trailingStopForm.controls.deviation.disable({emitEvent: false});
+                    this.trailingProfitForm.controls.percent.disable({emitEvent: false});
+                    this.trailingProfitForm.controls.deviation.disable({emitEvent: false});
                 }
                 this.saveState();
             });
@@ -359,9 +359,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             stopLossPercent: this.orderFormSettings.stopLossPercent,
             limitSellEnabled: this.orderFormSettings.limitSellEnabled,
             limitSellPercent: this.orderFormSettings.limitSellPercent,
-            trailingStopEnabled: this.orderFormSettings.trailingStopEnabled,
-            trailingStopPercent: this.orderFormSettings.trailingStopPercent,
-            trailingStopDeviation: this.orderFormSettings.trailingStopDeviation,
+            trailingProfitEnabled: this.orderFormSettings.trailingProfitEnabled,
+            trailingProfitPercent: this.orderFormSettings.trailingProfitPercent,
+            trailingProfitDeviation: this.orderFormSettings.trailingProfitDeviation,
         };
         this.binance.postBuyOrder(options).subscribe(() => {
         }, (error) => {

@@ -145,7 +145,7 @@ func updateTradeStopLossSettingsHandler(tradeService *TradeService) http.Handler
 	}
 }
 
-func updateTradeTrailingStopSettingsHandler(tradeService *TradeService) http.HandlerFunc {
+func updateTradeTrailingProfitSettingsHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
@@ -185,7 +185,7 @@ func updateTradeTrailingStopSettingsHandler(tradeService *TradeService) http.Han
 			writeJsonError(w, http.StatusNotFound, "")
 		}
 
-		tradeService.UpdateTrailingStop(trade, enable, percent, deviation)
+		tradeService.UpdateTrailingProfit(trade, enable, percent, deviation)
 	}
 }
 
@@ -247,7 +247,7 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 
 		log.WithFields(log.Fields{
 			"symbol":      trade.State.Symbol,
-			"tradeId":     trade.State.LocalID,
+			"tradeId":     trade.State.TradeID,
 			"sellOrderId": trade.State.SellOrderId,
 		}).Infof("Cancelling sell order.")
 
@@ -344,10 +344,10 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 				requestBody.LimitSellPercent)
 		}
 
-		if requestBody.TrailingStopEnabled {
-			trade.SetTrailingStop(requestBody.TrailingStopEnabled,
-				requestBody.TrailingStopPercent,
-				requestBody.TrailingStopDeviation)
+		if requestBody.TrailingProfitEnabled {
+			trade.SetTrailingProfit(requestBody.TrailingProfitEnabled,
+				requestBody.TrailingProfitPercent,
+				requestBody.TrailingProfitDeviation)
 		}
 
 		tradeId := tradeService.AddNewTrade(trade)

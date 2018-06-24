@@ -10,7 +10,7 @@
   </span>
   <span
       style="display: block; font-size: 0.675rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-    <a [routerLink]="['/trade', trade.LocalID]">{{trade.LocalID}}</a>
+    <a [routerLink]="['/trade', trade.TradeID]">{{trade.TradeID}}</a>
   </span>
 </td>
 
@@ -165,43 +165,43 @@
       </td>
     </tr>
     <tr>
-      <th>Trailing Stop</th>
+      <th>Trailing Profit</th>
       <!-- If... -->
       <td *ngIf="trade.__isOpen">
         <a href="javascript:void(0);"
            data-toggle="dropdown"
-        >{{trade.TrailingStop.Enabled}}</a>
+        >{{trade.TrailingProfit.Enabled}}</a>
         <div class="dropdown-menu dropdown-menu-right"
              style="margin: 0; padding: 0">
-          <app-trailingstopform [trade]="trade"></app-trailingstopform>
+          <app-trailingprofitform [trade]="trade"></app-trailingprofitform>
         </div>
       </td>
       <!-- Else... -->
       <td *ngIf="!trade.__isOpen">
-        {{trade.TrailingStop.Enabled}}
+        {{trade.TrailingProfit.Enabled}}
       </td>
     </tr>
     <tr>
       <th>Percent</th>
-      <td>{{trade.TrailingStop.Percent}}</td>
+      <td>{{trade.TrailingProfit.Percent}}</td>
     </tr>
     <tr>
       <th>Deviation</th>
-      <td>{{trade.TrailingStop.Deviation}}</td>
+      <td>{{trade.TrailingProfit.Deviation}}</td>
     </tr>
     <tr>
       <th>Activated</th>
       <td>
-        {{trade.TrailingStop && trade.TrailingStop.Activated || "--"}}
+        {{trade.TrailingProfit && trade.TrailingProfit.Activated || "--"}}
       </td>
     </tr>
     <tr>
       <th>Triggered</th>
       <td>
-        <span *ngIf="trade && trade.TrailingStop">
-          {{trade.TrailingStop && trade.TrailingStop.Triggered || "--"}}
+        <span *ngIf="trade && trade.TrailingProfit">
+          {{trade.TrailingProfit && trade.TrailingProfit.Triggered || "--"}}
         </span>
-        <span *ngIf="!(trade && trade.TrailingStop)">--</span>
+        <span *ngIf="!(trade && trade.TrailingProfit)">--</span>
       </td>
     </tr>
   </table>

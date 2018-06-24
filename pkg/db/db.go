@@ -84,8 +84,44 @@ func initDb(db *sql.DB) error {
 		}
 	}
 
-	tx.Commit()
+	if version < 3 {
+		rows, err := tx.Query(`select id, data from binance_trade`)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to load trades: %v", err)
+		}
 
+		count := 0
+		for rows.Next() {
+			var localId string
+			var data string
+			if err := rows.Scan(&localId, &data); err != nil {
+				log.WithError(err).Error("Failed to scan row.")
+				continue
+			}
+
+			var tradeState0 maker.TradeStateV0
+			if err := json.Unmarshal([]byte(data), &tradeState0); err != nil {
+				log.WithError(err).Error("Failed to unmarshal v0 trade state.")
+				continue
+			}
+
+			if tradeState0.Version > 0 {
+				continue
+			}
+
+			tradeState := maker.TradeV0ToTradeV1(tradeState0)
+			TxDbUpdateTradeState(tx, &tradeState)
+			count += 1
+		}
+		log.Printf("Migrated %d trades from v0 to v1.", count)
+		if err := incrementVersion(tx, 3); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
 	return nil
 }
 
@@ -125,8 +161,18 @@ func DbSaveTrade(trade *maker.Trade) error {
 		return err
 	}
 	_, err = tx.Exec(`insert into binance_trade (id, data) values (?, ?)`,
-		trade.State.LocalID, data)
+		trade.State.TradeID, data)
 	tx.Commit()
+	return err
+}
+
+func TxDbUpdateTradeState(tx *sql.Tx, trade *maker.TradeState) error {
+	data, err := formatJson(trade)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`update binance_trade set data = ? where id = ?`,
+		data, trade.TradeID)
 	return err
 }
 
@@ -135,12 +181,7 @@ func DbUpdateTrade(trade *maker.Trade) error {
 	if err != nil {
 		return err
 	}
-	data, err := formatJson(trade.State)
-	if err != nil {
-		return err
-	}
-	_, err = tx.Exec(`update binance_trade set data = ? where id = ?`,
-		data, trade.State.LocalID)
+	err = TxDbUpdateTradeState(tx, &trade.State)
 	if err != nil {
 		tx.Rollback()
 	} else {
@@ -155,7 +196,7 @@ func DbArchiveTrade(trade *maker.Trade) error {
 		return err
 	}
 	_, err = tx.Exec(`update binance_trade set archived = 1 where id = ?`,
-		trade.State.LocalID)
+		trade.State.TradeID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -182,6 +223,7 @@ func DbRestoreTradeState() ([]maker.TradeState, error) {
 		if err := json.Unmarshal([]byte(data), &tradeState); err != nil {
 			return nil, err
 		}
+
 		tradeStates = append(tradeStates, tradeState)
 	}
 	return tradeStates, nil
