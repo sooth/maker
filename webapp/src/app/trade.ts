@@ -23,6 +23,7 @@ export class Trade {
         Trade.updateProfit(trade, lastPrice);
     }
 
+    /* TODO: Need to use sellable quantity. */
     static updateProfit(trade: AppTradeState, lastPrice: number) {
         if (trade.BuyFillQuantity > 0) {
             const profit = lastPrice * (1 - trade.Fee) - trade.EffectiveBuyPrice;

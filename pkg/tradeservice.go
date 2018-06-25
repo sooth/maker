@@ -276,11 +276,28 @@ func (s *TradeService) AddClientOrderId(trade *maker.Trade, orderId string, lock
 	db.DbUpdateTrade(trade)
 }
 
+func (s *TradeService) UpdateSellableQuantity(trade *maker.Trade) {
+	feeAsset := trade.FeeAsset()
+	if feeAsset == "BNB" {
+		trade.State.SellableQuantity = trade.State.BuyFillQuantity
+	} else if feeAsset != "" {
+		// TODO: Only applicable to Binance.
+		stepSize, err := s.binanceExchangeInfo.GetStepSize(trade.State.Symbol)
+		if err != nil {
+			log.WithError(err).WithField("symbol", trade.State.Symbol).
+				Error("Failed to get symbol step size.")
+		} else {
+			trade.State.SellableQuantity = s.FixQuantityToStepSize(trade.State.BuyFillQuantity, stepSize)
+		}
+	}
+}
+
 func (s *TradeService) RestoreTrade(trade *maker.Trade) {
 	s.TradesByLocalID[trade.State.TradeID] = trade
 	for clientOrderId := range trade.State.ClientOrderIDs {
 		s.TradesByClientID[clientOrderId] = trade
 	}
+	s.UpdateSellableQuantity(trade)
 	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
 }
 
@@ -381,6 +398,13 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 		"tradeId": trade.State.TradeID,
 	}).Debugf("Received execution report: %s", log.ToJson(report))
 
+	_, err := s.binanceExchangeInfo.GetStepSize(trade.State.Symbol)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"symbol": trade.State.Symbol,
+		}).Error("Failed to get Binance symbol information.")
+	}
+
 	switch report.Side {
 	case binance.OrderSideBuy:
 		switch report.CurrentOrderStatus {
@@ -411,9 +435,14 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.AddBuyFill(report)
 			trade.State.Status = maker.TradeStatusWatching
 			if trade.State.LimitSell.Enabled {
-				s.TriggerLimitSell(trade)
+				s.DoLimitSell(trade, trade.State.LimitSell.Percent)
 			}
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
+		}
+
+		// Common.
+		if trade.State.BuyFillQuantity > 0 {
+			s.UpdateSellableQuantity(trade)
 		}
 	case binance.OrderSideSell:
 		switch report.CurrentOrderStatus {
@@ -472,11 +501,9 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	case maker.TradeStatusFailed:
 		trade.State.CloseTime = &event.EventTime
 		s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
-		fallthrough
-	default:
-		db.DbUpdateTrade(trade)
 	}
 
+	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
 
@@ -490,8 +517,13 @@ func (s *TradeService) CloseTrade(trade *maker.Trade, status maker.TradeStatus, 
 	db.DbUpdateTrade(trade)
 }
 
-func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
-	s.DoLimitSell(trade, trade.State.LimitSell.Percent)
+// Return the sellable quantity adjusted for lot size.
+func (s *TradeService) FixQuantityToStepSize(quantity float64, stepSize float64) float64 {
+	fixedQuantity := roundx(quantity, 1/stepSize)
+	if fixedQuantity > quantity {
+		fixedQuantity = roundx(fixedQuantity - stepSize, 1/stepSize)
+	}
+	return fixedQuantity
 }
 
 func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
@@ -504,10 +536,7 @@ func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 	}
 
 	quantity := trade.State.BuyFillQuantity
-	fixLotSizeQuantity := roundx(quantity, 1/symbolInfo.StepSize)
-	if fixLotSizeQuantity > quantity {
-		fixLotSizeQuantity = roundx(quantity-symbolInfo.StepSize, 1/symbolInfo.StepSize)
-	}
+	fixLotSizeQuantity := s.FixQuantityToStepSize(quantity, symbolInfo.StepSize)
 	if quantity != fixLotSizeQuantity {
 		log.WithFields(log.Fields{
 			"quantity":      quantity,
@@ -564,10 +593,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 	}
 
 	quantity := trade.State.BuyFillQuantity
-	fixLotSizeQuantity := roundx(quantity, 1/symbolInfo.StepSize)
-	if fixLotSizeQuantity > quantity {
-		fixLotSizeQuantity = roundx(quantity-symbolInfo.StepSize, 1/symbolInfo.StepSize)
-	}
+	fixLotSizeQuantity := s.FixQuantityToStepSize(quantity, symbolInfo.StepSize)
 	if quantity != fixLotSizeQuantity {
 		log.WithFields(log.Fields{
 			"quantity":      quantity,

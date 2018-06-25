@@ -19,7 +19,6 @@ import (
 	"time"
 	"math"
 	"github.com/crankykernel/cryptotrader/binance"
-	"github.com/crankykernel/maker/pkg/log"
 )
 
 const TRADE_STATE_VERSION = 1
@@ -71,6 +70,10 @@ type TradeState struct {
 
 	BuySideFills    []OrderFill `json:",omitempty"`
 	BuyFillQuantity float64
+
+	// The amount that can be sold. This is the quantity adjusted to any lot
+	// size limitation like Binance's step size.
+	SellableQuantity float64
 
 	// The average buy price per unit not accounting for fees.
 	AverageBuyPrice float64
@@ -168,6 +171,14 @@ func (t *Trade) IsDone() bool {
 	return true
 }
 
+func (s *Trade) FeeAsset() string {
+	lastFillIndex := len(s.State.BuySideFills) - 1
+	if lastFillIndex < 0 {
+		return ""
+	}
+	return s.State.BuySideFills[lastFillIndex].CommissionAsset
+}
+
 func (t *Trade) SetLimitSell(enable bool, percent float64) {
 	t.State.LimitSell.Enabled = enable
 	t.State.LimitSell.Percent = percent
@@ -215,7 +226,7 @@ func (t *Trade) UpdateSellState() {
 		if fill.CommissionAsset == "BNB" {
 			cost += (fill.Price * fill.Quantity) * (1 - BNB_FEE)
 		} else {
-			cost += (fill.Price * fill.Quantity) * fill.CommissionAmount
+			cost += (fill.Price * fill.Quantity) - fill.CommissionAmount
 		}
 	}
 
@@ -231,7 +242,6 @@ func (t *Trade) UpdateSellState() {
 }
 
 func (t *Trade) UpdateBuyState() {
-	log.Println("UpdateBuyState")
 	var cost float64 = 0
 	var totalPrice float64 = 0
 	var quantity float64 = 0
@@ -261,9 +271,6 @@ func (t *Trade) UpdateBuyState() {
 		// calculation in profit and losses.
 		t.State.Fee = lastFee
 	}
-
-	log.Printf("BuyCost: %.8f", t.State.BuyCost)
-	log.Printf("Effective buy price: %.8f", t.State.EffectiveBuyPrice)
 }
 
 func round8(val float64) float64 {

@@ -103,7 +103,7 @@ export class MakerService {
     }
 
     public updateTrailingProfit(trade: TradeState, enable: boolean,
-                              percent: number, deviation: number) {
+                                percent: number, deviation: number) {
         const params = new HttpParams()
                 .set("enable", String(enable))
                 .set("percent", percent.toFixed(8))
@@ -215,6 +215,7 @@ export interface TradeState {
         Price: number;
         Quantity: number;
     };
+    SellableQuantity: number;
 }
 
 export interface MakerMessage {
