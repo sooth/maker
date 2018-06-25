@@ -23,11 +23,11 @@ export class Trade {
         Trade.updateProfit(trade, lastPrice);
     }
 
-    /* TODO: Need to use sellable quantity. */
     static updateProfit(trade: AppTradeState, lastPrice: number) {
         if (trade.BuyFillQuantity > 0) {
-            const profit = lastPrice * (1 - trade.Fee) - trade.EffectiveBuyPrice;
-            trade.ProfitPercent = profit / trade.EffectiveBuyPrice * 100;
+            const grossSellCost = lastPrice * trade.SellableQuantity;
+            const netSellCost = grossSellCost * (1 - trade.Fee);
+            trade.ProfitPercent = (netSellCost - trade.BuyCost) / trade.BuyCost * 100;
         }
 
         // Calculate the percent difference between our buy price and the
