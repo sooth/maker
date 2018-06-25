@@ -29,6 +29,7 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/crankykernel/maker/pkg/handlers"
 	"github.com/crankykernel/maker/pkg/maker"
+	"time"
 )
 
 func writeBadRequestError(w http.ResponseWriter) {
@@ -421,6 +422,8 @@ func limitSellHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
+		startTime := time.Now()
+
 		if trade.State.Status == maker.TradeStatusPendingSell {
 			log.Printf("Cancelling existing sell order.");
 			tradeService.CancelSell(trade)
@@ -431,6 +434,12 @@ func limitSellHandler(tradeService *TradeService) http.HandlerFunc {
 			log.WithError(err).Error("Limit sell order failed.")
 			handlers.WriteJsonResponse(w, http.StatusBadRequest, err.Error())
 		}
+
+		duration := time.Now().Sub(startTime)
+		log.WithFields(log.Fields{
+			"duration": duration,
+			"symbol": trade.State.Symbol,
+		}).Debug("Sell order posted.")
 	}
 }
 
