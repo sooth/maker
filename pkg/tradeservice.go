@@ -89,6 +89,15 @@ func (s *TradeService) tradeStreamListener() {
 	}
 }
 
+// Calculate the profit based on the trade being sold at the given price.
+// Returns a percentage value in the range of 0-100.
+func (s *TradeService) CalculateProfit(trade *maker.Trade, price float64) float64 {
+	grossSellCost := price * trade.State.SellableQuantity
+	netSellCost := grossSellCost * (1 - trade.State.Fee)
+	profit := (netSellCost - trade.State.BuyCost) / trade.State.BuyCost * 100
+	return profit
+}
+
 func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -108,22 +117,19 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 			}
 
 			trade.State.LastPrice = lastTrade.Price
-
-			lastEffectivePrice := lastTrade.Price * (1 - trade.State.Fee)
-			trade.State.ProfitPercent = (lastEffectivePrice - trade.State.EffectiveBuyPrice) /
-				trade.State.EffectiveBuyPrice * 100
+			trade.State.ProfitPercent = s.CalculateProfit(trade, lastTrade.Price)
 
 			if trade.State.StopLoss.Enabled {
-				s.checkStopLoss(trade, lastTrade)
+				s.checkStopLoss(trade)
 			}
 			if trade.State.TrailingProfit.Enabled {
-				s.checkTrailingProfit(trade, lastTrade)
+				s.checkTrailingProfit(trade, lastTrade.Price)
 			}
 		}
 	}
 }
 
-func (s *TradeService) checkStopLoss(trade *maker.Trade, lastTrade *binance.StreamAggTrade) {
+func (s *TradeService) checkStopLoss(trade *maker.Trade) {
 	switch trade.State.Status {
 	case maker.TradeStatusPendingSell:
 	case maker.TradeStatusWatching:
@@ -146,7 +152,7 @@ func (s *TradeService) checkStopLoss(trade *maker.Trade, lastTrade *binance.Stre
 	}
 }
 
-func (s *TradeService) checkTrailingProfit(trade *maker.Trade, lastTrade *binance.StreamAggTrade) {
+func (s *TradeService) checkTrailingProfit(trade *maker.Trade, price float64) {
 	switch trade.State.Status {
 	case maker.TradeStatusPendingSell:
 	case maker.TradeStatusWatching:
@@ -159,14 +165,14 @@ func (s *TradeService) checkTrailingProfit(trade *maker.Trade, lastTrade *binanc
 	}
 
 	if trade.State.TrailingProfit.Activated {
-		if lastTrade.Price > trade.State.TrailingProfit.Price {
-			trade.State.TrailingProfit.Price = lastTrade.Price
+		if price > trade.State.TrailingProfit.Price {
+			trade.State.TrailingProfit.Price = price
 			log.WithFields(log.Fields{
 				"symbol":   trade.State.Symbol,
-				"price-hi": lastTrade.Price,
+				"price-hi": price,
 			}).Info("Trailing Stop: Increasing high price.")
 		} else {
-			deviation := (lastTrade.Price - trade.State.TrailingProfit.Price) /
+			deviation := (price - trade.State.TrailingProfit.Price) /
 				trade.State.TrailingProfit.Price * 100
 			log.Printf("%s: TrailingProfit Deviation: deviation=%.8f; allowed=%.8f",
 				trade.State.Symbol, deviation, trade.State.TrailingProfit.Deviation)
@@ -431,8 +437,10 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 				trade.State.LastBuyStatus = report.CurrentOrderStatus
 			}
 			trade.AddBuyFill(report)
+			s.UpdateSellableQuantity(trade)
 		case binance.OrderStatusFilled:
 			trade.AddBuyFill(report)
+			s.UpdateSellableQuantity(trade)
 			trade.State.Status = maker.TradeStatusWatching
 			if trade.State.LimitSell.Enabled {
 				s.DoLimitSell(trade, trade.State.LimitSell.Percent)
@@ -440,10 +448,6 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
 		}
 
-		// Common.
-		if trade.State.BuyFillQuantity > 0 {
-			s.UpdateSellableQuantity(trade)
-		}
 	case binance.OrderSideSell:
 		switch report.CurrentOrderStatus {
 		case binance.OrderStatusNew:
@@ -521,7 +525,7 @@ func (s *TradeService) CloseTrade(trade *maker.Trade, status maker.TradeStatus, 
 func (s *TradeService) FixQuantityToStepSize(quantity float64, stepSize float64) float64 {
 	fixedQuantity := roundx(quantity, 1/stepSize)
 	if fixedQuantity > quantity {
-		fixedQuantity = roundx(fixedQuantity - stepSize, 1/stepSize)
+		fixedQuantity = roundx(fixedQuantity-stepSize, 1/stepSize)
 	}
 	return fixedQuantity
 }
@@ -576,30 +580,22 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		return err
 	}
 
-	price := trade.State.EffectiveBuyPrice * (1 + (percent / 100)) * (1 + trade.State.Fee)
-	fixedPrice := roundx(price, 1/symbolInfo.TickSize)
+	price := trade.State.BuyCost *
+		(1 + trade.State.Fee) * (1 + (percent / 100)) /
+		trade.State.SellableQuantity
+	price = roundx(price, 1/symbolInfo.TickSize)
 
 	tickSize := symbolInfo.TickSize
-	if fixedPrice <= trade.State.EffectiveBuyPrice {
-		newPrice := fixedPrice + tickSize
+	if price <= trade.State.EffectiveBuyPrice {
+		fixedPrice := price + tickSize
 		log.WithFields(log.Fields{
 			"tickSize":          tickSize,
 			"symbol":            trade.State.Symbol,
-			"limitSellPrice":    fixedPrice,
+			"price":             price,
 			"effectiveBuyPrice": trade.State.EffectiveBuyPrice,
-			"newPrice":          newPrice,
+			"newPrice":          fixedPrice,
 		}).Warnf("Sell price <= effective buy price, incrementing by tick size.")
-		fixedPrice = newPrice
-	}
-
-	quantity := trade.State.BuyFillQuantity
-	fixLotSizeQuantity := s.FixQuantityToStepSize(quantity, symbolInfo.StepSize)
-	if quantity != fixLotSizeQuantity {
-		log.WithFields(log.Fields{
-			"quantity":      quantity,
-			"fixedQuantity": fixLotSizeQuantity,
-		}).Info("Quantity adjusted for lot size filter.")
-		quantity = fixLotSizeQuantity
+		price = fixedPrice
 	}
 
 	clientOrderId, err := s.MakeOrderID()
@@ -610,11 +606,10 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 	s.AddClientOrderId(trade, clientOrderId, false)
 
 	log.WithFields(log.Fields{
-		"limitPrice": fmt.Sprintf("%.8f", price),
-		"fixedPrice": fmt.Sprintf("%.8f", fixedPrice),
-		"symbol":     trade.State.Symbol,
-		"tradeId":    trade.State.TradeID,
-		"quantity":   quantity,
+		"price":    fmt.Sprintf("%.8f", price),
+		"symbol":   trade.State.Symbol,
+		"tradeId":  trade.State.TradeID,
+		"quantity": trade.State.SellableQuantity,
 	}).Debugf("Posting limit sell order.")
 
 	order := binance.OrderParameters{
@@ -622,8 +617,8 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		Side:             binance.OrderSideSell,
 		Type:             binance.OrderTypeLimit,
 		TimeInForce:      binance.TimeInForceGTC,
-		Quantity:         quantity,
-		Price:            fixedPrice,
+		Quantity:         trade.State.SellableQuantity,
+		Price:            price,
 		NewClientOrderId: clientOrderId,
 	}
 	s0 := time.Now()
@@ -637,8 +632,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 	}
 	log.WithFields(log.Fields{
 		"requestDuration": d,
-		"limitPrice":      price,
-		"fixedPrice":      fixedPrice,
+		"price":           price,
 		"symbol":          trade.State.Symbol,
 		"tradeId":         trade.State.TradeID,
 	}).Info("Sell order posted.")

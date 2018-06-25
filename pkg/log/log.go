@@ -199,6 +199,20 @@ func WithFields(fields Fields) *logrus.Entry {
 	return logrus.WithFields(fields)
 }
 
+func WithField(field string, value interface{}) *logrus.Entry {
+	if logLevel == logrus.DebugLevel {
+		fields := logrus.Fields{
+			field: value,
+		}
+		if fields["_source"] == nil {
+			_, filename, line, _ := runtime.Caller(1)
+			fields["_source"] = fmt.Sprintf("%s:%d", filepath.Base(filename), line)
+		}
+		return logrus.WithFields(fields)
+	}
+	return logrus.WithField(field, value)
+}
+
 func WithError(err error) *logrus.Entry {
 	if logLevel == logrus.DebugLevel {
 		_, filename, line, _ := runtime.Caller(1)
