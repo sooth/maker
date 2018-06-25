@@ -287,7 +287,6 @@ func (s *TradeService) UpdateSellableQuantity(trade *maker.Trade) {
 	if feeAsset == "BNB" {
 		trade.State.SellableQuantity = trade.State.BuyFillQuantity
 	} else if feeAsset != "" {
-		// TODO: Only applicable to Binance.
 		stepSize, err := s.binanceExchangeInfo.GetStepSize(trade.State.Symbol)
 		if err != nil {
 			log.WithError(err).WithField("symbol", trade.State.Symbol).
@@ -565,9 +564,6 @@ func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 		NewClientOrderId: clientOrderId,
 	}
 	_, err = getBinanceRestClient().PostOrder(order)
-	if err == nil {
-		db.DbUpdateTrade(trade)
-	}
 	return err
 }
 
@@ -663,6 +659,11 @@ func (s *TradeService) UpdateTrailingProfit(trade *maker.Trade, enable bool,
 }
 
 func (s *TradeService) CancelSell(trade *maker.Trade) error {
+	log.WithFields(log.Fields{
+		"symbol":  trade.State.Symbol,
+		"tradeId": trade.State.TradeID,
+		"orderId": trade.State.SellOrderId,
+	}).Info("Cancelling sell order.")
 	log.Printf("Cancelling sell order: symbol=%s; orderId=%d",
 		trade.State.Symbol, trade.State.SellOrderId)
 	_, err := getBinanceRestClient().CancelOrder(
