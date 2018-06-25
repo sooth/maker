@@ -124,7 +124,7 @@
     </tr>
     <tr>
       <th>Price</th>
-      <td>{{trade.AverageSellPrice || "--"}}</td>
+      <td>{{trade.AverageSellPrice | number:".8-8" || "--"}}</td>
     </tr>
     <tr>
       <th>Cost</th>
