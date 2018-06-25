@@ -183,6 +183,7 @@ func DbUpdateTrade(trade *maker.Trade) error {
 	}
 	err = TxDbUpdateTradeState(tx, &trade.State)
 	if err != nil {
+		log.WithError(err).Error("Failed to update trade to DB.")
 		tx.Rollback()
 	} else {
 		tx.Commit()
