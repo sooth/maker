@@ -17,8 +17,8 @@ package handlers
 
 import (
 	"net/http"
-	"github.com/crankykernel/maker/pkg/db"
-	"github.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/pkg/log"
 )
 
 func QueryTrades(w http.ResponseWriter, r *http.Request) {

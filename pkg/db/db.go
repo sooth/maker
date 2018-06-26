@@ -20,8 +20,8 @@ import (
 	"database/sql"
 	"time"
 	"encoding/json"
-	"github.com/crankykernel/maker/pkg/log"
-	"github.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/maker"
 	"strings"
 )
 

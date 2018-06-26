@@ -16,10 +16,10 @@
 package pkg
 
 import (
-	"github.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/pkg/db"
 	"github.com/crankykernel/cryptotrader/binance"
-	"github.com/crankykernel/maker/pkg/maker"
-	"github.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/pkg/log"
 	"time"
 )
 

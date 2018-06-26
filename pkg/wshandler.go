@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"github.com/gorilla/websocket"
 	"encoding/json"
-	"github.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/log"
 	"github.com/crankykernel/cryptotrader/binance"
-	"github.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/pkg/maker"
 )
 
 // This handler implements the read-only websocket that all clients connect

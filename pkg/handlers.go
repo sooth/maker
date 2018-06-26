@@ -24,11 +24,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
-	"github.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/log"
 	"github.com/crankykernel/cryptotrader/binance"
 	"github.com/gobuffalo/packr"
-	"github.com/crankykernel/maker/pkg/handlers"
-	"github.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/pkg/handlers"
+	"gitlab.com/crankykernel/maker/pkg/maker"
 	"time"
 )
 

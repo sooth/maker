@@ -18,7 +18,7 @@ package pkg
 import "fmt"
 import (
 	"github.com/crankykernel/cryptotrader/binance"
-	"github.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/pkg/maker"
 )
 
 type BinanceBuyService struct {

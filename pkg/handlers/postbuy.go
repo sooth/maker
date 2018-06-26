@@ -15,7 +15,7 @@
 
 package handlers
 
-import "github.com/crankykernel/maker/pkg/maker"
+import "gitlab.com/crankykernel/maker/pkg/maker"
 
 type BuyOrderRequest struct {
 	Symbol                string            `json:"symbol"`

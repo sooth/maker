@@ -19,7 +19,7 @@ import (
 	"sync"
 	"github.com/crankykernel/cryptotrader/binance"
 	"strings"
-	"github.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/log"
 )
 
 type BinanceStreamManager struct {

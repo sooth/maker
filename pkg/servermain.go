@@ -21,15 +21,15 @@ import (
 	"net/http"
 	"github.com/crankykernel/cryptotrader/binance"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/crankykernel/maker/pkg/log"
-	"github.com/crankykernel/maker/pkg/config"
+	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/config"
 	"runtime"
 	"os/exec"
 	"sync"
 	"path/filepath"
 	"os"
-	"github.com/crankykernel/maker/pkg/handlers"
-	"github.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/pkg/handlers"
+	"gitlab.com/crankykernel/maker/pkg/db"
 )
 
 var ServerFlags struct {

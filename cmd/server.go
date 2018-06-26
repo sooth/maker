@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/crankykernel/maker/pkg"
+	"gitlab.com/crankykernel/maker/pkg"
 )
 
 var ServerCmd = &cobra.Command{

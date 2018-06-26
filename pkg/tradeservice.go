@@ -20,11 +20,11 @@ import (
 	"sync"
 	"math"
 	"fmt"
-	"github.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/log"
 	"time"
-	"github.com/crankykernel/maker/pkg/idgenerator"
-	"github.com/crankykernel/maker/pkg/maker"
-	"github.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/pkg/idgenerator"
+	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/pkg/db"
 )
 
 type TradeEventType string
