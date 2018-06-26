@@ -17,6 +17,7 @@ import {Component, OnInit} from '@angular/core';
 import {BinanceService} from './binance.service';
 import {Logger, LoggerService} from './logger.service';
 import {MakerService} from './maker.service';
+import {VERSION} from "../environments/version";
 
 @Component({
     selector: 'app-root',
@@ -28,6 +29,8 @@ export class AppComponent implements OnInit {
     ticker: { [key: string]: number } = {};
 
     private logger: Logger;
+
+    VERSION = VERSION;
 
     constructor(public binance: BinanceService,
                 private maker: MakerService,

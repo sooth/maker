@@ -1,5 +1,4 @@
-# Local config file.
-/maker.yaml
+src/environments/version.ts
 
 # compiled output
 /dist

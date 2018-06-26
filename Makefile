@@ -1,5 +1,4 @@
-VERSION :=	0.0.1
-VSUFFIX :=	dev
+VERSION :=	$(shell cat VERSION)
 
 CGO_ENABLED :=	1
 
@@ -19,7 +18,7 @@ install-deps:
 dist: GOOS=$(shell go env GOOS)
 dist: GOARCH=$(shell go env GOARCH)
 dist: GOEXE=$(shell go env GOEXE)
-dist: OUTDIR=maker-$(VERSION)$(VSUFFIX)-$(GOOS)-$(GOARCH)
+dist: OUTDIR=maker-$(VERSION)-$(GOOS)-$(GOARCH)
 dist: OUTBIN=maker$(GOEXE)
 dist:
 	dep ensure
