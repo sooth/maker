@@ -36,7 +36,7 @@ func savePreferencesHandler(w http.ResponseWriter, r *http.Request) {
 			"path":   r.URL.Path,
 			"method": r.Method,
 		}).WithError(err).Errorf("Failed to decode Binance configuration.")
-		writeJsonError(w, http.StatusBadRequest, err.Error())
+		handlers.WriteJsonError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -57,7 +57,7 @@ func saveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
 			"path":   r.URL.Path,
 			"method": r.Method,
 		}).WithError(err).Errorf("Failed to decode Binance configuration.")
-		writeJsonError(w, http.StatusBadRequest, err.Error())
+		handlers.WriteJsonError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -68,18 +68,18 @@ func saveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 func binanceTestHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		writeJsonError(w, http.StatusBadRequest, "failed to parse form data")
+		handlers.WriteJsonError(w, http.StatusBadRequest, "failed to parse form data")
 		return
 	}
 
 	binanceApiKey := r.FormValue("binance.api.key")
 	if binanceApiKey == "" {
-		writeJsonError(w, http.StatusBadRequest, "missing binance.api.key")
+		handlers.WriteJsonError(w, http.StatusBadRequest, "missing binance.api.key")
 		return
 	}
 	binanceApiSecret := r.FormValue("binance.api.secret")
 	if binanceApiSecret == "" {
-		writeJsonError(w, http.StatusBadRequest, "missing binance.api.secret")
+		handlers.WriteJsonError(w, http.StatusBadRequest, "missing binance.api.secret")
 		return
 	}
 

@@ -219,7 +219,8 @@
       </button>
     </div>
     <div class="col-12">
-      <div class="btn-group btn-block">
+
+      <div class="btn-group btn-block dropleft">
         <button type="button"
                 class="btn btn-primary btn-sm dropdown-toggle mb-1 btn-block"
                 data-toggle="dropdown" aria-haspopup="true"
@@ -227,53 +228,48 @@
                 aria-expanded="false">
           Sell
         </button>
-        <div class="dropdown-menu dropdown-menu-right">
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 5)">Sell@5%
-          </span>
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 1)">Sell@1%
-          </span>
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 0.3)">Sell@0.3%
-          </span>
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 0.1)">Sell@0.1%
-          </span>
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 0.05)">Sell@0.05%
-          </span>
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 0.01)">Sell@0.01%
-          </span>
-          <span class="dropdown-item"
-                (click)="limitSell(trade, 0)">Sell@0%
-          </span>
-          <div class="dropdown-divider"></div>
-          <span class="dropdown-item"
-                style="width: 200px; white-space: nowrap;">
-            <form #sellPercentForm
-                  (ngSubmit)="limitSell(trade, sellPercentInput.value)">
-              <div class="input-group form-inline">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">@</span>
-                </div>
-                <input type="number" required class="form-control"
-                       name="foo" #sellPercentInput
-                       (click)="$event.stopPropagation();">
-                <div class="input-group-append">
-                  <button type="submit"
-                          [disabled]="!sellPercentInput.value"
-                          class="btn btn-primary btn-sm">%
-                  </button>
+        <div class="dropdown-menu sell-form" style="width: 250px;">
+          <div class="px-2">
+            <form (ngSubmit)="limitSellAtPrice()">
+              <div class="form-group">
+                <label>Sell at price</label>
+                <div class="input-group">
+                  <input type="number" required class="form-control"
+                         name="sellAtPriceModelPrice"
+                         step="0.00000001"
+                         [(ngModel)]="sellAtPriceModel.price"
+                         (click)="$event.stopPropagation();">
+                  <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary">Sell</button>
+                  </div>
                 </div>
               </div>
             </form>
-          </span>
-          <div class="dropdown-divider"></div>
-          <span class="dropdown-item bg-warning"
-                (click)="marketSell(trade)">Market
-          </span>
+
+            <form (ngSubmit)="limitSellAtPercent()">
+              <div class="form-group">
+                <label>Sell at %</label>
+                <div class="input-group">
+                  <input type="number" required class="form-control"
+                         name="sellAtPercentModelPrice"
+                         step="0.1"
+                         [(ngModel)]="sellAtPercentModel.percent"
+                         (click)="$event.stopPropagation();">
+                  <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary">Sell</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <hr/>
+
+            <button type="button" class="btn btn-block btn-warning"
+                    (click)="marketSell(trade)">Market
+              Sell
+            </button>
+
+          </div>
         </div>
       </div>
     </div>

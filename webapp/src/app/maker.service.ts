@@ -126,9 +126,24 @@ export class MakerService {
         return this.binanceApi.cancelSellOrder(trade.TradeID);
     }
 
-    limitSell(trade: TradeState, percent: number) {
+    limitSellByPercent(trade: TradeState, percent: number) {
+        this.logger.log(`Posting limit sell order at ${percent.toFixed(8)}%.`);
         const params = new HttpParams().set("percent", percent.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.TradeID}/limitSell`, null, {
+        this.http.post(`/api/binance/trade/${trade.TradeID}/limitSellByPercent`, null, {
+            params: params,
+        }).subscribe((response) => {
+            if (response) {
+                this.logger.log("Limit sell response: " + JSON.stringify(response));
+            }
+        }, (error) => {
+            this.logger.log("Limit sell error: " + JSON.stringify(error));
+            this.toastr.error(error.error, "Failed to post sell order.")
+        });
+    }
+
+    limitSellByPrice(trade: TradeState, price: number) {
+        const params = new HttpParams().set("price", price.toFixed(8));
+        this.http.post(`/api/binance/trade/${trade.TradeID}/limitSellByPrice`, null, {
             params: params,
         }).subscribe((response) => {
             if (response) {

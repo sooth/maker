@@ -14,19 +14,10 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Component, EventEmitter, Input, OnInit, Output} from "@angular/core";
-import {
-    MakerService,
-    TradeMap,
-    TradeState,
-    TradeStatus
-} from "../maker.service";
+import {MakerService, TradeState, TradeStatus} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
-import {AggTrade} from '../binance-api.service';
-import {
-    AppTradeState, getRowClass,
-    toAppTradeState
-} from '../trade-table/trade-table.component';
+import {AppTradeState} from '../trade-table/trade-table.component';
 
 @Component({
     selector: "[app-trade-table-row]",
@@ -36,8 +27,6 @@ import {
 export class TradeTableRowComponent implements OnInit {
 
     TradeStatus = TradeStatus;
-
-    trades: AppTradeState[] = [];
 
     private logger: Logger = null;
 
@@ -51,6 +40,18 @@ export class TradeTableRowComponent implements OnInit {
 
     @Input() showTradeButtons: boolean = false;
 
+    sellAtPriceModel: {
+        price: number;
+    } = {
+        price: null,
+    };
+
+    sellAtPercentModel: {
+        percent: number;
+    } = {
+        percent: 0,
+    };
+
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
                 logger: LoggerService) {
@@ -58,49 +59,7 @@ export class TradeTableRowComponent implements OnInit {
     }
 
     ngOnInit() {
-    }
-
-    /**
-     * Called by parent component to update the list of trades.
-     *
-     * This variation takes a map of trades keyed by ID.
-     */
-    onTradeMapUpdate(tradeMap: TradeMap) {
-        const trades: AppTradeState[] = [];
-        for (const tradeId of Object.keys(tradeMap)) {
-            trades.push(toAppTradeState(tradeMap[tradeId]));
-        }
-        this.trades = this.sortTrades(trades);
-    }
-
-    onTradesUpdate(trades: TradeState[]) {
-        this.trades = this.sortTrades(trades.map((trade: TradeState): AppTradeState => {
-            return toAppTradeState(trade);
-        }));
-    }
-
-    private sortTrades(trades: AppTradeState[]): AppTradeState[] {
-        return trades.sort((a, b) => {
-            return new Date(b.OpenTime).getTime() -
-                    new Date(a.OpenTime).getTime();
-        });
-    }
-
-    onAggTrade(aggTrade: AggTrade) {
-        for (const trade of this.trades) {
-            if (trade.Symbol === aggTrade.symbol) {
-                switch (trade.Status) {
-                    case TradeStatus.DONE:
-                    case TradeStatus.FAILED:
-                    case TradeStatus.CANCELED:
-                        break;
-                    default:
-                        trade.LastPrice = aggTrade.price;
-                        this.updateProfit(trade, aggTrade.price);
-                        trade.__rowClassName = getRowClass(trade);
-                }
-            }
-        }
+        this.sellAtPriceModel.price = this.trade.EffectiveBuyPrice;
     }
 
     cancelBuy(trade: TradeState) {
@@ -114,8 +73,12 @@ export class TradeTableRowComponent implements OnInit {
         });
     }
 
-    limitSell(trade: TradeState, percent: number) {
-        this.maker.limitSell(trade, percent);
+    limitSellAtPercent() {
+        this.maker.limitSellByPercent(this.trade, +this.sellAtPercentModel.percent);
+    }
+
+    limitSellAtPrice() {
+        this.maker.limitSellByPrice(this.trade, +this.sellAtPriceModel.price);
     }
 
     marketSell(trade: TradeState) {
@@ -130,38 +93,4 @@ export class TradeTableRowComponent implements OnInit {
         this.maker.abandonTrade(trade);
     }
 
-    archiveAll() {
-        for (const trade of this.trades) {
-            switch (trade.Status) {
-                case TradeStatus.FAILED:
-                case TradeStatus.CANCELED:
-                case TradeStatus.DONE:
-                    this.archive(trade);
-                    break;
-            }
-        }
-    }
-
-    archiveCanceledFailed() {
-        for (const trade of this.trades) {
-            switch (trade.Status) {
-                case TradeStatus.FAILED:
-                case TradeStatus.CANCELED:
-                    this.archive(trade);
-                    break;
-            }
-        }
-    }
-
-    private updateProfit(trade: AppTradeState, lastPrice: number) {
-        if (trade.BuyFillQuantity > 0) {
-            const profit = lastPrice * (1 - trade.Fee) - trade.EffectiveBuyPrice;
-            trade.ProfitPercent = profit / trade.EffectiveBuyPrice * 100;
-        }
-
-        // Calculate the percent different between our buy price and the
-        // current price.
-        const diffFromBuyPrice = trade.BuyOrder.Price - lastPrice;
-        trade.buyPercentOffsetPercent = diffFromBuyPrice / lastPrice * 100;
-    }
 }

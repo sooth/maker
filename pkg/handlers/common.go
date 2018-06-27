@@ -18,6 +18,7 @@ package handlers
 import (
 	"net/http"
 	"encoding/json"
+	"fmt"
 )
 
 func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) error {
@@ -25,4 +26,27 @@ func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) 
 	w.WriteHeader(statusCode)
 	encoder := json.NewEncoder(w)
 	return encoder.Encode(body)
+}
+
+func WriteJsonError(w http.ResponseWriter, statusCode int, message string) error {
+	body := map[string]interface{}{
+		"error":      true,
+		"statusCode": statusCode,
+	}
+	if message != "" {
+		body["message"] = message
+	}
+	return WriteJsonResponse(w, statusCode, body)
+}
+
+func RequireFormValue(w http.ResponseWriter, r *http.Request, field string) bool {
+	if r.FormValue(field) == "" {
+		WriteJsonError(w, http.StatusBadRequest, fmt.Sprintf("%s is required", field))
+		return false
+	}
+	return true
+}
+
+func WriteBadRequestError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
 }

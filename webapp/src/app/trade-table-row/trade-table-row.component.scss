@@ -16,3 +16,10 @@ table {
 .nowrap {
   white-space: nowrap;
 }
+
+.form-group {
+  label {
+    margin-bottom: 0px;
+    font-size: small;
+  }
+}

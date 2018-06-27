@@ -442,7 +442,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			s.UpdateSellableQuantity(trade)
 			trade.State.Status = maker.TradeStatusWatching
 			if trade.State.LimitSell.Enabled {
-				s.DoLimitSell(trade, trade.State.LimitSell.Percent)
+				s.LimitSellByPercent(trade, trade.State.LimitSell.Percent)
 			}
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
 		}
@@ -567,7 +567,7 @@ func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 	return err
 }
 
-func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
+func (s *TradeService) LimitSellByPercent(trade *maker.Trade, percent float64) error {
 	symbolInfo, err := s.binanceExchangeInfo.GetSymbol(trade.State.Symbol)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
@@ -606,7 +606,7 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"symbol":   trade.State.Symbol,
 		"tradeId":  trade.State.TradeID,
 		"quantity": trade.State.SellableQuantity,
-	}).Debugf("Posting limit sell order.")
+	}).Debugf("Posting limit sell order at percent.")
 
 	order := binance.OrderParameters{
 		Symbol:           trade.State.Symbol,
@@ -631,6 +631,45 @@ func (s *TradeService) DoLimitSell(trade *maker.Trade, percent float64) error {
 		"price":           price,
 		"symbol":          trade.State.Symbol,
 		"tradeId":         trade.State.TradeID,
+	}).Info("Sell order posted.")
+	db.DbUpdateTrade(trade)
+	return nil
+}
+
+func (s *TradeService) LimitSellByPrice(trade *maker.Trade, price float64) error {
+	clientOrderId, err := s.MakeOrderID()
+	if err != nil {
+		log.Printf("ERROR: Failed to generate clientOrderId: %v", err)
+		return err
+	}
+	s.AddClientOrderId(trade, clientOrderId, false)
+
+	log.WithFields(log.Fields{
+		"price":    fmt.Sprintf("%.8f", price),
+		"symbol":   trade.State.Symbol,
+		"tradeId":  trade.State.TradeID,
+		"quantity": trade.State.SellableQuantity,
+	}).Debugf("Posting limit sell order at price.")
+
+	order := binance.OrderParameters{
+		Symbol:           trade.State.Symbol,
+		Side:             binance.OrderSideSell,
+		Type:             binance.OrderTypeLimit,
+		TimeInForce:      binance.TimeInForceGTC,
+		Quantity:         trade.State.SellableQuantity,
+		Price:            price,
+		NewClientOrderId: clientOrderId,
+	}
+	_, err = getBinanceRestClient().PostOrder(order)
+	if err != nil {
+		log.WithFields(log.Fields{
+		}).WithError(err).Error("Failed to send sell order.")
+		return err
+	}
+	log.WithFields(log.Fields{
+		"price":   price,
+		"symbol":  trade.State.Symbol,
+		"tradeId": trade.State.TradeID,
 	}).Info("Sell order posted.")
 	db.DbUpdateTrade(trade)
 	return nil

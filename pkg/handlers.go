@@ -32,27 +32,12 @@ import (
 	"time"
 )
 
-func writeBadRequestError(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusBadRequest)
-}
-
-func writeJsonError(w http.ResponseWriter, statusCode int, message string) error {
-	body := map[string]interface{}{
-		"error":      true,
-		"statusCode": statusCode,
-	}
-	if message != "" {
-		body["message"] = message
-	}
-	return handlers.WriteJsonResponse(w, statusCode, body)
-}
-
 func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		tradeId := vars["tradeId"]
 		if tradeId == "" {
-			writeJsonError(w, http.StatusBadRequest, "tradeId required")
+			handlers.WriteJsonError(w, http.StatusBadRequest, "tradeId required")
 			return
 		}
 
@@ -64,14 +49,14 @@ func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
 		if trade == nil {
 			log.WithFields(logFields).
 				Warn("Failed to archive trade, tradeId not found.")
-			writeJsonError(w, http.StatusNotFound, "trade not found")
+			handlers.WriteJsonError(w, http.StatusNotFound, "trade not found")
 			return
 		}
 
 		if err := tradeService.ArchiveTrade(trade); err != nil {
 			log.WithFields(logFields).
 				WithError(err).Error("Failed to archive trade.")
-			writeJsonError(w, http.StatusInternalServerError, err.Error())
+			handlers.WriteJsonError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -84,7 +69,7 @@ func abandonTradeHandler(tradeService *TradeService) http.HandlerFunc {
 		vars := mux.Vars(r)
 		tradeId := vars["tradeId"]
 		if tradeId == "" {
-			writeJsonError(w, http.StatusBadRequest, "tradeId required")
+			handlers.WriteJsonError(w, http.StatusBadRequest, "tradeId required")
 			return
 		}
 
@@ -96,7 +81,7 @@ func abandonTradeHandler(tradeService *TradeService) http.HandlerFunc {
 		if trade == nil {
 			log.WithFields(logFields).
 				Warn("Failed to abandon trade, tradeId not found.")
-			writeJsonError(w, http.StatusNotFound, "trade not found")
+			handlers.WriteJsonError(w, http.StatusNotFound, "trade not found")
 			return
 		}
 
@@ -110,7 +95,7 @@ func updateTradeStopLossSettingsHandler(tradeService *TradeService) http.Handler
 		var err error
 
 		if err = r.ParseForm(); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
@@ -121,23 +106,23 @@ func updateTradeStopLossSettingsHandler(tradeService *TradeService) http.Handler
 		vars := mux.Vars(r)
 		tradeId = vars["tradeId"]
 		if tradeId == "" {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		if enable, err = strconv.ParseBool(r.FormValue("enable")); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 		if percent, err = strconv.ParseFloat(r.FormValue("percent"), 64); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		trade := tradeService.FindTradeByLocalID(tradeId)
 		if trade == nil {
 			log.Printf("Failed to find trade with ID %s.", tradeId)
-			writeJsonError(w, http.StatusNotFound, "")
+			handlers.WriteJsonError(w, http.StatusNotFound, "")
 		}
 
 		log.Printf("Updating stop loss for trade %s: enable=%v; percent=%v",
@@ -151,7 +136,7 @@ func updateTradeTrailingProfitSettingsHandler(tradeService *TradeService) http.H
 		var err error
 
 		if err = r.ParseForm(); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
@@ -163,27 +148,27 @@ func updateTradeTrailingProfitSettingsHandler(tradeService *TradeService) http.H
 		vars := mux.Vars(r)
 		tradeId = vars["tradeId"]
 		if tradeId == "" {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		if enable, err = strconv.ParseBool(r.FormValue("enable")); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 		if percent, err = strconv.ParseFloat(r.FormValue("percent"), 64); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 		if deviation, err = strconv.ParseFloat(r.FormValue("deviation"), 64); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		trade := tradeService.FindTradeByLocalID(tradeId)
 		if trade == nil {
 			log.Printf("Failed to find trade with ID %s.", tradeId)
-			writeJsonError(w, http.StatusNotFound, "")
+			handlers.WriteJsonError(w, http.StatusNotFound, "")
 		}
 
 		tradeService.UpdateTrailingProfit(trade, enable, percent, deviation)
@@ -193,13 +178,13 @@ func updateTradeTrailingProfitSettingsHandler(tradeService *TradeService) http.H
 func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		tradeId := r.FormValue("trade_id")
 		if tradeId == "" {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 		}
 
 		trade := tradeService.FindTradeByLocalID(tradeId)
@@ -207,7 +192,7 @@ func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			log.WithFields(log.Fields{
 				"tradeId": tradeId,
 			}).Warnf("Failed to cancel buy order. Trade ID not found.")
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
@@ -233,7 +218,7 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 		tradeId := r.FormValue("trade_id")
 
 		if tradeId == "" {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
@@ -242,7 +227,7 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 			log.WithFields(log.Fields{
 				"tradeId": tradeId,
 			}).Warnf("Failed to cancel sell order. No trade found for ID.")
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
@@ -260,7 +245,7 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 				"tradeId":     tradeId,
 				"sellOrderId": trade.State.SellOrderId,
 			}).Error("Failed to cancel sell order.")
-			writeJsonError(w, http.StatusBadRequest,
+			handlers.WriteJsonError(w, http.StatusBadRequest,
 				fmt.Sprintf("Failed to cancel sell order: %s", string(err.Error())))
 			return
 		}
@@ -283,7 +268,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&requestBody); err != nil {
 			log.Printf("error: failed to decode request body: %v", err)
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
@@ -293,10 +278,10 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		case maker.PriceSourceBestBid:
 		case maker.PriceSourceBestAsk:
 		case "":
-			writeJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
+			handlers.WriteJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
 			return
 		default:
-			writeJsonError(w, http.StatusBadRequest,
+			handlers.WriteJsonError(w, http.StatusBadRequest,
 				fmt.Sprintf("invalid value for priceSource: %v", requestBody.PriceSource))
 			return
 		}
@@ -307,7 +292,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		orderId, err := tradeService.MakeOrderID()
 		if err != nil {
 			log.WithError(err).Errorf("Failed to create order ID.")
-			writeJsonError(w, http.StatusInternalServerError, err.Error())
+			handlers.WriteJsonError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		params.NewClientOrderId = orderId
@@ -324,7 +309,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 				"priceSource": requestBody.PriceSource,
 				"symbol":      params.Symbol,
 			}).Error("Failed to get buy price.")
-			writeJsonError(w, http.StatusInternalServerError,
+			handlers.WriteJsonError(w, http.StatusInternalServerError,
 				fmt.Sprintf("Failed to get price: %v", err))
 			return
 		}
@@ -396,29 +381,29 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func limitSellHandler(tradeService *TradeService) http.HandlerFunc {
+func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		if err := r.ParseForm(); err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		tradeId := vars["tradeId"]
 		if tradeId == "" {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		percent, err := strconv.ParseFloat(r.FormValue("percent"), 64)
 		if err != nil {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		trade := tradeService.FindTradeByLocalID(tradeId)
 		if trade == nil {
-			writeJsonError(w, http.StatusNotFound, "")
+			handlers.WriteJsonError(w, http.StatusNotFound, "")
 			return
 		}
 
@@ -429,16 +414,69 @@ func limitSellHandler(tradeService *TradeService) http.HandlerFunc {
 			tradeService.CancelSell(trade)
 		}
 
-		err = tradeService.DoLimitSell(trade, percent)
+		err = tradeService.LimitSellByPercent(trade, percent)
 		if err != nil {
 			log.WithError(err).Error("Limit sell order failed.")
 			handlers.WriteJsonResponse(w, http.StatusBadRequest, err.Error())
 		}
 
-		duration := time.Now().Sub(startTime)
+		duration := time.Since(startTime)
 		log.WithFields(log.Fields{
 			"duration": duration,
-			"symbol": trade.State.Symbol,
+			"symbol":   trade.State.Symbol,
+		}).Debug("Sell order posted.")
+	}
+}
+
+func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		if err := r.ParseForm(); err != nil {
+			handlers.WriteBadRequestError(w)
+			return
+		}
+
+		tradeId := vars["tradeId"]
+		if tradeId == "" {
+			handlers.WriteBadRequestError(w)
+			return
+		}
+
+		if !handlers.RequireFormValue(w, r, "price") {
+			return
+		}
+
+		price, err := strconv.ParseFloat(r.FormValue("price"), 64)
+		if err != nil {
+			handlers.WriteJsonError(w, http.StatusBadRequest,
+				fmt.Sprintf("failed to parse price: %s: %v",
+					r.FormValue("price"), err))
+			return
+		}
+
+		trade := tradeService.FindTradeByLocalID(tradeId)
+		if trade == nil {
+			handlers.WriteJsonError(w, http.StatusNotFound, "")
+			return
+		}
+
+		startTime := time.Now()
+
+		if trade.State.Status == maker.TradeStatusPendingSell {
+			log.Printf("Cancelling existing sell order.");
+			tradeService.CancelSell(trade)
+		}
+
+		err = tradeService.LimitSellByPrice(trade, price)
+		if err != nil {
+			log.WithError(err).Error("Limit sell order failed.")
+			handlers.WriteJsonResponse(w, http.StatusBadRequest, err.Error())
+		}
+
+		duration := time.Since(startTime)
+		log.WithFields(log.Fields{
+			"duration": duration,
+			"symbol":   trade.State.Symbol,
 		}).Debug("Sell order posted.")
 	}
 }
@@ -449,13 +487,13 @@ func marketSellHandler(tradeService *TradeService) http.HandlerFunc {
 
 		tradeId := vars["tradeId"]
 		if tradeId == "" {
-			writeBadRequestError(w)
+			handlers.WriteBadRequestError(w)
 			return
 		}
 
 		trade := tradeService.FindTradeByLocalID(tradeId)
 		if trade == nil {
-			writeJsonError(w, http.StatusNotFound, "")
+			handlers.WriteJsonError(w, http.StatusNotFound, "")
 			return
 		}
 
@@ -466,7 +504,7 @@ func marketSellHandler(tradeService *TradeService) http.HandlerFunc {
 
 		err := tradeService.MarketSell(trade, false)
 		if err != nil {
-			writeJsonError(w, http.StatusInternalServerError, err.Error())
+			handlers.WriteJsonError(w, http.StatusInternalServerError, err.Error())
 		}
 	}
 }
