@@ -43,7 +43,10 @@ AGPL v3.
 
 ## ChangeLog
 
-### unreleased
+### 0.1.1
+
+Tagging what has been done as 0.1.1 as its low risk modifications, and
+the 0.1.0 binary build was broken.
 
 #### Added
 - Allow a trade to be sold at a fixed
