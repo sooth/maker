@@ -220,7 +220,7 @@
     </div>
     <div class="col-12">
 
-      <div class="btn-group btn-block dropleft">
+      <div [id]="'sellDropdown-' + trade.TradeID" class="btn-group btn-block dropleft">
         <button type="button"
                 class="btn btn-primary btn-sm dropdown-toggle mb-1 btn-block"
                 data-toggle="dropdown" aria-haspopup="true"
@@ -228,7 +228,7 @@
                 aria-expanded="false">
           Sell
         </button>
-        <div class="dropdown-menu sell-form" style="width: 250px;">
+        <div class="dropdown-menu" style="width: 250px;">
           <div class="px-2">
             <form (ngSubmit)="limitSellAtPrice()">
               <div class="form-group">
@@ -256,6 +256,20 @@
                          [(ngModel)]="sellAtPercentModel.percent"
                          (click)="$event.stopPropagation();">
                   <div class="input-group-append">
+                    <select class="custom-select form-control-sm"
+                            #percentSelector
+                            style="border-bottom-right-radius: 0; border-top-right-radius: 0;"
+                            (change)="sellAtPercentModel.percent = +percentSelector.value; percentSelector.value = '%'"
+                            (click)="$event.stopPropagation();"
+                    >
+                      <option>%</option>
+                      <option>0</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                    </select>
                     <button type="submit" class="btn btn-primary">Sell</button>
                   </div>
                 </div>
@@ -264,8 +278,12 @@
 
             <hr/>
 
-            <button type="button" class="btn btn-block btn-warning"
-                    (click)="marketSell(trade)">Market
+            <button type="button" class="btn btn-block"
+                    (click)="onMarketSellClick($event)"
+                    [ngClass]="{'btn-warning': marketSellState == MARKET_SELL_STATE.INITIAL,
+                                'btn-danger': marketSellState == MARKET_SELL_STATE.CONFIRM}"
+            >{{marketSellState == MARKET_SELL_STATE.CONFIRM && "Confirm " ||
+              ""}}Market
               Sell
             </button>
 

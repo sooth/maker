@@ -13,11 +13,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Component, EventEmitter, Input, OnInit, Output} from "@angular/core";
+import {
+    AfterViewInit,
+    Component,
+    Input,
+    OnDestroy,
+    OnInit
+} from "@angular/core";
 import {MakerService, TradeState, TradeStatus} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
 import {AppTradeState} from '../trade-table/trade-table.component';
+import * as $ from "jquery";
 
 interface SellAtPriceModel {
     price: number;
@@ -61,16 +68,23 @@ function getSellAtPriceModel(tradeId: string, defaultPrice: number = 0): SellAtP
     return sellAtPriceModels[tradeId];
 }
 
+enum MARKET_SELL_STATE {
+    INITIAL = "INITIAL",
+    CONFIRM = "CONFIRM",
+}
+
 @Component({
     selector: "[app-trade-table-row]",
     templateUrl: "./trade-table-row.component.html",
     styleUrls: ["./trade-table-row.component.scss"]
 })
-export class TradeTableRowComponent implements OnInit {
+export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit {
+
+    MARKET_SELL_STATE = MARKET_SELL_STATE;
 
     TradeStatus = TradeStatus;
 
-    private logger: Logger = null;
+    logger: Logger = null;
 
     @Input("trade") trade: AppTradeState = null;
 
@@ -80,6 +94,10 @@ export class TradeTableRowComponent implements OnInit {
 
     sellAtPriceModel: SellAtPriceModel = null;
     sellAtPercentModel: SellAtPercentModel = null;
+
+    marketSellState = MARKET_SELL_STATE.INITIAL;
+
+    destroyHooks: any[] = [];
 
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
@@ -93,12 +111,28 @@ export class TradeTableRowComponent implements OnInit {
                 this.trade.EffectiveBuyPrice);
     }
 
-    cancelBuy(trade: TradeState) {
-        this.maker.cancelBuy(trade);
+    ngOnDestroy() {
+        for (const hook of this.destroyHooks) {
+            hook();
+        }
     }
 
-    cancelSell(trade: TradeState) {
-        this.maker.cancelSell(trade).subscribe(() => {
+    ngAfterViewInit() {
+        let sellDropdownHandler = $("#sellDropdown-" + this.trade.TradeID).on("hidden.bs.dropdown", () => {
+            // Reset market sell confirmation state.
+            this.marketSellState = MARKET_SELL_STATE.INITIAL;
+        });
+        this.destroyHooks.push(() => {
+            sellDropdownHandler.off();
+        });
+    }
+
+    cancelBuy() {
+        this.maker.cancelBuy(this.trade);
+    }
+
+    cancelSell() {
+        this.maker.cancelSell(this.trade).subscribe(() => {
         }, (error) => {
             this.toastr.error(`Failed to cancel sell order: ${error.error.message}`);
         });
@@ -112,8 +146,13 @@ export class TradeTableRowComponent implements OnInit {
         this.maker.limitSellByPrice(this.trade, +this.sellAtPriceModel.price);
     }
 
-    marketSell(trade: TradeState) {
-        this.maker.marketSell(trade);
+    onMarketSellClick($event: any) {
+        if (this.marketSellState == MARKET_SELL_STATE.INITIAL) {
+            this.marketSellState = MARKET_SELL_STATE.CONFIRM;
+            $event.stopPropagation();
+        } else {
+            this.maker.marketSell(this.trade);
+        }
     }
 
     archive(trade: TradeState) {
