@@ -20,7 +20,7 @@ import {
     OnDestroy,
     OnInit
 } from "@angular/core";
-import {MakerService, TradeState, TradeStatus} from "../maker.service";
+import {MakerService, TradeStatus} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
 import {AppTradeState} from '../trade-table/trade-table.component';
@@ -97,6 +97,8 @@ export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit 
 
     marketSellState = MARKET_SELL_STATE.INITIAL;
 
+    abandonState = 0;
+
     destroyHooks: any[] = [];
 
     constructor(public maker: MakerService,
@@ -121,6 +123,9 @@ export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit 
         let sellDropdownHandler = $("#sellDropdown-" + this.trade.TradeID).on("hidden.bs.dropdown", () => {
             // Reset market sell confirmation state.
             this.marketSellState = MARKET_SELL_STATE.INITIAL;
+
+            // Reset abandon state.
+            this.abandonState = 0;
         });
         this.destroyHooks.push(() => {
             sellDropdownHandler.off();
@@ -155,12 +160,12 @@ export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit 
         }
     }
 
-    archive(trade: TradeState) {
-        this.maker.archiveTrade(trade);
+    archive() {
+        this.maker.archiveTrade(this.trade);
     }
 
-    abandon(trade: TradeState) {
-        this.maker.abandonTrade(trade);
+    abandon() {
+        this.maker.abandonTrade(this.trade);
     }
 
 }

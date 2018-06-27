@@ -220,7 +220,8 @@
     </div>
     <div class="col-12">
 
-      <div [id]="'sellDropdown-' + trade.TradeID" class="btn-group btn-block dropleft">
+      <div [id]="'sellDropdown-' + trade.TradeID"
+           class="btn-group btn-block dropleft">
         <button type="button"
                 class="btn btn-primary btn-sm dropdown-toggle mb-1 btn-block"
                 data-toggle="dropdown" aria-haspopup="true"
@@ -228,7 +229,7 @@
                 aria-expanded="false">
           Sell
         </button>
-        <div class="dropdown-menu" style="width: 250px;">
+        <div class="dropdown-menu sell-dropdown" style="width: 250px;">
           <div class="px-2">
             <form (ngSubmit)="limitSellAtPrice()">
               <div class="form-group">
@@ -312,13 +313,20 @@
     </div>
 
     <div class="col-12">
-      <button type="button"
-              title="Stop Tracking Order"
-              (click)="abandon(trade)"
-              [disabled]="!trade.__canAbandon"
-              class="btn btn-primary btn-sm btn-block mb-1">
-        Abandon
-      </button>
+      <div class="dropdown dropup">
+        <button class="btn btn-primary btn-sm btn-block dropdown-toggle"
+                type="button"
+                data-toggle="dropdown"
+                [disabled]="!trade.__canAbandon"
+                aria-haspopup="true" aria-expanded="false">
+          Abandon
+        </button>
+        <div class="dropdown-menu">
+          <a class="dropdown-item" href="javascript:void(0);"
+             (click)="abandon()">Yes, Abandon trade.</a>
+          <a class="dropdown-item" href="javascript:void(0);">Cancel</a>
+        </div>
+      </div>
     </div>
 
   </div>
