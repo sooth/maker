@@ -45,6 +45,11 @@ AGPL v3.
 
 ### unreleased
 
+#### Added
+- Allow a trade to be sold at a fixed
+  price. https://gitlab.com/crankykernel/maker/issues/14
+- Require confirmation to market sell.
+
 [Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.1.0...master)
 
 [Download](https://gitlab.com/crankykernel/maker/-/jobs/artifacts/master/browse?job=build)
