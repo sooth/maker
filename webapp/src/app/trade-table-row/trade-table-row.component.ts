@@ -19,6 +19,48 @@ import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
 import {AppTradeState} from '../trade-table/trade-table.component';
 
+interface SellAtPriceModel {
+    price: number;
+}
+
+interface SellAtPercentModel {
+    percent: number;
+}
+
+const sellAtPercentModels: {
+    [key: string]: SellAtPercentModel
+} = {};
+
+function getSellAtPercentModel(tradeId: string): SellAtPercentModel {
+    if (sellAtPercentModels.hasOwnProperty(tradeId)) {
+        return sellAtPercentModels[tradeId];
+    }
+    const model: SellAtPercentModel = {
+        percent: 0,
+    };
+    sellAtPercentModels[tradeId] = model;
+    return sellAtPercentModels[tradeId];
+}
+
+const sellAtPriceModels: {
+    [key: string]: SellAtPriceModel
+} = {};
+
+function getSellAtPriceModel(tradeId: string, defaultPrice: number = 0): SellAtPriceModel {
+    if (sellAtPriceModels.hasOwnProperty(tradeId)) {
+        const model = sellAtPriceModels[tradeId];
+        if (!model.price) {
+            model.price = defaultPrice;
+        }
+        return model;
+    }
+    const model: SellAtPriceModel = {
+        price: defaultPrice,
+    };
+    sellAtPriceModels[tradeId] = model;
+    return sellAtPriceModels[tradeId];
+}
+
 @Component({
     selector: "[app-trade-table-row]",
     templateUrl: "./trade-table-row.component.html",
@@ -30,27 +72,14 @@ export class TradeTableRowComponent implements OnInit {
 
     private logger: Logger = null;
 
-    showJson = false;
-
     @Input("trade") trade: AppTradeState = null;
-
-    @Output() symbolClickHandler: EventEmitter<any> = new EventEmitter();
 
     @Input() showArchiveButtons: boolean = true;
 
     @Input() showTradeButtons: boolean = false;
 
-    sellAtPriceModel: {
-        price: number;
-    } = {
-        price: null,
-    };
-
-    sellAtPercentModel: {
-        percent: number;
-    } = {
-        percent: 0,
-    };
+    sellAtPriceModel: SellAtPriceModel = null;
+    sellAtPercentModel: SellAtPercentModel = null;
 
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
@@ -59,7 +88,9 @@ export class TradeTableRowComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.sellAtPriceModel.price = this.trade.EffectiveBuyPrice;
+        this.sellAtPercentModel = getSellAtPercentModel(this.trade.TradeID);
+        this.sellAtPriceModel = getSellAtPriceModel(this.trade.TradeID,
+                this.trade.EffectiveBuyPrice);
     }
 
     cancelBuy(trade: TradeState) {
