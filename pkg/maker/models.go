@@ -21,5 +21,5 @@ const (
 	PriceSourceLast    PriceSource = "LAST_PRICE";
 	PriceSourceBestBid PriceSource = "BEST_BID";
 	PriceSourceBestAsk PriceSource = "BEST_ASK";
+	PriceSourceManual  PriceSource = "MANUAL";
 )
-

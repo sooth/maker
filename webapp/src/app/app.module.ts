@@ -32,6 +32,7 @@ import {ConfigComponent} from "./config/config.component";
 import * as fontawesome from "@fortawesome/fontawesome";
 import * as faCog from "@fortawesome/fontawesome-free-solid/faCog";
 import * as faQuestion from "@fortawesome/fontawesome-free-solid/faQuestion";
+import * as faSyncAlt from "@fortawesome/fontawesome-free-solid/faSyncAlt";
 import {HttpClientModule} from "@angular/common/http";
 import {HistoryComponent} from './history/history.component';
 
@@ -49,6 +50,7 @@ import {TrailingProfitFormComponent} from './trailingprofitform/trailing-profit-
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
+fontawesome.library.add(faSyncAlt);
 
 @NgModule({
     declarations: [

@@ -18,16 +18,17 @@ package handlers
 import "gitlab.com/crankykernel/maker/pkg/maker"
 
 type BuyOrderRequest struct {
-	Symbol                string            `json:"symbol"`
-	Quantity              float64           `json:"quantity"`
-	PriceSource           maker.PriceSource `json:"priceSource"`
-	LimitSellEnabled      bool              `json:"limitSellEnabled"`
-	LimitSellPercent      float64           `json:"limitSellPercent"`
-	StopLossEnabled       bool              `json:"stopLossEnabled"`
-	StopLossPercent       float64           `json:"stopLossPercent"`
+	Symbol                  string            `json:"symbol"`
+	Quantity                float64           `json:"quantity"`
+	PriceSource             maker.PriceSource `json:"priceSource"`
+	LimitSellEnabled        bool              `json:"limitSellEnabled"`
+	LimitSellPercent        float64           `json:"limitSellPercent"`
+	StopLossEnabled         bool              `json:"stopLossEnabled"`
+	StopLossPercent         float64           `json:"stopLossPercent"`
 	TrailingProfitEnabled   bool              `json:"trailingProfitEnabled"`
 	TrailingProfitPercent   float64           `json:"trailingProfitPercent"`
 	TrailingProfitDeviation float64           `json:"trailingProfitDeviation"`
+	Price                   float64           `json:"price"`
 }
 
 type BuyOrderResponse struct {

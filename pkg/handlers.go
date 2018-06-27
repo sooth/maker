@@ -277,6 +277,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		case maker.PriceSourceLast:
 		case maker.PriceSourceBestBid:
 		case maker.PriceSourceBestAsk:
+		case maker.PriceSourceManual:
 		case "":
 			handlers.WriteJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
 			return
@@ -303,15 +304,21 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 		buyService := NewBinanceBuyService()
 
-		params.Price, err = buyService.GetPrice(params.Symbol, requestBody.PriceSource)
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"priceSource": requestBody.PriceSource,
-				"symbol":      params.Symbol,
-			}).Error("Failed to get buy price.")
-			handlers.WriteJsonError(w, http.StatusInternalServerError,
-				fmt.Sprintf("Failed to get price: %v", err))
-			return
+		switch requestBody.PriceSource {
+		case maker.PriceSourceManual:
+			log.Infof("Using manual price of %v", requestBody.Price)
+			params.Price = requestBody.Price
+		default:
+			params.Price, err = buyService.GetPrice(params.Symbol, requestBody.PriceSource)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"priceSource": requestBody.PriceSource,
+					"symbol":      params.Symbol,
+				}).Error("Failed to get buy price.")
+				handlers.WriteJsonError(w, http.StatusInternalServerError,
+					fmt.Sprintf("Failed to get price: %v", err))
+				return
+			}
 		}
 
 		log.WithFields(log.Fields{

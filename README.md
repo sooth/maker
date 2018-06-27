@@ -50,6 +50,8 @@ AGPL v3.
   price. https://gitlab.com/crankykernel/maker/issues/14
 - Require confirmation to market sell.
 - Require confirmation to abandon a trade.
+- Allow a trade to be bought at a fixed
+  price. https://gitlab.com/crankykernel/maker/issues/14
 
 [Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.1.0...master)
 

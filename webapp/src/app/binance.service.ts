@@ -46,6 +46,8 @@ export enum PriceSource {
 
     /** The best ask is used. Queries the REST API. */
     BEST_ASK = "BEST_ASK",
+
+    MANUAL = "MANUAL",
 }
 
 export interface SymbolMap {

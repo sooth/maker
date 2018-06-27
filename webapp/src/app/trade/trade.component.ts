@@ -101,10 +101,12 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         amount: number;
         quoteAmount: number;
         buyLimitPercent: number;
+        manualPrice: string;
     } = {
         amount: null,
         quoteAmount: null,
         buyLimitPercent: null,
+        manualPrice: null,
     };
 
     balances: { [key: string]: Balance } = {};
@@ -118,6 +120,8 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     private logger: Logger = null;
 
     trailingProfitForm: FormGroup;
+
+    priceStepSize: number = 0.00000001;
 
     @ViewChild(TradeTableComponent) private tradeTable: TradeTableComponent;
 
@@ -301,7 +305,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 .subscribe((ticker: PriceTicker) => {
                     this.binance.lastPriceMap[ticker.symbol] = ticker.price;
                     this.updateOrderFormAssetAmount();
+                    this.orderForm.manualPrice = ticker.price.toFixed(8);
                 });
+        this.priceStepSize = this.binance.symbolMap[symbol].tickSize;
 
         this.api.getBookTicker(symbol)
                 .subscribe((ticker) => {
@@ -326,6 +332,10 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 });
 
         this.saveState();
+    }
+
+    syncManualPrice() {
+        this.orderForm.manualPrice = this.binance.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
     }
 
     private onAggTrade(trade: AggTrade) {
@@ -362,6 +372,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             trailingProfitEnabled: this.orderFormSettings.trailingProfitEnabled,
             trailingProfitPercent: this.orderFormSettings.trailingProfitPercent,
             trailingProfitDeviation: this.orderFormSettings.trailingProfitDeviation,
+            price: +this.orderForm.manualPrice,
         };
         this.binance.postBuyOrder(options).subscribe(() => {
         }, (error) => {
@@ -369,5 +380,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             console.log(JSON.stringify(error));
             this.toastr.error(error.error.message, "Fail to make order");
         });
+    }
+
+    onManualPriceInput() {
+        this.orderForm.manualPrice = (+this.orderForm.manualPrice).toFixed(8)
     }
 }
