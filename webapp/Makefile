@@ -13,3 +13,9 @@ serve: ./src/environments/version.ts
 ./src/environments/version.ts: ../VERSION ./src/environments/version.ts.in
 	sed -e "s#@version@#$(VERSION)#g" ./src/environments/version.ts.in > \
 		./src/environments/version.ts
+
+clean:
+	rm -rf dist
+
+distclean:
+	rm -rf dist node_modules
