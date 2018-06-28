@@ -528,23 +528,7 @@ func (s *TradeService) FixQuantityToStepSize(quantity float64, stepSize float64)
 }
 
 func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
-	symbolInfo, err := s.binanceExchangeInfo.GetSymbol(trade.State.Symbol)
-	if err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"symbol": trade.State.Symbol,
-		}).Error("Failed to get info for symbol.")
-		return err
-	}
-
-	quantity := trade.State.BuyFillQuantity
-	fixLotSizeQuantity := s.FixQuantityToStepSize(quantity, symbolInfo.StepSize)
-	if quantity != fixLotSizeQuantity {
-		log.WithFields(log.Fields{
-			"quantity":      quantity,
-			"fixedQuantity": fixLotSizeQuantity,
-		}).Info("Quantity adjusted for lot size filter.")
-		quantity = fixLotSizeQuantity
-	}
+	quantity := trade.State.SellableQuantity - trade.State.SellFillQuantity
 
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
@@ -553,6 +537,12 @@ func (s *TradeService) MarketSell(trade *maker.Trade, locked bool) error {
 	}
 
 	s.AddClientOrderId(trade, clientOrderId, locked)
+
+	log.WithFields(log.Fields{
+		"symbol":   trade.State.Symbol,
+		"quantity": quantity,
+		"tradeId":  trade.State.TradeID,
+	}).Info("Posting market sell order.")
 
 	order := binance.OrderParameters{
 		Symbol:           trade.State.Symbol,
@@ -599,11 +589,13 @@ func (s *TradeService) LimitSellByPercent(trade *maker.Trade, percent float64) e
 	}
 	s.AddClientOrderId(trade, clientOrderId, false)
 
+	quantity := trade.State.SellableQuantity - trade.State.SellFillQuantity
+
 	log.WithFields(log.Fields{
 		"price":    fmt.Sprintf("%.8f", price),
 		"symbol":   trade.State.Symbol,
 		"tradeId":  trade.State.TradeID,
-		"quantity": trade.State.SellableQuantity,
+		"quantity": quantity,
 	}).Debugf("Posting limit sell order at percent.")
 
 	order := binance.OrderParameters{
@@ -611,7 +603,7 @@ func (s *TradeService) LimitSellByPercent(trade *maker.Trade, percent float64) e
 		Side:             binance.OrderSideSell,
 		Type:             binance.OrderTypeLimit,
 		TimeInForce:      binance.TimeInForceGTC,
-		Quantity:         trade.State.SellableQuantity,
+		Quantity:         quantity,
 		Price:            price,
 		NewClientOrderId: clientOrderId,
 	}
