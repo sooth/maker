@@ -386,16 +386,14 @@ func (s *TradeService) FindTradeForReport(report binance.StreamExecutionReport) 
 	return nil
 }
 
+// Note: Be sure to process reports even after a fill, as sometimes partial
+//       fills will be received after the fill report.
 func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	report := event.ExecutionReport
 
 	trade := s.FindTradeForReport(report)
 	if trade == nil {
 		log.Errorf("Failed to find trade for execution report: %s", log.ToJson(report))
-		return
-	}
-
-	if trade.IsDone() {
 		return
 	}
 
