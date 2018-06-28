@@ -301,7 +301,7 @@
                 <button type="button"
                         class="wrapper-button"
                         (click)="orderFormSettings.limitSellEnabled = !orderFormSettings.limitSellEnabled; saveState()">
-                  <div class="form-check">
+                  <div class="form-check" title="Place limit order on buy execution.">
                     <input class="form-check-input" type="checkbox"
                            (click)="$event.stopPropagation(); saveState();"
                            [(ngModel)]="orderFormSettings.limitSellEnabled">
