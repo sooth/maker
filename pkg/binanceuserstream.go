@@ -18,7 +18,7 @@ package pkg
 import (
 	"sync"
 	"time"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"github.com/gorilla/websocket"
 	"strings"
 	"encoding/json"

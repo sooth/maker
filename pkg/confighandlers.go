@@ -17,7 +17,7 @@ package pkg
 
 import (
 	"net/http"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/pkg/log"
 	"gitlab.com/crankykernel/maker/pkg/config"
 	"encoding/json"

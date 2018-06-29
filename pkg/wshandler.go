@@ -20,7 +20,7 @@ import (
 	"github.com/gorilla/websocket"
 	"encoding/json"
 	"gitlab.com/crankykernel/maker/pkg/log"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/pkg/maker"
 )
 

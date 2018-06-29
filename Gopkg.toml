@@ -27,7 +27,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/crankykernel/cryptotrader"
+  name = "gitlab.com/crankykernel/cryptotrader"
 
 [[constraint]]
   name = "github.com/gorilla/mux"

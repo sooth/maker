@@ -17,7 +17,7 @@ package pkg
 
 import "fmt"
 import (
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/pkg/maker"
 )
 

@@ -18,7 +18,7 @@ package maker
 import (
 	"time"
 	"math"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 )
 
 const TRADE_STATE_VERSION = 1

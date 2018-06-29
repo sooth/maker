@@ -17,7 +17,7 @@ package maker
 
 import (
 	"time"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 )
 
 type TradeStateV0 struct {

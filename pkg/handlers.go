@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 	"gitlab.com/crankykernel/maker/pkg/log"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"github.com/gobuffalo/packr"
 	"gitlab.com/crankykernel/maker/pkg/handlers"
 	"gitlab.com/crankykernel/maker/pkg/maker"

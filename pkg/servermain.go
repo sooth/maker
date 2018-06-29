@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
-	"github.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	_ "github.com/mattn/go-sqlite3"
 	"gitlab.com/crankykernel/maker/pkg/log"
 	"gitlab.com/crankykernel/maker/pkg/config"

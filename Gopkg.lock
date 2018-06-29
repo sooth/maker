@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/crankykernel/cryptotrader"
-  packages = ["binance"]
-  revision = "eabda03111c3bd5035c5a787aabeeb8cb0f31e36"
-
-[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -143,6 +137,12 @@
 
 [[projects]]
   branch = "master"
+  name = "gitlab.com/crankykernel/cryptotrader"
+  packages = ["binance"]
+  revision = "9a9350e3dfb0081b2ec3b335e742b1cf455ccd76"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
@@ -154,7 +154,7 @@
     "unix",
     "windows"
   ]
-  revision = "ad87a3a340fa7f3bed189293fbfa7a9b7e021ae1"
+  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -178,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e262837452b138d67afe36a8c4b1ea8c858f904ac9607e2404b4e65702417483"
+  inputs-digest = "97d9b1f318bac3c37c71821b9d9e33d43a3d3bec8cfd250809dbbbc9f886393c"
   solver-name = "gps-cdcl"
   solver-version = 1
