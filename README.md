@@ -43,6 +43,11 @@ AGPL v3.
 
 ## ChangeLog
 
+### unreleased
+
+- When setting limit sell order when placing buy, allow an absolute
+  price to be entered. https://gitlab.com/crankykernel/maker/issues/18
+
 ### 0.1.1
 
 Tagging what has been done as 0.1.1 as its low risk modifications, and
