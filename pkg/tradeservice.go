@@ -439,10 +439,8 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.AddBuyFill(report)
 			s.UpdateSellableQuantity(trade)
 			trade.State.Status = maker.TradeStatusWatching
-			if trade.State.LimitSell.Enabled {
-				s.LimitSellByPercent(trade, trade.State.LimitSell.Percent)
-			}
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
+			s.TriggerLimitSell(trade)
 		}
 
 	case binance.OrderSideSell:
@@ -506,6 +504,36 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 
 	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
+}
+
+func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
+	if trade.State.LimitSell.Enabled {
+		if trade.State.LimitSell.Type == maker.LimitSellTypePercent {
+			log.WithFields(log.Fields{
+				"tradeId": trade.State.TradeID,
+				"symbol":  trade.State.Symbol,
+			}).Infof("Triggering limit sell at %f percent.",
+				trade.State.LimitSell.Percent)
+			s.LimitSellByPercent(trade, trade.State.LimitSell.Percent)
+		} else if trade.State.LimitSell.Type == maker.LimitSellTypePrice {
+			log.WithFields(log.Fields{
+				"tradeId": trade.State.TradeID,
+				"symbol":  trade.State.Symbol,
+			}).Infof("Triggering limit sell at price %f.",
+				trade.State.LimitSell.Price)
+			s.LimitSellByPrice(trade, trade.State.LimitSell.Price)
+		} else {
+			log.WithFields(log.Fields{
+				"tradeId": trade.State.TradeID,
+				"symbol": trade.State.Symbol,
+			}).Errorf("Unknown limit sell type: %v", trade.State.LimitSell.Type)
+		}
+	} else {
+		log.WithFields(log.Fields{
+			"tradeId": trade.State.TradeID,
+			"symbol": trade.State.Symbol,
+		}).Debug("Limit sell not enabled.")
+	}
 }
 
 func (s *TradeService) CloseTrade(trade *maker.Trade, status maker.TradeStatus, closeTime time.Time) {

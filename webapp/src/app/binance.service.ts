@@ -50,6 +50,11 @@ export enum PriceSource {
     MANUAL = "MANUAL",
 }
 
+export enum LimitSellType {
+    PERCENT = "PERCENT",
+    PRICE = "PRICE",
+}
+
 export interface SymbolMap {
     [key: string]: SymbolInfo;
 }
@@ -233,7 +238,9 @@ export interface OpenTradeOptions {
     stopLossPercent?: number;
 
     limitSellEnabled?: boolean;
+    limitSellType?: LimitSellType;
     limitSellPercent?: number;
+    limitSellPrice?: number;
 
     trailingProfitEnabled?: boolean;
     trailingProfitPercent?: number;

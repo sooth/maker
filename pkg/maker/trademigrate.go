@@ -38,7 +38,9 @@ func TradeV0ToTradeV1(old TradeStateV0) TradeState {
 	state.AverageSellPrice = old.AverageSellPrice
 	state.SellCost = old.SellCost
 	state.StopLoss = old.StopLoss
-	state.LimitSell = old.LimitSell
+	state.LimitSell.Enabled = old.LimitSell.Enabled
+	state.LimitSell.Type = LimitSellTypePercent
+	state.LimitSell.Percent = old.LimitSell.Percent
 	state.TrailingProfit = old.TrailingProfit
 	state.Profit = old.Profit
 	state.ProfitPercent = old.ProfitPercent

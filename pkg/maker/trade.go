@@ -99,7 +99,9 @@ type TradeState struct {
 
 	LimitSell struct {
 		Enabled bool
+		Type    LimitSellType
 		Percent float64
+		Price   float64
 	}
 
 	TrailingProfit struct {
@@ -179,9 +181,16 @@ func (s *Trade) FeeAsset() string {
 	return s.State.BuySideFills[lastFillIndex].CommissionAsset
 }
 
-func (t *Trade) SetLimitSell(enable bool, percent float64) {
-	t.State.LimitSell.Enabled = enable
+func (t *Trade) SetLimitSellByPercent(percent float64) {
+	t.State.LimitSell.Enabled = true
+	t.State.LimitSell.Type = LimitSellTypePercent
 	t.State.LimitSell.Percent = percent
+}
+
+func (t *Trade) SetLimitSellByPrice(price float64) {
+	t.State.LimitSell.Enabled = true
+	t.State.LimitSell.Type = LimitSellTypePrice
+	t.State.LimitSell.Price = price
 }
 
 func (t *Trade) SetStopLoss(enable bool, percent float64) {
@@ -202,6 +211,10 @@ func (t *Trade) AddBuyFill(report binance.StreamExecutionReport) {
 		CommissionAmount: report.CommissionAmount,
 		CommissionAsset:  report.CommissionAsset,
 	}
+	t.DoAddBuyFill(fill)
+}
+
+func (t *Trade) DoAddBuyFill(fill OrderFill) {
 	t.State.BuySideFills = append(t.State.BuySideFills, fill)
 	t.UpdateBuyState()
 }

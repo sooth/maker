@@ -274,7 +274,7 @@
           <div class="card-body">
             <div class="form-row mb-2">
 
-              <div class="form-group col">
+              <div class="form-group col-3">
                 <button type="button"
                         class="wrapper-button"
                         (click)="orderFormSettings.stopLossEnabled = !orderFormSettings.stopLossEnabled; saveState()">
@@ -297,15 +297,16 @@
                 </div>
               </div>
 
-              <div class="form-group col">
+              <div class="form-group col-4">
                 <button type="button"
                         class="wrapper-button"
-                        (click)="orderFormSettings.limitSellEnabled = !orderFormSettings.limitSellEnabled; saveState()">
-                  <div class="form-check" title="Place limit order on buy execution.">
+                        (click)="toggleLimitSellType('PERCENT'); saveState()">
+                  <div class="form-check"
+                       title="Place limit order on buy execution.">
                     <input class="form-check-input" type="checkbox"
-                           (click)="$event.stopPropagation(); saveState();"
+                           (click)="toggleLimitSellType('PERCENT'); $event.stopPropagation(); saveState();"
                            [(ngModel)]="orderFormSettings.limitSellEnabled">
-                    <label class="form-check-label">Quick Sell</label>
+                    <label class="form-check-label">Limit Sell at %</label>
                   </div>
                 </button>
                 <div class="input-group">
@@ -319,6 +320,35 @@
                          [(ngModel)]="orderFormSettings.limitSellPercent">
                   <div class="input-group-append">
                     <div class="input-group-text">%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group col">
+                <button type="button"
+                        class="wrapper-button"
+                        (click)="toggleLimitSellType('PRICE'); saveState()">
+                  <div class="form-check"
+                       title="Place limit order on buy execution.">
+                    <input class="form-check-input" type="checkbox"
+                           (click)="toggleLimitSellType('PRICE'); $event.stopPropagation(); saveState();"
+                           [(ngModel)]="orderFormSettings.limitSellPriceEnabled">
+                    <label class="form-check-label">Limit Sell at Price</label>
+                  </div>
+                </button>
+                <div class="input-group">
+                  <input type="number" class="form-control"
+                         title="Price"
+                         placeholder="Price..."
+                         [step]="priceStepSize"
+                         (change)="orderForm.limitSellPrice = toFixed(orderForm.limitSellPrice, 8); onLimitPriceChange()"
+                         [value]="orderForm.limitSellPrice"
+                         [disabled]="!orderFormSettings.limitSellPriceEnabled"
+                         [(ngModel)]="orderForm.limitSellPrice">
+                  <div class="input-group-append">
+                    <div class="input-group-text" title="Estimate profit at 0.1% fee.">
+                      {{limitPricePercentEstimate | number:".3-3"}}%
+                    </div>
                   </div>
                 </div>
               </div>

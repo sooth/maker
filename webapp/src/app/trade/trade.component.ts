@@ -30,6 +30,7 @@ import {
 import {Observable} from "rxjs";
 import {
     BinanceService,
+    LimitSellType,
     OpenTradeOptions,
     PriceSource
 } from "../binance.service";
@@ -64,6 +65,7 @@ interface OrderFormSettingsModel {
     trailingProfitDeviation: number;
     limitSellEnabled: boolean;
     limitSellPercent: number;
+    limitSellPriceEnabled: boolean;
 }
 
 interface SavedState {
@@ -94,6 +96,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         trailingProfitDeviation: 0.25,
         limitSellEnabled: false,
         limitSellPercent: 0.1,
+        limitSellPriceEnabled: false,
     };
 
     // Parts of the order form that don't persist.
@@ -102,11 +105,13 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         quoteAmount: number;
         buyLimitPercent: number;
         manualPrice: string;
+        limitSellPrice: string;
     } = {
         amount: null,
         quoteAmount: null,
         buyLimitPercent: null,
         manualPrice: null,
+        limitSellPrice: null,
     };
 
     balances: { [key: string]: Balance } = {};
@@ -306,6 +311,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.binance.lastPriceMap[ticker.symbol] = ticker.price;
                     this.updateOrderFormAssetAmount();
                     this.orderForm.manualPrice = ticker.price.toFixed(8);
+                    this.orderForm.limitSellPrice = ticker.price.toFixed(8);
                 });
         this.priceStepSize = this.binance.symbolMap[symbol].tickSize;
 
@@ -329,6 +335,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                         bid: depth.bids[0].price,
                         ask: depth.asks[0].price,
                     };
+                    this.onLimitPriceChange();
                 });
 
         this.saveState();
@@ -341,6 +348,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     private onAggTrade(trade: AggTrade) {
         if (trade.symbol === this.orderFormSettings.symbol) {
             this.updateOrderFormAssetAmount();
+
+            /* For now, update the limit price % estimate here as well. */
+            this.onLimitPriceChange();
         }
     }
 
@@ -367,13 +377,22 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             priceAdjustment: this.orderForm.buyLimitPercent,
             stopLossEnabled: this.orderFormSettings.stopLossEnabled,
             stopLossPercent: this.orderFormSettings.stopLossPercent,
-            limitSellEnabled: this.orderFormSettings.limitSellEnabled,
-            limitSellPercent: this.orderFormSettings.limitSellPercent,
             trailingProfitEnabled: this.orderFormSettings.trailingProfitEnabled,
             trailingProfitPercent: this.orderFormSettings.trailingProfitPercent,
             trailingProfitDeviation: this.orderFormSettings.trailingProfitDeviation,
             price: +this.orderForm.manualPrice,
         };
+
+        if (this.orderFormSettings.limitSellEnabled) {
+            options.limitSellEnabled = true;
+            options.limitSellType = LimitSellType.PERCENT;
+            options.limitSellPercent = this.orderFormSettings.limitSellPercent;
+        } else if (this.orderFormSettings.limitSellPriceEnabled) {
+            options.limitSellEnabled = true;
+            options.limitSellType = LimitSellType.PRICE;
+            options.limitSellPrice = +this.orderForm.limitSellPrice;
+        }
+
         this.binance.postBuyOrder(options).subscribe(() => {
         }, (error) => {
             console.log("failed to place order:");
@@ -382,7 +401,54 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         });
     }
 
+    toggleLimitSellType(type: string) {
+        if (type == 'PERCENT') {
+            if (this.orderFormSettings.limitSellPriceEnabled) {
+                this.orderFormSettings.limitSellPriceEnabled = false;
+            }
+            this.orderFormSettings.limitSellEnabled = !this.orderFormSettings.limitSellEnabled;
+        } else if (type == 'PRICE') {
+            this.orderFormSettings.limitSellEnabled = false;
+            this.orderFormSettings.limitSellPriceEnabled = !this.orderFormSettings.limitSellPriceEnabled;
+        }
+
+        if (this.orderFormSettings.limitSellPriceEnabled) {
+            this.orderForm.limitSellPrice =
+                    this.binance.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
+        }
+
+    }
+
     onManualPriceInput() {
-        this.orderForm.manualPrice = (+this.orderForm.manualPrice).toFixed(8)
+        this.orderForm.manualPrice = this.toFixed(this.orderForm.manualPrice, 8);
+    }
+
+    toFixed(value: number | string, fractionDigits: number): string {
+        return (+value).toFixed(fractionDigits);
+    }
+
+    private getPrice(): number {
+        switch (this.orderFormSettings.priceSource) {
+            case PriceSource.MANUAL:
+                return +this.orderForm.manualPrice;
+            case PriceSource.LAST_PRICE:
+                return this.binance.lastPriceMap[this.orderFormSettings.symbol];
+            case PriceSource.BEST_BID:
+                return this.bidAskMap[this.orderFormSettings.symbol].bid;
+            case PriceSource.BEST_ASK:
+                return this.bidAskMap[this.orderFormSettings.symbol].ask;
+            default:
+                break;
+        }
+        return 0;
+    }
+
+    limitPricePercentEstimate: number = 0;
+
+    onLimitPriceChange() {
+        const price = this.getPrice() * (1 + 0.001);
+        const limitPrice = (+this.orderForm.limitSellPrice) * (1 - 0.001);
+        const percent = (limitPrice - price) / price * 100;
+        this.limitPricePercentEstimate = percent;
     }
 }

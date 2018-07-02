@@ -32,13 +32,76 @@ func restoreTrades(tradeService *TradeService) {
 
 	tradeHistoryCache := map[string][]binance.TradeResponse{}
 
-	for _, state := range (tradeStates) {
-		trade := maker.NewTradeWithState(state)
-		tradeService.RestoreTrade(trade)
+	for _, state := range tradeStates {
+		position := maker.NewTradeWithState(state)
+		tradeService.RestoreTrade(position)
 
-		if trade.State.Status == maker.TradeStatusPendingBuy {
+		if position.State.Status == maker.TradeStatusNew {
+			var clientOrderId string = ""
+			for clientOrderId = range position.State.ClientOrderIDs {
+				break
+			}
+			order, err := binanceRestClient.GetOrderByClientId(position.State.Symbol, clientOrderId)
+			if err != nil {
+				log.WithError(err).Error("Failed to get trade by client order ID.")
+				continue
+			}
+
+			switch order.Status {
+			case binance.OrderStatusNew:
+				position.State.Status = maker.TradeStatusPendingBuy
+			case binance.OrderStatusPartiallyFilled:
+				position.State.Status = maker.TradeStatusPendingBuy
+				trades := tradeHistoryCache[state.Symbol]
+				if trades == nil {
+					trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)
+					if err != nil {
+						log.Errorf("Failed to get trades: %v", err)
+					}
+					tradeHistoryCache[state.Symbol] = trades
+				}
+				for _, trade := range trades {
+					if trade.OrderID == order.OrderId {
+						log.Println(log.ToJson(trade))
+						fill := maker.OrderFill{
+							Price:            trade.Price,
+							Quantity:         trade.Quantity,
+							CommissionAsset:  trade.CommissionAsset,
+							CommissionAmount: trade.Commission,
+						}
+						position.DoAddBuyFill(fill)
+					}
+				}
+			case binance.OrderStatusFilled:
+				position.State.Status = maker.TradeStatusWatching
+				trades := tradeHistoryCache[state.Symbol]
+				if trades == nil {
+					trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)
+					if err != nil {
+						log.Errorf("Failed to get trades: %v", err)
+					}
+					tradeHistoryCache[state.Symbol] = trades
+				}
+				for _, trade := range trades {
+					if trade.OrderID == order.OrderId {
+						log.Println(log.ToJson(trade))
+						fill := maker.OrderFill{
+							Price:            trade.Price,
+							Quantity:         trade.Quantity,
+							CommissionAsset:  trade.CommissionAsset,
+							CommissionAmount: trade.Commission,
+						}
+						position.DoAddBuyFill(fill)
+					}
+				}
+			default:
+				log.Errorf("Don't know how to restore new trade now with status %s.",
+					order.Status)
+				log.Println(log.ToJson(order))
+			}
+		} else if position.State.Status == maker.TradeStatusPendingBuy {
 			order, err := binanceRestClient.GetOrderByOrderId(
-				trade.State.Symbol, trade.State.BuyOrderId)
+				position.State.Symbol, position.State.BuyOrderId)
 			if err != nil {
 				log.WithError(err).Error("Failed to get order by ID.")
 			}
@@ -47,21 +110,21 @@ func restoreTrades(tradeService *TradeService) {
 				// No change.
 			default:
 				log.WithFields(log.Fields{
-					"tradeId":     trade.State.TradeID,
+					"tradeId":     position.State.TradeID,
 					"orderStatus": order.Status,
-					"symbol":      trade.State.Symbol,
-					"tradeStatus": trade.State.Status,
+					"symbol":      position.State.Symbol,
+					"tradeStatus": position.State.Status,
 				}).Warnf("Don't know how to restore pending buy trade.")
 			}
 		}
 
-		if trade.State.Status == maker.TradeStatusPendingSell {
+		if position.State.Status == maker.TradeStatusPendingSell {
 			order, err := binanceRestClient.GetOrderByOrderId(
-				trade.State.Symbol, trade.State.SellOrderId)
+				position.State.Symbol, position.State.SellOrderId)
 			if err != nil {
 				log.WithError(err).Errorf(
 					"Failed to find existing order %d for %s.",
-					trade.State.SellOrderId, trade.State.Symbol)
+					position.State.SellOrderId, position.State.Symbol)
 			} else {
 				if order.Status == binance.OrderStatusNew {
 					// Unchanged.
@@ -70,7 +133,7 @@ func restoreTrades(tradeService *TradeService) {
 						"symbol":  state.Symbol,
 						"tradeId": state.TradeID,
 					}).Infof("Outstanding sell order has been canceled.")
-					trade.State.Status = maker.TradeStatusWatching
+					position.State.Status = maker.TradeStatusWatching
 				} else if order.Status == binance.OrderStatusFilled {
 					trades := tradeHistoryCache[state.Symbol]
 					if trades == nil {
@@ -80,30 +143,30 @@ func restoreTrades(tradeService *TradeService) {
 						}
 						tradeHistoryCache[state.Symbol] = trades
 					}
-					for _, _trade := range trades {
-						if _trade.OrderID == state.SellOrderId {
+					for _, trade := range trades {
+						if trade.OrderID == state.SellOrderId {
 							fill := maker.OrderFill{
-								Price:            _trade.Price,
-								Quantity:         _trade.Quantity,
-								CommissionAmount: _trade.Commission,
-								CommissionAsset:  _trade.CommissionAsset,
+								Price:            trade.Price,
+								Quantity:         trade.Quantity,
+								CommissionAmount: trade.Commission,
+								CommissionAsset:  trade.CommissionAsset,
 							}
-							trade.DoAddSellFill(fill)
+							position.DoAddSellFill(fill)
 						}
 					}
-					if trade.State.SellFillQuantity != trade.State.BuyFillQuantity {
+					if position.State.SellFillQuantity != position.State.BuyFillQuantity {
 						log.WithFields(log.Fields{
-							"buyQuantity":  trade.State.BuyFillQuantity,
-							"sellQuantity": trade.State.SellFillQuantity,
+							"buyQuantity":  position.State.BuyFillQuantity,
+							"sellQuantity": position.State.SellFillQuantity,
 						}).Warnf("Order is filled but sell quantity != buy quantity.")
 					} else {
 						closeTime := time.Unix(0, order.TimeMillis*int64(time.Millisecond))
 						log.WithFields(log.Fields{
-							"symbol":    trade.State.Symbol,
+							"symbol":    position.State.Symbol,
 							"closeTime": closeTime,
-							"tradeId":   trade.State.TradeID,
+							"tradeId":   position.State.TradeID,
 						}).Infof("Closing trade.")
-						tradeService.CloseTrade(trade, maker.TradeStatusDone, closeTime)
+						tradeService.CloseTrade(position, maker.TradeStatusDone, closeTime)
 					}
 				} else {
 					log.WithFields(log.Fields{
@@ -115,6 +178,8 @@ func restoreTrades(tradeService *TradeService) {
 				}
 			}
 		}
+		tradeService.UpdateSellableQuantity(position)
+		db.DbUpdateTrade(position)
 	}
 	log.Printf("Restored %d trade states.", len(tradeService.TradesByClientID))
 }

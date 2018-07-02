@@ -23,3 +23,10 @@ const (
 	PriceSourceBestAsk PriceSource = "BEST_ASK";
 	PriceSourceManual  PriceSource = "MANUAL";
 )
+
+type LimitSellType string
+
+const (
+	LimitSellTypePercent LimitSellType = "PERCENT"
+	LimitSellTypePrice   LimitSellType = "PRICE"
+)

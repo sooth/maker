@@ -16,19 +16,18 @@
 package pkg
 
 import (
-	"net/http"
-	"fmt"
-	"io/ioutil"
 	"encoding/json"
-	"strconv"
+	"fmt"
+	"github.com/gobuffalo/packr"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
-	"gitlab.com/crankykernel/maker/pkg/log"
-	"gitlab.com/crankykernel/cryptotrader/binance"
-	"github.com/gobuffalo/packr"
 	"gitlab.com/crankykernel/maker/pkg/handlers"
+	"gitlab.com/crankykernel/maker/pkg/log"
 	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -254,140 +253,6 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		params := binance.OrderParameters{
-			Side:        binance.OrderSideBuy,
-			Type:        binance.OrderTypeLimit,
-			TimeInForce: binance.TimeInForceGTC,
-		}
-
-		var requestBody handlers.BuyOrderRequest
-		decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(&requestBody); err != nil {
-			log.Printf("error: failed to decode request body: %v", err)
-			handlers.WriteBadRequestError(w)
-			return
-		}
-
-		// Validate price source.
-		switch requestBody.PriceSource {
-		case maker.PriceSourceLast:
-		case maker.PriceSourceBestBid:
-		case maker.PriceSourceBestAsk:
-		case maker.PriceSourceManual:
-		case "":
-			handlers.WriteJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
-			return
-		default:
-			handlers.WriteJsonError(w, http.StatusBadRequest,
-				fmt.Sprintf("invalid value for priceSource: %v", requestBody.PriceSource))
-			return
-		}
-
-		params.Symbol = requestBody.Symbol
-		params.Quantity = requestBody.Quantity
-
-		orderId, err := tradeService.MakeOrderID()
-		if err != nil {
-			log.WithError(err).Errorf("Failed to create order ID.")
-			handlers.WriteJsonError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		params.NewClientOrderId = orderId
-
-		trade := maker.NewTrade()
-		trade.State.Symbol = params.Symbol
-		trade.AddClientOrderID(params.NewClientOrderId)
-
-		buyService := NewBinanceBuyService()
-
-		switch requestBody.PriceSource {
-		case maker.PriceSourceManual:
-			log.Infof("Using manual price of %v", requestBody.Price)
-			params.Price = requestBody.Price
-		default:
-			params.Price, err = buyService.GetPrice(params.Symbol, requestBody.PriceSource)
-			if err != nil {
-				log.WithError(err).WithFields(log.Fields{
-					"priceSource": requestBody.PriceSource,
-					"symbol":      params.Symbol,
-				}).Error("Failed to get buy price.")
-				handlers.WriteJsonError(w, http.StatusInternalServerError,
-					fmt.Sprintf("Failed to get price: %v", err))
-				return
-			}
-		}
-
-		log.WithFields(log.Fields{
-			"symbol":      params.Symbol,
-			"priceSource": requestBody.PriceSource,
-			"price":       params.Price,
-		}).Debug("Got purchase price for symbol.")
-
-		if requestBody.StopLossEnabled {
-			trade.SetStopLoss(requestBody.StopLossEnabled,
-				requestBody.StopLossPercent)
-		}
-
-		if requestBody.LimitSellEnabled {
-			trade.SetLimitSell(requestBody.LimitSellEnabled,
-				requestBody.LimitSellPercent)
-		}
-
-		if requestBody.TrailingProfitEnabled {
-			trade.SetTrailingProfit(requestBody.TrailingProfitEnabled,
-				requestBody.TrailingProfitPercent,
-				requestBody.TrailingProfitDeviation)
-		}
-
-		tradeId := tradeService.AddNewTrade(trade)
-
-		log.WithFields(log.Fields{
-			"tradeId":       tradeId,
-			"symbol":        params.Symbol,
-			"price":         params.Price,
-			"quantity":      params.Quantity,
-			"type":          params.Type,
-			"clientOrderId": params.NewClientOrderId,
-		}).Infof("Posting BUY order for %s", params.Symbol)
-
-		response, err := getBinanceRestClient().PostOrder(params)
-		if err != nil {
-			log.WithError(err).
-				Errorf("Failed to post buy order.")
-			switch err := err.(type) {
-			case *binance.RestApiError:
-				log.Debugf("Forwarding Binance error repsonse.")
-				w.WriteHeader(response.StatusCode)
-				w.Write(err.Body)
-			default:
-				handlers.WriteJsonResponse(w, http.StatusInternalServerError,
-					err.Error())
-			}
-			if trade != nil {
-				tradeService.FailTrade(trade)
-			}
-			return
-		}
-
-		data, err := ioutil.ReadAll(response.Body)
-		var buyResponse binance.PostOrderResponse
-		if err := json.Unmarshal(data, &buyResponse); err != nil {
-			log.Printf("error: failed to decode buy order response: %v", err)
-		}
-		log.WithFields(log.Fields{
-			"tradeId": tradeId,
-		}).Debugf("Decoded BUY response: %s", log.ToJson(buyResponse))
-
-		handlers.WriteJsonResponse(w, http.StatusOK, handlers.BuyOrderResponse{
-			TradeID: tradeId,
-		})
-	}
-}
-
 func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -417,7 +282,7 @@ func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 		startTime := time.Now()
 
 		if trade.State.Status == maker.TradeStatusPendingSell {
-			log.Printf("Cancelling existing sell order.");
+			log.Printf("Cancelling existing sell order.")
 			tradeService.CancelSell(trade)
 		}
 
@@ -470,7 +335,7 @@ func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
 		startTime := time.Now()
 
 		if trade.State.Status == maker.TradeStatusPendingSell {
-			log.Printf("Cancelling existing sell order.");
+			log.Printf("Cancelling existing sell order.")
 			tradeService.CancelSell(trade)
 		}
 
@@ -505,7 +370,7 @@ func marketSellHandler(tradeService *TradeService) http.HandlerFunc {
 		}
 
 		if trade.State.Status == maker.TradeStatusPendingSell {
-			log.Printf("Cancelling existing sell order.");
+			log.Printf("Cancelling existing sell order.")
 			tradeService.CancelSell(trade)
 		}
 
