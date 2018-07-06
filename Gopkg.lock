@@ -139,7 +139,7 @@
   branch = "master"
   name = "gitlab.com/crankykernel/cryptotrader"
   packages = ["binance"]
-  revision = "9a9350e3dfb0081b2ec3b335e742b1cf455ccd76"
+  revision = "e82c919dcb4655a14602fe4fdf082fc5be1f565f"
 
 [[projects]]
   branch = "master"
@@ -154,7 +154,7 @@
     "unix",
     "windows"
   ]
-  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
+  revision = "ce36f3865eeb42541ce3f87f32f8462c5687befa"
 
 [[projects]]
   name = "golang.org/x/text"
