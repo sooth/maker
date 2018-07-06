@@ -82,7 +82,16 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     BuyPriceSource = PriceSource;
 
-    bidAskMap: { [key: string]: { bid: number, ask: number } } = {};
+    bidAskMap: {
+        [key: string]: {
+            bid: number,
+            ask: number
+        }
+    } = {};
+
+    lastPriceMap: {
+        [key: string]: number,
+    } = {};
 
     orderFormSettings: OrderFormSettingsModel = {
         quoteAsset: "BTC",
@@ -118,6 +127,8 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     private depthSubscription: Subscription = null;
 
+    private tradeSubscription: Subscription = null;
+
     balancePercents: number[] = [];
 
     private subs: Subscription[] = [];
@@ -132,6 +143,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     constructor(private api: BinanceApiService,
                 public binance: BinanceService,
+                private binanceApi: BinanceApiService,
                 private maker: MakerService,
                 private config: ConfigService,
                 private formBuilder: FormBuilder,
@@ -210,15 +222,11 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         });
         this.subs.push(s);
 
-        s = this.binance.aggTradeStream$.subscribe((trade) => {
-            this.onAggTrade(trade);
-        });
-        this.subs.push(s);
-
         Mousetrap.bind("/", () => {
             window.scrollTo(0, 0);
             $("#symbolInput").focus();
         });
+
     }
 
     ngAfterViewInit() {
@@ -242,6 +250,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     ngOnDestroy() {
         if (this.depthSubscription) {
             this.depthSubscription.unsubscribe();
+        }
+        if (this.tradeSubscription) {
+            this.tradeSubscription.unsubscribe();
         }
         for (const sub of this.subs) {
             sub.unsubscribe();
@@ -308,7 +319,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.api.getPriceTicker(symbol)
                 .subscribe((ticker: PriceTicker) => {
-                    this.binance.lastPriceMap[ticker.symbol] = ticker.price;
+                    this.lastPriceMap[ticker.symbol] = ticker.price;
                     this.updateOrderFormAssetAmount();
                     this.orderForm.manualPrice = ticker.price.toFixed(8);
                     this.orderForm.limitSellPrice = ticker.price.toFixed(8);
@@ -323,9 +334,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                     };
                 });
 
-        /** TODO: This is just for the order info page, unsubscribe when done. */
-        this.binance.subscribeToTradeStream(symbol);
-
         if (this.depthSubscription) {
             this.depthSubscription.unsubscribe();
         }
@@ -338,11 +346,20 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                     this.onLimitPriceChange();
                 });
 
+        if (this.tradeSubscription) {
+            this.tradeSubscription.unsubscribe();
+        }
+        this.tradeSubscription = this.binance.subscribeAggTradeStream(symbol)
+                .subscribe((aggTrade) => {
+                    this.lastPriceMap[symbol] = aggTrade.price;
+                    this.onAggTrade(aggTrade);
+                });
+
         this.saveState();
     }
 
     syncManualPrice() {
-        this.orderForm.manualPrice = this.binance.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
+        this.orderForm.manualPrice = this.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
     }
 
     private onAggTrade(trade: AggTrade) {
@@ -363,7 +380,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         const portion = round8(available * this.orderFormSettings.balancePercent / 100);
         const symbolInfo = this.binance.symbolMap[symbol];
         const stepSize = symbolInfo.stepSize;
-        const lastTradePrice = this.binance.lastPriceMap[this.orderFormSettings.symbol];
+        const lastTradePrice = this.lastPriceMap[this.orderFormSettings.symbol];
         const amount = roundx(portion / lastTradePrice, 1 / stepSize);
         this.orderForm.quoteAmount = portion;
         this.orderForm.amount = amount;
@@ -414,7 +431,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
         if (this.orderFormSettings.limitSellPriceEnabled) {
             this.orderForm.limitSellPrice =
-                    this.binance.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
+                    this.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
         }
 
     }
@@ -432,7 +449,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             case PriceSource.MANUAL:
                 return +this.orderForm.manualPrice;
             case PriceSource.LAST_PRICE:
-                return this.binance.lastPriceMap[this.orderFormSettings.symbol];
+                return this.lastPriceMap[this.orderFormSettings.symbol];
             case PriceSource.BEST_BID:
                 return this.bidAskMap[this.orderFormSettings.symbol].bid;
             case PriceSource.BEST_ASK:

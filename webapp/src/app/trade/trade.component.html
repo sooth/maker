@@ -89,7 +89,7 @@
                         <input
                             *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
                             type="number" class="form-control" disabled
-                            [value]="binance.lastPriceMap[orderFormSettings.symbol] && binance.lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
+                            [value]="lastPriceMap[orderFormSettings.symbol] && lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
                         <input
                             *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
                             type="number" class="form-control" disabled
@@ -147,7 +147,7 @@
                   <tr>
                     <th>Last</th>
                     <td>
-                      {{(binance.lastPriceMap[orderFormSettings.symbol] |
+                      {{(lastPriceMap[orderFormSettings.symbol] |
                       number:".8-8")
                       ||
                       '--'}}

@@ -17,6 +17,7 @@ import {Injectable} from "@angular/core";
 import {
     AggTrade,
     BinanceApiService,
+    buildAggTradeFromStream,
     buildTickerFromStream,
     Depth,
     ExchangeInfo,
@@ -24,9 +25,8 @@ import {
     PriceTicker,
     SymbolInfo
 } from "./binance-api.service";
-import {roundx} from "./utils";
-import {map, multicast, refCount, switchMap, take, tap} from "rxjs/operators";
-import {Observable, Subject, Subscription} from "rxjs";
+import {map, multicast, refCount, take, tap} from "rxjs/operators";
+import {Observable, Subject} from "rxjs";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Logger, LoggerService} from "./logger.service";
 import {HttpClient} from "@angular/common/http";
@@ -73,15 +73,6 @@ export class BinanceService {
      */
     symbolMap: SymbolMap = {};
 
-    /**
-     * A symbol map of symbol to last price.
-     */
-    lastPriceMap: { [key: string]: number } = {};
-
-    aggTradeStream$: Subject<AggTrade> = new Subject();
-
-    private aggTradeStreams: { [key: string]: Subscription } = {};
-
     streams$: { [key: string]: Observable<any> } = {};
 
     private isReadySubject: Subject<boolean> = null;
@@ -105,76 +96,35 @@ export class BinanceService {
         this.makerApi.getConfig().subscribe((config) => {
             this.api.apiKey = config["binance.api.key"];
             this.api.apiSecret = config["binance.api.secret"];
-
-            this.updateExchangeInfo()
-                    .pipe(switchMap(() => {
-                        return this.api.getPriceTicker("BTCUSDT")
-                                .pipe(tap((ticker) => {
-                                    this.lastPriceMap[ticker.symbol] = ticker.price;
-                                }));
-                    })).subscribe(() => {
+            this.updateExchangeInfo().subscribe(() => {
                 this.isReadySubject.next(true);
             });
         });
-
-        this.maker.binanceAggTrades$.subscribe((trade) => {
-            this.onAggTrade(trade);
-        });
-
-        // Subscribe to the aggTrade stream, even though we publish to it.
-        this.aggTradeStream$.subscribe((trade) => {
-            this.onAggTrade(trade);
-        });
-
-        // Subscribe to the BTCUSDT ticker to assign a USD value to trades.
-        this.subscribeToTicker("BTCUSDT").subscribe((ticker) => {
-            this.lastPriceMap["BTCUSDT"] = ticker.price;
-        });
-    }
-
-    private onAggTrade(trade: AggTrade) {
-        this.lastPriceMap[trade.symbol] = trade.price;
     }
 
     postBuyOrder(body: OpenTradeOptions) {
         return this.api.postBuyOrder(body);
     }
 
-    /**
-     * Adjust the price by a percentage, up or down, taking into account the
-     * symbols tick size.
-     */
-    adjustPrice(symbol: string, price: number, percent: number): number {
-        if (percent === 0) {
-            return price;
+    subscribeAggTradeStream(symbol: string): Observable<AggTrade> {
+        const stream = `${symbol.toLowerCase()}@aggTrade`;
+        if (!this.streams$[stream]) {
+            const path = `/ws/${stream}`;
+            this.streams$[stream] = this.api.openStream(path)
+                    .pipe(
+                            multicast(new Subject<any>()),
+                            refCount(),
+                            map((message) => {
+                                return buildAggTradeFromStream(message);
+                            })
+                    );
         }
-        const limitPrice = price * (1 + (percent / 100));
-        const symbolInfo = this.symbolMap[symbol];
-        const tickSize = symbolInfo.tickSize;
-        const adjustedPrice = roundx(limitPrice, 1 / tickSize);
-        return adjustedPrice;
-    }
-
-    subscribeToTradeStream(symbol: string) {
-        symbol = symbol.toLowerCase();
-        if (symbol in this.aggTradeStreams) {
-            return;
-        }
-        const streams = [
-            `${symbol}@aggTrade`,
-        ];
-        this.aggTradeStreams[symbol] = this.api.openMultiStream(streams)
-                .subscribe((message) => {
-                    if (message.streamType === "aggTrade") {
-                        this.aggTradeStream$.next(message.getAggTrade());
-                    }
-                });
+        return this.streams$[stream];
     }
 
     subscribeToTicker(symbol: string): Observable<PriceTicker> {
         const stream = `${symbol.toLowerCase()}@ticker`;
         if (!this.streams$[stream]) {
-            this.logger.log(`Creating new ticker stream for ${symbol}.`);
             const path = `/ws/${stream}`;
             this.streams$[stream] = this.api.openStream(path)
                     .pipe(
@@ -188,8 +138,8 @@ export class BinanceService {
         return this.streams$[stream];
     }
 
-    subscribeToDepth(symbol: string): Observable<Depth> {
-        const stream = `${symbol.toLowerCase()}@depth5`;
+    subscribeToDepth(symbol: string, depth: number = 5): Observable<Depth> {
+        const stream = `${symbol.toLowerCase()}@depth${depth}`;
         if (!this.streams$[stream]) {
             const path = `/ws/${stream}`;
             this.streams$[stream] = this.api.openStream(path)

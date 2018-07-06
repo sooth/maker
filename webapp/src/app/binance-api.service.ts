@@ -44,8 +44,19 @@ export class BinanceApiService {
         this._apiSecret = secret;
     }
 
-    private get(path: string, params: HttpParams = null,
-                authenticated: boolean = false): Observable<Object> {
+    private get(path: string, params: HttpParams = null): Observable<Object> {
+        const url = `${API_ROOT}${path}`;
+
+        if (params == null) {
+            params = new HttpParams();
+        }
+
+        return this.http.get<Object>(url, {
+            params: params,
+        });
+    }
+
+    private authenticateGet(path: string, params: HttpParams = null): Observable<Object> {
         const url = `${API_ROOT}${path}`;
 
         if (params == null) {
@@ -54,15 +65,13 @@ export class BinanceApiService {
 
         let headers = new HttpHeaders();
 
-        if (authenticated) {
-            const timestamp = new Date().getTime();
-            params = params.set("timestamp", `${timestamp}`);
+        const timestamp = new Date().getTime();
+        params = params.set("timestamp", `${timestamp}`);
 
-            const hmacDigest = hmacSHA256(params.toString(), this._apiSecret);
-            params = params.set("signature", hex.stringify(hmacDigest));
+        const hmacDigest = hmacSHA256(params.toString(), this._apiSecret);
+        params = params.set("signature", hex.stringify(hmacDigest));
 
-            headers = headers.append("X-MBX-APIKEY", this._apiKey);
-        }
+        headers = headers.append("X-MBX-APIKEY", this._apiKey);
 
         return this.http.get<Object>(url, {
             headers: headers,
@@ -98,7 +107,7 @@ export class BinanceApiService {
 
     getAccountInfo(): Observable<AccountInfo> {
         const endpoint = "/api/v3/account";
-        return this.get(endpoint, null, true)
+        return this.authenticateGet(endpoint, null)
                 .pipe(map((raw: RawRestAccountInfo) => {
                     return AccountInfo.fromRest(raw);
                 }));
@@ -106,7 +115,7 @@ export class BinanceApiService {
 
     getExchangeInfo(): Observable<ExchangeInfo> {
         const endpoint = "/api/v1/exchangeInfo";
-        return this.get(endpoint, null, false).pipe(map((info: RestExchangeInfoResponse) => {
+        return this.get(endpoint, null).pipe(map((info: RestExchangeInfoResponse) => {
             return ExchangeInfo.fromRest(info);
         }));
     }
@@ -114,7 +123,7 @@ export class BinanceApiService {
     getPriceTicker(symbol: string): Observable<PriceTicker> {
         const endpoint = "/api/v3/ticker/price";
         const params = new HttpParams().set("symbol", symbol);
-        return this.get(endpoint, params, false).pipe(
+        return this.get(endpoint, params).pipe(
                 map((r: RestTickerPriceResponse) => {
                     return buildTickerFromRest(r);
                 }));
@@ -123,7 +132,7 @@ export class BinanceApiService {
     getBookTicker(symbol: string): Observable<BookTicker> {
         const endpoint = "/api/v3/ticker/bookTicker";
         const params = new HttpParams().set("symbol", symbol);
-        return this.get(endpoint, params, false).pipe(
+        return this.get(endpoint, params).pipe(
                 map((r: RestBookTicker): BookTicker => {
                     return {
                         symbol: r.symbol,
@@ -157,13 +166,6 @@ export class BinanceApiService {
     openStream(path: string): Observable<any> {
         const url = `${STREAM_ROOT}${path}`;
         return makeWebSocketObservable(url);
-    }
-
-    openMultiStream(streams: string[]): Observable<MultiStreamMessage> {
-        const path = "/stream?streams=" + streams.join("/");
-        return this.openStream(path).pipe(map((event: MultiStreamFrame) => {
-            return new MultiStreamMessage(event);
-        }));
     }
 
 }
@@ -446,32 +448,6 @@ export function makeDepthFromStream(symbol: string, raw: StreamDepth): Depth {
     };
 }
 
-export class MultiStreamMessage {
-
-    stream: string = null;
-
-    data: any = null;
-
-    symbol: any = null;
-
-    streamType: string = null;
-
-    constructor(private frame: MultiStreamFrame) {
-        this.stream = frame.stream;
-        this.data = frame.data;
-
-        const parts = frame.stream.split("@");
-        if (parts.length > 1) {
-            this.symbol = parts[0].toUpperCase();
-            this.streamType = parts[1];
-        }
-    }
-
-    getAggTrade(): AggTrade {
-        return buildAggTradeFromStream(this.data);
-    }
-}
-
 export function buildAggTradeFromStream(raw: StreamAggTrade): AggTrade {
     return {
         symbol: raw.s.toUpperCase(),
@@ -501,7 +477,7 @@ export function makeWebSocketObservable(url: string): Observable<any> {
         let closeRequested = false;
 
         const openWebSocket = () => {
-            console.log("Connecting to websocket: " + url);
+            console.log(`websocket: connecting to ${url}.`);
             ws = new WebSocket(url);
 
             ws.onmessage = (event) => {
@@ -509,12 +485,13 @@ export function makeWebSocketObservable(url: string): Observable<any> {
             };
 
             ws.onerror = (event) => {
-                console.log("websocket error:");
+                console.log(`websocket: error: ${url}: ${JSON.stringify(event)}`);
                 console.log(event);
                 observer.error(event);
             };
 
             ws.onclose = () => {
+                console.log(`websocket: closed ${url}.`);
                 if (!closeRequested) {
                     openWebSocket();
                 }
