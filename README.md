@@ -43,10 +43,15 @@ AGPL v3.
 
 ## ChangeLog
 
-### unreleased
+### 0.2.0
 
 - When setting limit sell order when placing buy, allow an absolute
   price to be entered. https://gitlab.com/crankykernel/maker/issues/18
+- Allow limit sell to be modified before buy is
+  filled. https://gitlab.com/crankykernel/maker/issues/9
+- Fixed issue where not all buy fills were being handled. In
+  particular when a partial fill came after the fill.
+- Rename "quick sell" to "limit sell" and add tooltip.
 
 ### 0.1.1
 
