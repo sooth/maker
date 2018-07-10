@@ -17,6 +17,13 @@ package handlers
 
 import "gitlab.com/crankykernel/maker/pkg/maker"
 
+type LimitSellRequest struct {
+	Enabled bool                `json:"enabled"`
+	Type    maker.LimitSellType `json:"type"`
+	Percent float64             `json:"percent"`
+	Price   float64             `json:"price"`
+}
+
 type BuyOrderRequest struct {
 	Symbol                  string              `json:"symbol"`
 	Quantity                float64             `json:"quantity"`

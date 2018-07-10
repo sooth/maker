@@ -17,6 +17,7 @@ import {Injectable} from "@angular/core";
 import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {map} from "rxjs/operators";
+import {LimitSellType} from './binance.service';
 
 /**
  * The MakerApiService contains methods that wrap around calls to the Maker
@@ -43,6 +44,7 @@ export class MakerApiService {
                     return true;
                 }));
     }
+
 }
 
 function flattenJson(input) {
@@ -70,3 +72,9 @@ function flattenJson(input) {
     return output;
 }
 
+interface LimitSellRequest {
+    enabled: boolean;
+    type: LimitSellType;
+    price: number;
+    percent: number;
+}

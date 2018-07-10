@@ -29,6 +29,7 @@ import {HttpClient, HttpParams} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
 import {Observable} from "rxjs";
 import {ToastrService} from './toastr.service';
+import {LimitSellType} from './binance.service';
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -230,6 +231,12 @@ export interface TradeState {
         Price: number;
         Quantity: number;
     };
+    LimitSell: {
+        Enabled: boolean;
+        Type: LimitSellType;
+        Percent: number;
+        Price: number;
+    }
     SellableQuantity: number;
 }
 

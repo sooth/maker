@@ -102,7 +102,7 @@ func ServerMain() {
 
 	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
-	router.HandleFunc("/api/binance/sell", deleteSellHandler(tradeService)).Methods("DELETE")
+	router.HandleFunc("/api/binance/sell", DeleteSellHandler(tradeService)).Methods("DELETE")
 
 	// Set/change stop-loss on a trade.
 	router.HandleFunc("/api/binance/trade/{tradeId}/stopLoss",
@@ -112,8 +112,6 @@ func ServerMain() {
 		updateTradeTrailingProfitSettingsHandler(tradeService)).Methods("POST")
 
 	// Limit sell at percent.
-	router.HandleFunc("/api/binance/trade/{tradeId}/limitSell",  // Deprecate this one.
-		limitSellByPercentHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/trade/{tradeId}/limitSellByPercent",
 		limitSellByPercentHandler(tradeService)).Methods("POST")
 

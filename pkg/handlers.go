@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"gitlab.com/crankykernel/maker/pkg/db"
 )
 
 func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
@@ -211,7 +212,7 @@ func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
+func DeleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		tradeId := r.FormValue("trade_id")
@@ -235,6 +236,16 @@ func deleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 			"tradeId":     trade.State.TradeID,
 			"sellOrderId": trade.State.SellOrderId,
 		}).Infof("Cancelling sell order.")
+
+		switch trade.State.Status {
+		case maker.TradeStatusNew:
+			fallthrough
+		case maker.TradeStatusPendingBuy:
+			trade.State.LimitSell.Enabled = false
+			db.DbUpdateTrade(trade)
+			tradeService.BroadcastTradeUpdate(trade)
+			return
+		}
 
 		response, err := getBinanceRestClient().CancelOrder(trade.State.Symbol,
 			trade.State.SellOrderId)
@@ -276,6 +287,21 @@ func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 		trade := tradeService.FindTradeByLocalID(tradeId)
 		if trade == nil {
 			handlers.WriteJsonError(w, http.StatusNotFound, "")
+			return
+		}
+
+		switch trade.State.Status {
+		case maker.TradeStatusNew:
+			fallthrough
+		case maker.TradeStatusPendingBuy:
+			trade.SetLimitSellByPercent(percent)
+			db.DbUpdateTrade(trade)
+			tradeService.BroadcastTradeUpdate(trade)
+			log.WithFields(log.Fields{
+				"symbol":  trade.State.Symbol,
+				"tradeId": trade.State.TradeID,
+				"percent": percent,
+			}).Info("Updated limit sell on buy.")
 			return
 		}
 
@@ -329,6 +355,21 @@ func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
 		trade := tradeService.FindTradeByLocalID(tradeId)
 		if trade == nil {
 			handlers.WriteJsonError(w, http.StatusNotFound, "")
+			return
+		}
+
+		switch trade.State.Status {
+		case maker.TradeStatusNew:
+			fallthrough
+		case maker.TradeStatusPendingBuy:
+			trade.SetLimitSellByPrice(price)
+			db.DbUpdateTrade(trade)
+			tradeService.BroadcastTradeUpdate(trade)
+			log.WithFields(log.Fields{
+				"symbol":  trade.State.Symbol,
+				"tradeId": trade.State.TradeID,
+				"price":   price,
+			}).Info("Updated limit sell on buy.")
 			return
 		}
 

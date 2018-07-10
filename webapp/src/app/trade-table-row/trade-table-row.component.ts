@@ -53,16 +53,26 @@ const sellAtPriceModels: {
     [key: string]: SellAtPriceModel
 } = {};
 
-function getSellAtPriceModel(tradeId: string, defaultPrice: number = 0): SellAtPriceModel {
+function getSellAtPriceModel(tradeId: string, defaults: number[]): SellAtPriceModel {
+
+    let price = 0;
+
+    for (let defaultPrice of defaults) {
+        if (defaultPrice > 0) {
+            price = defaultPrice;
+            break;
+        }
+    }
+
     if (sellAtPriceModels.hasOwnProperty(tradeId)) {
         const model = sellAtPriceModels[tradeId];
         if (!model.price) {
-            model.price = defaultPrice;
+            model.price = price;
         }
         return model;
     }
     const model: SellAtPriceModel = {
-        price: defaultPrice,
+        price: price,
     };
     sellAtPriceModels[tradeId] = model;
     return sellAtPriceModels[tradeId];
@@ -109,8 +119,10 @@ export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit 
 
     ngOnInit() {
         this.sellAtPercentModel = getSellAtPercentModel(this.trade.TradeID);
-        this.sellAtPriceModel = getSellAtPriceModel(this.trade.TradeID,
-                this.trade.EffectiveBuyPrice);
+        this.sellAtPriceModel = getSellAtPriceModel(this.trade.TradeID, [
+            this.trade.EffectiveBuyPrice,
+            +(this.trade.BuyOrder.Price * (1 + 0.001)).toFixed(8),
+        ]);
     }
 
     ngOnDestroy() {

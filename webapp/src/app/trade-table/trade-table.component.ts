@@ -64,12 +64,6 @@ export class TradeTableComponent implements OnInit {
         this.trades = this.sortTrades(trades);
     }
 
-    onTradesUpdate(trades: TradeState[]) {
-        this.trades = this.sortTrades(trades.map((trade: TradeState): AppTradeState => {
-            return toAppTradeState(trade);
-        }));
-    }
-
     private sortTrades(trades: AppTradeState[]): AppTradeState[] {
         return trades.sort((a, b) => {
             return new Date(b.OpenTime).getTime() -
@@ -128,8 +122,10 @@ export interface AppTradeState extends TradeState {
     __rowClassName?: string;
     __canArchive?: boolean;
     __canSell?: boolean;
+    __canMarketSell?: boolean;
     __canAbandon?: boolean;
     __isOpen?: boolean;
+    __canCancelSell?: boolean;
 
     /** The percent off from the purchase price. */
     buyPercentOffsetPercent?: number;
@@ -140,6 +136,8 @@ export function toAppTradeState(trade: TradeState): AppTradeState {
     appTradeState.__rowClassName = getRowClass(trade);
     appTradeState.__canArchive = canArchive(trade);
     appTradeState.__canSell = canSell(trade);
+    appTradeState.__canMarketSell = canMarketSell(trade);
+    appTradeState.__canCancelSell = canCancelSell(trade);
     appTradeState.__canAbandon = canAbandon(trade);
     appTradeState.__isOpen = Trade.isOpen(trade);
     return appTradeState;
@@ -157,12 +155,50 @@ export function canArchive(trade: AppTradeState): boolean {
     }
 }
 
+/**
+ * Can a trade be sold. Within the scope of this application a sell order can
+ * be placed for any non closed trade. If the buy has not been filled, the sell
+ * order is queued until the buy is complete.
+ *
+ * The exception is market sell orders.
+ */
 export function canSell(trade: AppTradeState): boolean {
+    switch (trade.Status) {
+        case TradeStatus.NEW:
+        case TradeStatus.PENDING_BUY:
+        case TradeStatus.WATCHING:
+        case TradeStatus.PENDING_SELL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/**
+ * Can a trade be market sold.
+ */
+export function canMarketSell(trade: AppTradeState): boolean {
     switch (trade.Status) {
         case TradeStatus.WATCHING:
         case TradeStatus.PENDING_SELL:
             return true;
         default:
+            return false;
+    }
+}
+
+export function canCancelSell(trade: AppTradeState): boolean {
+    switch (trade.Status) {
+        case TradeStatus.ABANDONED:
+        case TradeStatus.DONE:
+        case TradeStatus.FAILED:
+            return false;
+        case TradeStatus.PENDING_SELL:
+            return true;
+        default:
+            if (trade.LimitSell.Enabled) {
+                return true;
+            }
             return false;
     }
 }

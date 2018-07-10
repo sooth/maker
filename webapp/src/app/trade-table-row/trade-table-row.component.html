@@ -130,6 +130,33 @@
       <th>Cost</th>
       <td>{{trade.SellCost || "--"}}</td>
     </tr>
+
+    <tr>
+      <td colspan="2">
+        <hr/>
+      </td>
+    </tr>
+
+    <tr>
+      <th>Enabled</th>
+      <td>{{trade.LimitSell.Enabled}}</td>
+    </tr>
+
+    <tr *ngIf="trade.LimitSell.Enabled">
+      <th>Type</th>
+      <td>{{trade.LimitSell.Type}}</td>
+    </tr>
+
+    <tr *ngIf="trade.LimitSell.Enabled && trade.LimitSell.Type == 'PERCENT'">
+      <th>Percent</th>
+      <td>{{trade.LimitSell.Percent}}</td>
+    </tr>
+
+    <tr *ngIf="trade.LimitSell.Enabled && trade.LimitSell.Type == 'PRICE'">
+      <th>Price</th>
+      <td>{{trade.LimitSell.Price}}</td>
+    </tr>
+
   </table>
 </td>
 
@@ -281,6 +308,7 @@
 
             <button type="button" class="btn btn-block"
                     (click)="onMarketSellClick($event)"
+                    [disabled]="!trade.__canMarketSell"
                     [ngClass]="{'btn-warning': marketSellState == MARKET_SELL_STATE.INITIAL,
                                 'btn-danger': marketSellState == MARKET_SELL_STATE.CONFIRM}"
             >{{marketSellState == MARKET_SELL_STATE.CONFIRM && "Confirm " ||
@@ -299,7 +327,8 @@
       <button type="button"
               class="btn btn-primary btn-sm mb-1 btn-block"
               (click)="cancelSell(trade)"
-              [disabled]="trade.Status != TradeStatus.PENDING_SELL">
+              [disabled]="!trade.__canCancelSell"
+      >
         Cancel Sell
       </button>
     </div>
