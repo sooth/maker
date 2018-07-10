@@ -55,6 +55,7 @@
   </table>
 </td>
 
+<!-- Current state. -->
 <td>
   <table>
     <tr>
@@ -79,6 +80,29 @@
         --
       </td>
     </tr>
+
+    <tr>
+      <td></td>
+      <td>
+        <b style="color: grey">-- Sell --</b>
+      </td>
+    </tr>
+
+    <tr>
+      <th>Filled</th>
+      <td>{{trade.SellFillQuantity > 0 && trade.SellFillQuantity ||
+        "--"}}
+      </td>
+    </tr>
+    <tr>
+      <th>Price</th>
+      <td>{{trade.AverageSellPrice | number:".8-8" || "--"}}</td>
+    </tr>
+    <tr>
+      <th>Cost</th>
+      <td>{{trade.SellCost || "--"}}</td>
+    </tr>
+
   </table>
 </td>
 
@@ -111,29 +135,9 @@
     </tr>
 
     <tr>
-      <td colspan="2">
-        <hr/>
-      </td>
-    </tr>
-
-    <tr>
-      <th>Filled</th>
-      <td>{{trade.SellFillQuantity > 0 && trade.SellFillQuantity ||
-        "--"}}
-      </td>
-    </tr>
-    <tr>
-      <th>Price</th>
-      <td>{{trade.AverageSellPrice | number:".8-8" || "--"}}</td>
-    </tr>
-    <tr>
-      <th>Cost</th>
-      <td>{{trade.SellCost || "--"}}</td>
-    </tr>
-
-    <tr>
-      <td colspan="2">
-        <hr/>
+      <td></td>
+      <td>
+          <b style="color: grey">-- Limit Sell--</b>
       </td>
     </tr>
 
