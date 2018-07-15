@@ -1,0 +1,32 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "jhcook/macos-sierra"
+
+  # Not working for some reason.
+  config.vm.network "forwarded_port",
+                    guest: 6045,
+                    host: 6045,
+                    host_ip: "127.0.0.1"
+
+  config.vm.synced_folder "../..",
+                          "/Users/vagrant/go/src/gitlab.com/crankykernel/maker",
+                          type: "rsync",
+                          rsync__user: "vagrant",
+                          rsync__group: "staff",
+                          rsync__exclude: "webapp/node_modules/*"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = true
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    mkdir -p ~/go/src/gitlab.com/crankykernel/maker
+    chown -R vagrant ~/go
+
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    brew install go
+    brew install node
+
+  SHELL
+
+end

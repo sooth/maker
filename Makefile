@@ -1,6 +1,10 @@
 VERSION :=	$(shell cat VERSION)
 
+GOPATH ?=	$(HOME)/go
 CGO_ENABLED :=	1
+
+DEP :=		$(GOPATH)/bin/dep
+PACKR :=	$(GOPATH)/bin/packr
 
 TAGS :=		json1
 
@@ -8,12 +12,14 @@ TAGS :=		json1
 
 all:
 	cd webapp && $(MAKE) $@
-	packr -z
+	$(PACKR) -z
 	CGO_ENABLED=1 go build --tags "$(TAGS)"
 
 install-deps:
 	cd webapp && $(MAKE) $@
-	dep ensure
+	go get -u github.com/gobuffalo/packr/...
+	go get -u github.com/golang/dep/cmd/dep
+	$(DEP) ensure
 
 dist: GOOS=$(shell go env GOOS)
 dist: GOARCH=$(shell go env GOARCH)
@@ -21,11 +27,11 @@ dist: GOEXE=$(shell go env GOEXE)
 dist: OUTDIR=maker-$(VERSION)-$(GOOS)-$(GOARCH)
 dist: OUTBIN=maker$(GOEXE)
 dist:
-	dep ensure
+	$(GOPATH)/bin/dep ensure
 	rm -rf dist/$(OUTDIR)
 	mkdir -p dist/$(OUTDIR)
 	cd webapp && $(MAKE)
-	packr -z
+	$(PACKR) -z
 	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) \
 		go build --tags "$(TAGS)" -o dist/$(OUTDIR)/$(OUTBIN)
 	(cd dist && zip -r $(OUTDIR).zip $(OUTDIR))
