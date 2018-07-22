@@ -37,6 +37,30 @@ https://gitlab.com/crankykernel/maker/-/jobs/artifacts/master/browse?job=build
   loss to execute.
 - This is PRE BETA software. Use at your own risk.
 
+## Building
+
+Before building _Maker_ you must install Go and Node.
+- Node 8.11.3+
+- Go 1.10.3+
+
+A Makefile is used to complete some steps of the build, so install
+_make_ as well.
+
+1. From the top of the source tree run:
+
+		make install-deps
+
+	This command will:
+	- In webapp into npm dependencies: `npm install`.
+	- In the top level directory, install the Go dependencies.
+
+2. In the top level directory run:
+
+		make
+
+	This will produce the *maker* binary in the current directory with
+    the web application resources bundled into it.
+
 ## License
 
 AGPL v3.

@@ -1,5 +1,10 @@
 #! /bin/sh
 
+#
+# Requires reflex:
+#    go get github.com/cespare/reflex
+#
+
 set -x
 set -e
 
