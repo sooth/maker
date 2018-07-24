@@ -83,7 +83,7 @@ func (b *BinanceUserDataStream) DoRun() {
 			select {
 			case intervalChannel <- true:
 			default:
-				log.Println("Failed to send OK to interval channel.")
+				log.Errorf("Failed to send OK to interval channel.")
 			}
 		}
 	}()
@@ -114,8 +114,7 @@ Start:
 		// First we have to get the user stream listen key.
 		listenKey, err := restClient.GetUserDataStream()
 		if err != nil {
-			log.Printf("error: failed to get user stream key: %v",
-				err)
+			log.WithError(err).Error("Failed to get Binance user stream key. Retyring.")
 			goto Fail
 		}
 
@@ -134,20 +133,20 @@ Start:
 		go func() {
 			for {
 				if time.Now().Sub(lastPong) > intervalDuration*2 {
-					log.Printf("ERROR: Last user stream PONG received %v ago.", intervalDuration)
+					log.Errorf("Last user stream PONG received %v ago.", intervalDuration)
 					userStream.Close()
 					return
 				}
 
 				if err := userStream.Conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-					log.Printf("ERROR: Failed to send user stream PING message: %v", err)
+					log.WithError(err).Error("Failed to send user stream PING message.")
 					userStream.Close()
 					return
 				}
 
 				err := restClient.PutUserStreamKeepAlive(listenKey)
 				if err != nil {
-					log.Printf("ERROR: Failed to send user stream keep alive: %v", err)
+					log.WithError(err).Error("Failed to send user stream keep alive.")
 					userStream.Close()
 					return
 				}
@@ -155,11 +154,11 @@ Start:
 				select {
 				case ok := <-intervalChannel:
 					if !ok {
-						log.Println("PING loop exiting.")
+						log.Infof("Binance user stream PING loop exiting.")
 						return
 					}
 				case <-configChannel:
-					log.Info("Received configuration update notification.")
+					log.Infof("Binance user stream: received configuration update.")
 					userStream.Close()
 					return
 				}
@@ -170,7 +169,7 @@ Start:
 		for {
 			_, message, err := userStream.Next()
 			if err != nil {
-				log.Printf("error: user stream: %v", err)
+				log.WithError(err).Error("Failed to read next user stream message.")
 				goto Fail
 			}
 
@@ -181,14 +180,16 @@ Start:
 			case strings.HasPrefix(string(message), `{"e":"executionReport",`):
 				var orderUpdate binance.StreamExecutionReport
 				if err := json.Unmarshal(message, &orderUpdate); err != nil {
-					log.Printf("error: failed to decode executionReport event")
+					log.WithError(err).Error("Failed to decode user stream executionReport message.")
+					continue
 				}
 				streamEvent.EventType = StreamEventType(orderUpdate.EventType)
 				streamEvent.EventTime = time.Unix(0, orderUpdate.EventTimeMillis*int64(time.Millisecond))
 				streamEvent.ExecutionReport = orderUpdate
 			case strings.HasPrefix(string(message), `{"e":"outboundAccountInfo",`):
 				if err := json.Unmarshal(message, &streamEvent.OutboundAccountInfo); err != nil {
-					log.Printf("error: failed to decode outputAccountInfo event")
+					log.WithError(err).Error("Failed to decode user stream outboundAccountInfo message.")
+					continue
 				}
 				streamEvent.EventType = StreamEventType(streamEvent.OutboundAccountInfo.EventType)
 				streamEvent.EventTime = time.Unix(0, streamEvent.OutboundAccountInfo.EventTimeMillis*int64(time.Millisecond))

@@ -97,25 +97,31 @@ func (m *BinanceStreamManager) UnsubscribeTradeStream(symbol string) {
 
 func (m *BinanceStreamManager) RunTradeStream(symbol string, unsubscribe chan bool) {
 	for {
-		log.Printf("Opening trade stream for %s.", symbol)
+		log.WithFields(log.Fields{
+			"symbol": symbol,
+		}).Info("Opening Binance trade stream.")
 		streamClient, err := binance.OpenAggTradeStream(symbol)
 		if err != nil {
 			log.Printf("failed to open aggTrade stream: %v", err)
 			return
 		}
 
+		// TODO: As we're already running in a go routing, I think we could just
+		//     call Next() on the stream client.
 		channel := make(chan binance.AggTradeStreamEvent)
 		go streamClient.Subscribe(channel)
 
 		for {
 			select {
 			case <-unsubscribe:
-				log.Printf("Closing trade subscription for %s.", symbol)
+				log.WithFields(log.Fields{
+					"symbol": symbol,
+				}).Info("Closing Binance trade stream.")
 				streamClient.Close()
 				return
 			case event := <-channel:
 				if event.Err != nil {
-					log.Printf("failed to read from aggTrade stream: %v", event.Err)
+					log.WithError(err).Errorf("Failed to read from trade stream.")
 					return
 				}
 				m.lock()
