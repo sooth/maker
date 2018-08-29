@@ -67,6 +67,10 @@ AGPL v3.
 
 ## ChangeLog
 
+### 0.2.1
+
+- Update for new Binance fee discount of 25%.
+
 ### 0.2.0
 
 - When setting limit sell order when placing buy, allow an absolute

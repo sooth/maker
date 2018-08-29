@@ -24,7 +24,7 @@ import (
 const TRADE_STATE_VERSION = 1
 
 const DEFAULT_FEE = float64(0.001)
-const BNB_FEE = float64(0.0005)
+const BNB_FEE = float64(0.00075)
 
 type TradeStatus string
 
