@@ -3,7 +3,6 @@ VERSION :=	$(shell cat VERSION)
 GOPATH ?=	$(HOME)/go
 CGO_ENABLED :=	1
 
-DEP :=		$(GOPATH)/bin/dep
 PACKR :=	$(GOPATH)/bin/packr
 
 TAGS :=		json1
@@ -18,8 +17,7 @@ all:
 install-deps:
 	cd webapp && $(MAKE) $@
 	go get -u github.com/gobuffalo/packr/...
-	go get -u github.com/golang/dep/cmd/dep
-	$(DEP) ensure
+	go mod download
 
 dist: GOOS=$(shell go env GOOS)
 dist: GOARCH=$(shell go env GOARCH)
@@ -27,7 +25,6 @@ dist: GOEXE=$(shell go env GOEXE)
 dist: OUTDIR=maker-$(VERSION)-$(GOOS)-$(GOARCH)
 dist: OUTBIN=maker$(GOEXE)
 dist:
-	$(GOPATH)/bin/dep ensure
 	rm -rf dist/$(OUTDIR)
 	mkdir -p dist/$(OUTDIR)
 	cd webapp && $(MAKE)
