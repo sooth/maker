@@ -2,3 +2,8 @@ vendor
 dist
 webapp/dist
 webapp/node_modules
+Dockerfile
+maker.db
+maker.yaml
+maker.log
+data
