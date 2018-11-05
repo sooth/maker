@@ -8,7 +8,6 @@ browser. Your API keys and secrets are only sent between you and the
 exchange servers.
 
 ## Supported Platforms
--------------------
 
 - Windows
 - Linux
@@ -16,6 +15,16 @@ exchange servers.
 ## Download
 
 https://gitlab.com/crankykernel/maker/-/jobs/artifacts/master/browse?job=build
+
+## Running
+
+If using a .zip file download, first unzip then:
+
+- On Linux: ./maker server
+- On MacOS: Open the terminal and run "./maker server"
+- On Windows: Double click "maker.exe"
+
+Then using your web browser visit http://localhost:6045.
 
 ## Supported Exchanges
 
