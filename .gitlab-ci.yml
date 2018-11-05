@@ -1,8 +1,6 @@
-image: fedora:28
+image: fedora:29
 
 before_script:
-  - mkdir -p /go/src/gitlab.com/crankykernel/maker
-  - cp -a . /go/src/gitlab.com/crankykernel/maker
   - yum -y install git make gcc mingw64-gcc mingw32-gcc zip
   - yum -y install go nodejs npm
 
@@ -10,9 +8,6 @@ build:
   script: |
     export GOPATH=/go
     export PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
-    go version
-    go env
-    cd /go/src/gitlab.com/crankykernel/maker
     make install-deps
     GOOS=linux GOARCH=amd64 make dist
     CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 make dist
