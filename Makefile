@@ -34,13 +34,10 @@ dist:
 	(cd dist && zip -r $(OUTDIR).zip $(OUTDIR))
 
 clean:
+	cd webapp && $(MAKE) $@
 	rm -f maker maker.exe
 	rm -rf dist
-	cd webapp && $(MAKE) $@
 
 distclean: clean
-	rm -rf vendor
 	cd webapp && $(MAKE) $@
-
-dev-server:
-	reflex -d none -s -r \.go$$ -- go run --tags "json1" ./main.go server
+	rm -rf vendor
