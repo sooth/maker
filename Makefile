@@ -14,6 +14,9 @@ all:
 	$(PACKR) -z
 	CGO_ENABLED=1 go build --tags "$(TAGS)"
 
+evebox-only:
+	CGO_ENABLED=1 go build --tags "$(TAGS)"
+
 install-deps:
 	cd webapp && $(MAKE) $@
 	go get -u github.com/gobuffalo/packr/...
