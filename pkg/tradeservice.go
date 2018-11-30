@@ -334,6 +334,18 @@ func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
 	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
 	s.BroadcastTradeUpdate(trade)
 
+	lastPrice, err := binance.NewAnonymousClient().GetPriceTicker(trade.State.Symbol)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"symbol": trade.State.Symbol,
+		}).Errorf("Failed to get last price for new trade")
+	} else {
+		if trade.State.LastPrice == 0 {
+			trade.State.LastPrice = lastPrice.Price
+			s.BroadcastTradeUpdate(trade)
+		}
+	}
+
 	return trade.State.TradeID
 }
 
