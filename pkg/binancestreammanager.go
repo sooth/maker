@@ -16,10 +16,11 @@
 package pkg
 
 import (
-	"sync"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"strings"
 	"gitlab.com/crankykernel/maker/pkg/log"
+	"strings"
+	"sync"
+	"time"
 )
 
 type BinanceStreamManager struct {
@@ -96,6 +97,7 @@ func (m *BinanceStreamManager) UnsubscribeTradeStream(symbol string) {
 }
 
 func (m *BinanceStreamManager) RunTradeStream(symbol string, unsubscribe chan bool) {
+Reopen:
 	for {
 		log.WithFields(log.Fields{
 			"symbol": symbol,
@@ -121,8 +123,11 @@ func (m *BinanceStreamManager) RunTradeStream(symbol string, unsubscribe chan bo
 				return
 			case event := <-channel:
 				if event.Err != nil {
-					log.WithError(err).Errorf("Failed to read from trade stream.")
-					return
+					log.WithFields(log.Fields{
+						"symbol": symbol,
+					}).WithError(event.Err).Errorf("Failed to read from trade stream.")
+					time.Sleep(100 * time.Millisecond)
+					continue Reopen
 				}
 				m.lock()
 				for channel := range m.tradeStreamSubscriptions {

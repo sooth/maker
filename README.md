@@ -76,6 +76,10 @@ AGPL v3.
 
 ## ChangeLog
 
+### Unreleased
+- Update frontend to Angular 7.
+- Reconnect os loss of connection from a symbol trade stream.
+
 ### 0.2.1
 
 - Update for new Binance fee discount of 25%.
