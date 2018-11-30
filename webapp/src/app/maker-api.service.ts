@@ -71,10 +71,3 @@ function flattenJson(input) {
 
     return output;
 }
-
-interface LimitSellRequest {
-    enabled: boolean;
-    type: LimitSellType;
-    price: number;
-    percent: number;
-}

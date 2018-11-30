@@ -22,16 +22,7 @@ export let LOGGER: LoggerService = null;
 })
 export class LoggerService {
 
-    private logFile: any = null;
-
-    private fs: any = null;
-
     constructor() {
-        if ((<any>window).require) {
-            this.fs = (<any>window).require("fs");
-            this.logFile = this.fs.createWriteStream("log");
-        }
-
         if (LOGGER != null) {
             console.log("error: global logger service not null.");
         } else {
@@ -39,21 +30,8 @@ export class LoggerService {
         }
     }
 
-    private format(msg) {
-        switch (typeof msg) {
-            case "string":
-                return msg;
-            default:
-                return JSON.stringify(msg);
-        }
-    }
-
     log(msg) {
-        const formatter = this.format(msg);
         console.log(msg);
-        if (this.logFile) {
-            this.logFile.write(msg + "\n");
-        }
     }
 
     logWithPrefix(prefix, msg) {
