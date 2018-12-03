@@ -15,7 +15,10 @@
 
 package handlers
 
-import "gitlab.com/crankykernel/maker/pkg/maker"
+import (
+	"encoding/json"
+	"gitlab.com/crankykernel/maker/pkg/maker"
+)
 
 type LimitSellRequest struct {
 	Enabled bool                `json:"enabled"`
@@ -38,6 +41,14 @@ type BuyOrderRequest struct {
 	TrailingProfitPercent   float64             `json:"trailingProfitPercent"`
 	TrailingProfitDeviation float64             `json:"trailingProfitDeviation"`
 	Price                   float64             `json:"price"`
+}
+
+func (r *BuyOrderRequest) AsJson() string {
+	bytes, err := json.Marshal(r)
+	if err != nil {
+		return ""
+	}
+	return string(bytes)
 }
 
 type BuyOrderResponse struct {

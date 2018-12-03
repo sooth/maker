@@ -16,20 +16,18 @@
 package pkg
 
 import (
-	"net/http"
+	"encoding/json"
+	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/pkg/handlers"
-	"encoding/json"
-	"gitlab.com/crankykernel/maker/pkg/maker"
-	"fmt"
 	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/pkg/maker"
 	"io/ioutil"
+	"net/http"
 )
 
 func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
 		params := binance.OrderParameters{
 			Side:        binance.OrderSideBuy,
 			Type:        binance.OrderTypeLimit,
@@ -42,6 +40,12 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			log.Printf("error: failed to decode request body: %v", err)
 			handlers.WriteBadRequestError(w)
 			return
+		}
+
+		log.Debugf("Received buy order request: %v", requestBody.AsJson())
+
+		commonLogFields := log.Fields{
+			"symbol": requestBody.Symbol,
 		}
 
 		// Validate price source.
@@ -76,7 +80,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 		orderId, err := tradeService.MakeOrderID()
 		if err != nil {
-			log.WithError(err).Errorf("Failed to create order ID.")
+			log.WithFields(commonLogFields).WithError(err).Errorf("Failed to create order ID.")
 			handlers.WriteJsonError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -90,26 +94,18 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 		switch requestBody.PriceSource {
 		case maker.PriceSourceManual:
-			log.Infof("Using manual price of %v", requestBody.Price)
 			params.Price = requestBody.Price
 		default:
 			params.Price, err = buyService.GetPrice(params.Symbol, requestBody.PriceSource)
 			if err != nil {
-				log.WithError(err).WithFields(log.Fields{
+				log.WithError(err).WithFields(commonLogFields).WithFields(log.Fields{
 					"priceSource": requestBody.PriceSource,
-					"symbol":      params.Symbol,
 				}).Error("Failed to get buy price.")
 				handlers.WriteJsonError(w, http.StatusInternalServerError,
 					fmt.Sprintf("Failed to get price: %v", err))
 				return
 			}
 		}
-
-		log.WithFields(log.Fields{
-			"symbol":      params.Symbol,
-			"priceSource": requestBody.PriceSource,
-			"price":       params.Price,
-		}).Debug("Got purchase price for symbol.")
 
 		if requestBody.StopLossEnabled {
 			trade.SetStopLoss(requestBody.StopLossEnabled,
@@ -123,31 +119,35 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		}
 
 		tradeId := tradeService.AddNewTrade(trade)
-
-		logFields := log.Fields{
-			"tradeId": tradeId,
-			"symbol":  params.Symbol,
-		}
+		commonLogFields["tradeId"] = tradeId;
 
 		if requestBody.LimitSellEnabled {
 			if requestBody.LimitSellType == maker.LimitSellTypePercent {
-				log.WithFields(logFields).Infof("Setting limit sell at %f percent.",
+				log.WithFields(commonLogFields).Infof("Setting limit sell at %f percent.",
 					requestBody.LimitSellPercent)
 				trade.SetLimitSellByPercent(requestBody.LimitSellPercent)
 			} else if requestBody.LimitSellType == maker.LimitSellTypePrice {
-				log.WithFields(logFields).Infof("Setting limit sell at price %f.",
+				log.WithFields(commonLogFields).Infof("Setting limit sell at price %f.",
 					requestBody.LimitSellPrice)
 				trade.SetLimitSellByPrice(requestBody.LimitSellPrice)
 			}
 		}
 
-		log.WithFields(log.Fields{
-			"tradeId":       tradeId,
-			"symbol":        params.Symbol,
-			"price":         params.Price,
-			"quantity":      params.Quantity,
-			"type":          params.Type,
-			"clientOrderId": params.NewClientOrderId,
+		log.WithFields(commonLogFields).WithFields(log.Fields{
+			"type":                    params.Type,
+			"price":                   params.Price,
+			"quantity":                params.Quantity,
+			"clientOrderId":           params.NewClientOrderId,
+			"priceSource":             requestBody.PriceSource,
+			"limitSellEnabled":        requestBody.LimitSellEnabled,
+			"limitSellType":           requestBody.LimitSellType,
+			"limitSellPercent":        requestBody.LimitSellPercent,
+			"limitSellPrice":          requestBody.LimitSellPrice,
+			"stopLossEnabled":         requestBody.StopLossEnabled,
+			"stopLossPercent":         requestBody.StopLossPercent,
+			"trailingProfitEnabled":   requestBody.TrailingProfitEnabled,
+			"trailingProfitPercent":   requestBody.TrailingProfitPercent,
+			"trailingProfitDeviation": requestBody.TrailingProfitDeviation,
 		}).Infof("Posting BUY order for %s", params.Symbol)
 
 		response, err := getBinanceRestClient().PostOrder(params)

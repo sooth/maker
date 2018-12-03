@@ -15,8 +15,8 @@
 
 package pkg
 
-import "fmt"
 import (
+	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/pkg/maker"
 )
@@ -31,24 +31,45 @@ func NewBinanceBuyService() *BinanceBuyService {
 	}
 }
 
-func (s *BinanceBuyService) GetPrice(symbol string, priceSource maker.PriceSource) (float64, error) {
-	if priceSource == maker.PriceSourceLast {
-		ticker, err := s.anonymousClient.GetPriceTicker(symbol)
-		if err != nil {
-			return 0, err
-		}
-		return ticker.Price, nil
-	} else if priceSource == maker.PriceSourceBestAsk || priceSource == maker.PriceSourceBestBid {
-		ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
-		if err != nil {
-			return 0, err
-		}
-		switch priceSource {
-		case maker.PriceSourceBestBid:
-			return ticker.BidPrice, nil
-		case maker.PriceSourceBestAsk:
-			return ticker.AskPrice, nil
-		}
+// GetLastPrice gets the most current close price from Binance using the REST
+// API.
+func (s *BinanceBuyService) GetLastPrice(symbol string) (float64, error) {
+	ticker, err := s.anonymousClient.GetPriceTicker(symbol)
+	if err != nil {
+		return 0, err
 	}
-	return 0, fmt.Errorf("unknown price source: %s", priceSource)
+	return ticker.Price, nil
+}
+
+// GetBestBidPrice gets the most current best bid price from Binance using
+// the REST API.
+func (s *BinanceBuyService) GetBestBidPrice(symbol string) (float64, error) {
+	ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
+	if err != nil {
+		return 0, err
+	}
+	return ticker.BidPrice, nil
+}
+
+// GetBestBidPrice gets the most current best bid price from Binance using
+// the REST API.
+func (s *BinanceBuyService) GetBestAskPrice(symbol string) (float64, error) {
+	ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
+	if err != nil {
+		return 0, err
+	}
+	return ticker.AskPrice, nil
+}
+
+func (s *BinanceBuyService) GetPrice(symbol string, priceSource maker.PriceSource) (float64, error) {
+	switch priceSource {
+	case maker.PriceSourceLast:
+		return s.GetLastPrice(symbol)
+	case maker.PriceSourceBestBid:
+		return s.GetBestBidPrice(symbol)
+	case maker.PriceSourceBestAsk:
+		return s.GetBestAskPrice(symbol)
+	default:
+		return 0, fmt.Errorf("unknown price source: %s", priceSource)
+	}
 }

@@ -16,9 +16,10 @@
 package handlers
 
 import (
-	"net/http"
 	"encoding/json"
 	"fmt"
+	"gitlab.com/crankykernel/maker/pkg/log"
+	"net/http"
 )
 
 func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) error {
@@ -28,7 +29,8 @@ func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) 
 	return encoder.Encode(body)
 }
 
-func WriteJsonError(w http.ResponseWriter, statusCode int, message string) error {
+/// WriteJsonError writes a JSON formatted error response to the web client.
+func WriteJsonError(w http.ResponseWriter, statusCode int, message string) {
 	body := map[string]interface{}{
 		"error":      true,
 		"statusCode": statusCode,
@@ -36,7 +38,9 @@ func WriteJsonError(w http.ResponseWriter, statusCode int, message string) error
 	if message != "" {
 		body["message"] = message
 	}
-	return WriteJsonResponse(w, statusCode, body)
+	if err := WriteJsonResponse(w, statusCode, body); err != nil {
+		log.WithError(err).Errorf("Failed to write HTTP error response to client.")
+	}
 }
 
 func RequireFormValue(w http.ResponseWriter, r *http.Request, field string) bool {
