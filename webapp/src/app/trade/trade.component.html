@@ -89,14 +89,17 @@
                         <input
                           *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
                           type="number" class="form-control" disabled step="0.00000001"
+                          title="Last price will be determined when order is placed."
                           [value]="lastPriceMap[orderFormSettings.symbol] && lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
                         <input
                           *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
                           type="number" class="form-control" disabled step="0.00000001"
+                          title="Best bid price will be determined when order is placed."
                           [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid.toFixed(8) || null">
                         <input
                           *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
                           type="number" class="form-control" disabled step="0.00000001"
+                          title="Best ask price will be determined when order is placed."
                           [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask.toFixed(8) || null">
                         <input
                           *ngIf="orderFormSettings.priceSource == 'MANUAL'"
