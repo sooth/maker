@@ -5,11 +5,11 @@ Vagrant.configure("2") do |config|
   # Not working for some reason.
   config.vm.network "forwarded_port",
                     guest: 6045,
-                    host: 6045,
+                    host: 8045,
                     host_ip: "127.0.0.1"
 
   config.vm.synced_folder "../..",
-                          "/Users/vagrant/go/src/gitlab.com/crankykernel/maker",
+                          "/Users/vagrant/maker",
                           type: "rsync",
                           rsync__user: "vagrant",
                           rsync__group: "staff",
@@ -20,13 +20,6 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision "shell", inline: <<-SHELL
-    mkdir -p ~/go/src/gitlab.com/crankykernel/maker
-    chown -R vagrant ~/go
-
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-    brew install go
-    brew install node
-
   SHELL
 
 end
