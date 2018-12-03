@@ -20,8 +20,8 @@
                             (change)="changeSymbol()">
                       <option [value]=""></option>
                       <option
-                          *ngFor="let symbol of binance.symbols | withquoteasset:orderFormSettings.quoteAsset"
-                          [value]="symbol">
+                        *ngFor="let symbol of binance.symbols | withquoteasset:orderFormSettings.quoteAsset"
+                        [value]="symbol">
                         {{symbol}}
                       </option>
                     </select>
@@ -87,23 +87,23 @@
                           </select>
                         </div>
                         <input
-                            *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
-                            type="number" class="form-control" disabled
-                            [value]="lastPriceMap[orderFormSettings.symbol] && lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
+                          *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
+                          type="number" class="form-control" disabled step="0.00000001"
+                          [value]="lastPriceMap[orderFormSettings.symbol] && lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
                         <input
-                            *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
-                            type="number" class="form-control" disabled
-                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid.toFixed(8) || null">
+                          *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
+                          type="number" class="form-control" disabled step="0.00000001"
+                          [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid.toFixed(8) || null">
                         <input
-                            *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
-                            type="number" class="form-control" disabled
-                            [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask.toFixed(8) || null">
+                          *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
+                          type="number" class="form-control" disabled step="0.00000001"
+                          [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask.toFixed(8) || null">
                         <input
-                            *ngIf="orderFormSettings.priceSource == 'MANUAL'"
-                            type="number" class="form-control"
-                            [(ngModel)]="orderForm.manualPrice"
-                            (change)="onManualPriceInput()"
-                            [step]="priceStepSize">
+                          *ngIf="orderFormSettings.priceSource == 'MANUAL'"
+                          type="number" class="form-control"
+                          [(ngModel)]="orderForm.manualPrice"
+                          (change)="onManualPriceInput()"
+                          [step]="priceStepSize">
                         <div *ngIf="orderFormSettings.priceSource == 'MANUAL'"
                              class="input-group-append">
                           <button type="button"
@@ -151,12 +151,12 @@
                       number:".8-8")
                       ||
                       '--'}}
-                    </td>
-                  </tr>
+                      </td>
+                      </tr>
 
-                  <tr>
-                    <th>Bid</th>
-                    <td>{{(bidAskMap[orderFormSettings.symbol] &&
+                      <tr>
+                      <th>Bid</th>
+                      <td>{{(bidAskMap[orderFormSettings.symbol] &&
                       bidAskMap[orderFormSettings.symbol].bid
                       | number:".8-8") || '--' }}
                     </td>
