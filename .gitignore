@@ -1,13 +1,10 @@
 /.idea
 *.iml
-/maker
-/maker.exe
 /maker.db
 /maker.yaml
 /maker.log
 *-packr.go
 *~
 /dist
-/vendor
 .vagrant/
 /data

@@ -462,7 +462,7 @@ func yaml2json(i interface{}) interface{} {
 }
 
 func staticAssetHandler() http.HandlerFunc {
-	static := packr.NewBox("../webapp/dist")
+	static := packr.NewBox("../../webapp/dist")
 	fileServer := http.FileServer(static)
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !static.Has(r.URL.Path) {
