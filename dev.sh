@@ -8,5 +8,5 @@ trap 'echo "Killing background jobs..."; kill $(jobs -p)' EXIT
 
 while true; do
     find */* -name \*.go | \
-	entr -d -r sh -c "make evebox-only && ./maker server"
+	entr -d -r sh -c "(cd go && make) && ./go/maker server"
 done
