@@ -36,14 +36,6 @@ import * as faSyncAlt from "@fortawesome/fontawesome-free-solid/faSyncAlt";
 import {HttpClientModule} from "@angular/common/http";
 import {HistoryComponent} from './history/history.component';
 
-import {
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatTableModule
-} from "@angular/material";
 import {TradeDetailComponent} from './trade-detail/trade-detail.component';
 import {TradeTableRowComponent} from './trade-table-row/trade-table-row.component';
 import {TrailingProfitFormComponent} from './trailingprofitform/trailing-profit-form.component';
@@ -73,14 +65,6 @@ fontawesome.library.add(faSyncAlt);
         ReactiveFormsModule,
         BrowserAnimationsModule,
         HttpClientModule,
-
-        // Angular Material modules.
-        MatButtonModule,
-        MatPaginatorModule,
-        MatTableModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSortModule,
     ],
     providers: [
         BinanceService,

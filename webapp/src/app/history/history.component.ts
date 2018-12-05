@@ -13,16 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {TradeState} from '../maker.service';
-import {
-    MatPaginator,
-    MatSort,
-    MatSortable,
-    MatTableDataSource
-} from '@angular/material';
-import {toAppTradeState} from '../trade-table/trade-table.component';
+import {AppTradeState, toAppTradeState} from '../trade-table/trade-table.component';
+import {HttpClient} from "@angular/common/http";
 
 @Component({
     selector: 'app-history',
@@ -31,11 +25,7 @@ import {toAppTradeState} from '../trade-table/trade-table.component';
 })
 export class HistoryComponent implements OnInit, AfterViewInit {
 
-    displayedColumns = ["closeTime", 'symbol', "status", "profitPercent"];
-
-    dataSource: MatTableDataSource<TradeState>;
-    @ViewChild(MatPaginator) paginator: MatPaginator;
-    @ViewChild(MatSort) sort: MatSort;
+    trades: TradeState[] = [];
 
     constructor(private http: HttpClient) {
     }
@@ -45,29 +35,15 @@ export class HistoryComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit() {
         this.http.get("/api/trade/query")
-                .subscribe((trades: TradeState[]) => {
-                    this.dataSource = new MatTableDataSource(trades.map((trade) => {
-                        return toAppTradeState(trade)
-                    }));
-                    this.dataSource.paginator = this.paginator;
-                    this.dataSource.sort = this.sort;
-                    this.sort.sort(<MatSortable>{
-                        id: "CloseTime",
-                        start: "desc",
-                        disableClear: false,
-                    });
-                });
+            .subscribe((trades: TradeState[]) => {
+                this.trades = trades.map((trade) => {
+                    return toAppTradeState(trade);
+                }).sort(this.sort);
+            });
     }
 
-    applyFilter(filterValue: string) {
-        filterValue = filterValue.trim().toLowerCase();
-        this.dataSource.filter = filterValue;
-        if (this.dataSource.paginator) {
-            this.dataSource.paginator.firstPage();
-        }
-    }
-
-    onPage(event) {
-        console.log(event);
+    private sort(a: AppTradeState, b: AppTradeState) {
+        return new Date(b.OpenTime).getTime() -
+            new Date(a.OpenTime).getTime();
     }
 }
