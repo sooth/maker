@@ -1,45 +1,61 @@
-.form-group {
-  label {
-    margin-bottom: 0px;
-    font-size: small;
-  }
-}
+@import "~bootstrap/scss/bootstrap";
 
-.form-group .custom-select {
-  border-bottom-left-radius: 0;
-  border-top-left-radius: 0;
+.form-group {
+    label {
+        margin-bottom: 0px;
+        font-size: 0.8rem;
+    }
 }
 
 .card-body {
-  padding-top: 0px;
-  padding-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 .col {
-  margin-bottom: 0 !important;
+    margin-bottom: 0;
+}
+
+// Tighten up the spacing between columns without changing the spacing before
+// the first and after the last.
+.col {
+    &:not(:first-child) {
+        padding-left: 2px;
+    }
+
+    &:not(:last-child) {
+        padding-right: 2px;
+    }
 }
 
 .form-group {
-  margin-bottom: 0 !important;
+    margin-bottom: 0;
 }
 
-#sellActionRow {
-  .col:first-child {
-    padding-right: 2px;
-  }
-  .col:nth-child(2) {
-    padding-left: 2px;
-  }
+// Make some components their small variant by default.
+.form-control {
+    @extend .form-control-sm;
 }
 
+.btn {
+    @extend .btn-sm;
+}
+
+.input-group {
+    @extend .input-group-sm;
+}
+
+// A button that wraps a checkbox and a label.
 .wrapper-button {
-  background: transparent;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  outline: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: none;
 }
 
 .wrapper-button:hover {
-  background: #f7f7f7;
+    background: #f7f7f7;
 }

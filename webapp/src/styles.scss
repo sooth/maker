@@ -3,12 +3,20 @@
 
 body {
     padding-top: 40px;
+    margin: 0;
+    height: 100%;
 }
 
-.dropdown-menu span {
-    cursor: pointer;
+html {
+    height: 100%;
 }
 
+.top-nav {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+// Fix the radius when 2 items are appended to an input group.
 .input-group-append {
     select {
         @extend .dropdown-toggle;
@@ -19,33 +27,4 @@ body {
         position: relative;
         z-index: 2;
     }
-}
-
-.form-control {
-    @extend .form-control-sm;
-}
-
-.btn {
-    @extend .btn-sm;
-}
-
-.input-group {
-    @extend .input-group-sm;
-}
-
-.top-nav {
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-body {
-    margin: 0;
-}
-
-html, body {
-    height: 100%;
-}
-
-body {
-    margin: 0;
 }
