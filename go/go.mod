@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/websocket v1.2.0
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/mattn/go-sqlite3 v1.9.0
+	github.com/mitchellh/go-homedir v1.0.0 // indirect
 	github.com/oklog/ulid v0.3.0
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect

@@ -17,6 +17,7 @@ package pkg
 
 import (
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/types"
 	"sync"
 	"math"
 	"fmt"
@@ -520,14 +521,14 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 
 func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
 	if trade.State.LimitSell.Enabled {
-		if trade.State.LimitSell.Type == maker.LimitSellTypePercent {
+		if trade.State.LimitSell.Type == types.LimitSellTypePercent {
 			log.WithFields(log.Fields{
 				"tradeId": trade.State.TradeID,
 				"symbol":  trade.State.Symbol,
 			}).Infof("Triggering limit sell at %f percent.",
 				trade.State.LimitSell.Percent)
 			s.LimitSellByPercent(trade, trade.State.LimitSell.Percent)
-		} else if trade.State.LimitSell.Type == maker.LimitSellTypePrice {
+		} else if trade.State.LimitSell.Type == types.LimitSellTypePrice {
 			log.WithFields(log.Fields{
 				"tradeId": trade.State.TradeID,
 				"symbol":  trade.State.Symbol,

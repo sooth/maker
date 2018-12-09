@@ -19,6 +19,7 @@ import (
 	"time"
 	"math"
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/types"
 )
 
 const TRADE_STATE_VERSION = 1
@@ -99,7 +100,7 @@ type TradeState struct {
 
 	LimitSell struct {
 		Enabled bool
-		Type    LimitSellType
+		Type    types.LimitSellType
 		Percent float64
 		Price   float64
 	}
@@ -183,13 +184,13 @@ func (s *Trade) FeeAsset() string {
 
 func (t *Trade) SetLimitSellByPercent(percent float64) {
 	t.State.LimitSell.Enabled = true
-	t.State.LimitSell.Type = LimitSellTypePercent
+	t.State.LimitSell.Type = types.LimitSellTypePercent
 	t.State.LimitSell.Percent = percent
 }
 
 func (t *Trade) SetLimitSellByPrice(price float64) {
 	t.State.LimitSell.Enabled = true
-	t.State.LimitSell.Type = LimitSellTypePrice
+	t.State.LimitSell.Type = types.LimitSellTypePrice
 	t.State.LimitSell.Price = price
 }
 

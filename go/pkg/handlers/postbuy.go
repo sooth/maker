@@ -17,12 +17,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/types"
 )
 
 type LimitSellRequest struct {
 	Enabled bool                `json:"enabled"`
-	Type    maker.LimitSellType `json:"type"`
+	Type    types.LimitSellType `json:"type"`
 	Percent float64             `json:"percent"`
 	Price   float64             `json:"price"`
 }
@@ -30,9 +30,9 @@ type LimitSellRequest struct {
 type BuyOrderRequest struct {
 	Symbol                  string              `json:"symbol"`
 	Quantity                float64             `json:"quantity"`
-	PriceSource             maker.PriceSource   `json:"priceSource"`
+	PriceSource             types.PriceSource   `json:"priceSource"`
 	LimitSellEnabled        bool                `json:"limitSellEnabled"`
-	LimitSellType           maker.LimitSellType `json:"limitSellType"`
+	LimitSellType           types.LimitSellType `json:"limitSellType"`
 	LimitSellPercent        float64             `json:"limitSellPercent"`
 	LimitSellPrice          float64             `json:"limitSellPrice"`
 	StopLossEnabled         bool                `json:"stopLossEnabled"`

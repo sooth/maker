@@ -18,7 +18,7 @@ package pkg
 import (
 	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/types"
 )
 
 type BinanceBuyService struct {
@@ -61,13 +61,13 @@ func (s *BinanceBuyService) GetBestAskPrice(symbol string) (float64, error) {
 	return ticker.AskPrice, nil
 }
 
-func (s *BinanceBuyService) GetPrice(symbol string, priceSource maker.PriceSource) (float64, error) {
+func (s *BinanceBuyService) GetPrice(symbol string, priceSource types.PriceSource) (float64, error) {
 	switch priceSource {
-	case maker.PriceSourceLast:
+	case types.PriceSourceLast:
 		return s.GetLastPrice(symbol)
-	case maker.PriceSourceBestBid:
+	case types.PriceSourceBestBid:
 		return s.GetBestBidPrice(symbol)
-	case maker.PriceSourceBestAsk:
+	case types.PriceSourceBestAsk:
 		return s.GetBestAskPrice(symbol)
 	default:
 		return 0, fmt.Errorf("unknown price source: %s", priceSource)

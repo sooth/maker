@@ -22,6 +22,7 @@ import (
 	"gitlab.com/crankykernel/maker/pkg/handlers"
 	"gitlab.com/crankykernel/maker/pkg/log"
 	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/types"
 	"io/ioutil"
 	"net/http"
 )
@@ -50,10 +51,10 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 
 		// Validate price source.
 		switch requestBody.PriceSource {
-		case maker.PriceSourceLast:
-		case maker.PriceSourceBestBid:
-		case maker.PriceSourceBestAsk:
-		case maker.PriceSourceManual:
+		case types.PriceSourceLast:
+		case types.PriceSourceBestBid:
+		case types.PriceSourceBestAsk:
+		case types.PriceSourceManual:
 		case "":
 			handlers.WriteJsonError(w, http.StatusBadRequest, "missing required parameter: priceSource")
 			return
@@ -66,8 +67,8 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		// Validate limit sell.
 		if requestBody.LimitSellEnabled {
 			switch requestBody.LimitSellType {
-			case maker.LimitSellTypePercent:
-			case maker.LimitSellTypePrice:
+			case types.LimitSellTypePercent:
+			case types.LimitSellTypePrice:
 			default:
 				handlers.WriteJsonError(w, http.StatusBadRequest,
 					fmt.Sprintf("limit sell type invalid or not set"))
@@ -93,7 +94,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		buyService := NewBinanceBuyService()
 
 		switch requestBody.PriceSource {
-		case maker.PriceSourceManual:
+		case types.PriceSourceManual:
 			params.Price = requestBody.Price
 		default:
 			params.Price, err = buyService.GetPrice(params.Symbol, requestBody.PriceSource)
@@ -122,11 +123,11 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		commonLogFields["tradeId"] = tradeId;
 
 		if requestBody.LimitSellEnabled {
-			if requestBody.LimitSellType == maker.LimitSellTypePercent {
+			if requestBody.LimitSellType == types.LimitSellTypePercent {
 				log.WithFields(commonLogFields).Infof("Setting limit sell at %f percent.",
 					requestBody.LimitSellPercent)
 				trade.SetLimitSellByPercent(requestBody.LimitSellPercent)
-			} else if requestBody.LimitSellType == maker.LimitSellTypePrice {
+			} else if requestBody.LimitSellType == types.LimitSellTypePrice {
 				log.WithFields(commonLogFields).Infof("Setting limit sell at price %f.",
 					requestBody.LimitSellPrice)
 				trade.SetLimitSellByPrice(requestBody.LimitSellPrice)
