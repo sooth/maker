@@ -18,18 +18,18 @@ package pkg
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"net/http"
-	"gitlab.com/crankykernel/cryptotrader/binance"
 	_ "github.com/mattn/go-sqlite3"
-	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/config"
-	"runtime"
-	"os/exec"
-	"sync"
-	"path/filepath"
-	"os"
-	"gitlab.com/crankykernel/maker/handlers"
 	"gitlab.com/crankykernel/maker/db"
+	"gitlab.com/crankykernel/maker/handlers"
+	"gitlab.com/crankykernel/maker/log"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"sync"
 )
 
 var ServerFlags struct {
@@ -132,11 +132,11 @@ func ServerMain() {
 		handlers.GetTrade).Methods("GET")
 
 	router.HandleFunc("/api/binance/account/test",
-		binanceTestHandler).Methods("GET")
+		handlers.BinanceTestHandler).Methods("GET")
 	router.HandleFunc("/api/binance/config",
-		saveBinanceConfigHandler).Methods("POST")
+		handlers.SaveBinanceConfigHandler).Methods("POST")
 	router.HandleFunc("/api/config/preferences",
-		savePreferencesHandler).Methods("POST");
+		handlers.SavePreferencesHandler).Methods("POST");
 	binanceApiProxyHandler := http.StripPrefix("/proxy/binance",
 		binance.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)

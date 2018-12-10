@@ -13,18 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package pkg
+package handlers
 
 import (
-	"net/http"
-	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/maker/config"
 	"encoding/json"
-	"gitlab.com/crankykernel/maker/handlers"
+	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/config"
+	"gitlab.com/crankykernel/maker/log"
+	"net/http"
 )
 
-func savePreferencesHandler(w http.ResponseWriter, r *http.Request) {
+func SavePreferencesHandler(w http.ResponseWriter, r *http.Request) {
 	type preferenceConfig struct {
 		BalancePercents string `json:"balancePercents"`
 	}
@@ -36,7 +35,7 @@ func savePreferencesHandler(w http.ResponseWriter, r *http.Request) {
 			"path":   r.URL.Path,
 			"method": r.Method,
 		}).WithError(err).Errorf("Failed to decode Binance configuration.")
-		handlers.WriteJsonError(w, http.StatusBadRequest, err.Error())
+		WriteJsonError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -44,7 +43,7 @@ func savePreferencesHandler(w http.ResponseWriter, r *http.Request) {
 	config.WriteConfig()
 }
 
-func saveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
+func SaveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
 	type binanceApiConfiguration struct {
 		ApiKey    string `json:"key"`
 		ApiSecret string `json:"secret"`
@@ -57,7 +56,7 @@ func saveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
 			"path":   r.URL.Path,
 			"method": r.Method,
 		}).WithError(err).Errorf("Failed to decode Binance configuration.")
-		handlers.WriteJsonError(w, http.StatusBadRequest, err.Error())
+		WriteJsonError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -66,20 +65,20 @@ func saveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
 	config.WriteConfig()
 }
 
-func binanceTestHandler(w http.ResponseWriter, r *http.Request) {
+func BinanceTestHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		handlers.WriteJsonError(w, http.StatusBadRequest, "failed to parse form data")
+		WriteJsonError(w, http.StatusBadRequest, "failed to parse form data")
 		return
 	}
 
 	binanceApiKey := r.FormValue("binance.api.key")
 	if binanceApiKey == "" {
-		handlers.WriteJsonError(w, http.StatusBadRequest, "missing binance.api.key")
+		WriteJsonError(w, http.StatusBadRequest, "missing binance.api.key")
 		return
 	}
 	binanceApiSecret := r.FormValue("binance.api.secret")
 	if binanceApiSecret == "" {
-		handlers.WriteJsonError(w, http.StatusBadRequest, "missing binance.api.secret")
+		WriteJsonError(w, http.StatusBadRequest, "missing binance.api.secret")
 		return
 	}
 
@@ -87,14 +86,14 @@ func binanceTestHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := client.GetAccount()
 	if err != nil {
 		log.WithError(err).Warn("Binance account authentication test failed.")
-		handlers.WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
+		WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
 			"ok":    false,
 			"error": err.Error(),
 		})
 		return
 	}
 
-	handlers.WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
+	WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
 		"ok": true,
 	})
 }
