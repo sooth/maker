@@ -21,15 +21,15 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"gitlab.com/crankykernel/maker/pkg/handlers"
-	"gitlab.com/crankykernel/maker/pkg/log"
-	"gitlab.com/crankykernel/maker/pkg/maker"
+	"gitlab.com/crankykernel/maker/handlers"
+	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/types"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-	"gitlab.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/db"
 )
 
 func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
@@ -238,9 +238,9 @@ func DeleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 		}).Infof("Cancelling sell order.")
 
 		switch trade.State.Status {
-		case maker.TradeStatusNew:
+		case types.TradeStatusNew:
 			fallthrough
-		case maker.TradeStatusPendingBuy:
+		case types.TradeStatusPendingBuy:
 			trade.State.LimitSell.Enabled = false
 			db.DbUpdateTrade(trade)
 			tradeService.BroadcastTradeUpdate(trade)
@@ -291,9 +291,9 @@ func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 		}
 
 		switch trade.State.Status {
-		case maker.TradeStatusNew:
+		case types.TradeStatusNew:
 			fallthrough
-		case maker.TradeStatusPendingBuy:
+		case types.TradeStatusPendingBuy:
 			trade.SetLimitSellByPercent(percent)
 			db.DbUpdateTrade(trade)
 			tradeService.BroadcastTradeUpdate(trade)
@@ -307,7 +307,7 @@ func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 
 		startTime := time.Now()
 
-		if trade.State.Status == maker.TradeStatusPendingSell {
+		if trade.State.Status == types.TradeStatusPendingSell {
 			log.Printf("Cancelling existing sell order.")
 			tradeService.CancelSell(trade)
 		}
@@ -359,9 +359,9 @@ func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
 		}
 
 		switch trade.State.Status {
-		case maker.TradeStatusNew:
+		case types.TradeStatusNew:
 			fallthrough
-		case maker.TradeStatusPendingBuy:
+		case types.TradeStatusPendingBuy:
 			trade.SetLimitSellByPrice(price)
 			db.DbUpdateTrade(trade)
 			tradeService.BroadcastTradeUpdate(trade)
@@ -375,7 +375,7 @@ func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
 
 		startTime := time.Now()
 
-		if trade.State.Status == maker.TradeStatusPendingSell {
+		if trade.State.Status == types.TradeStatusPendingSell {
 			log.Printf("Cancelling existing sell order.")
 			tradeService.CancelSell(trade)
 		}
@@ -410,7 +410,7 @@ func marketSellHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
-		if trade.State.Status == maker.TradeStatusPendingSell {
+		if trade.State.Status == types.TradeStatusPendingSell {
 			log.Printf("Cancelling existing sell order.")
 			tradeService.CancelSell(trade)
 		}

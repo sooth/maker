@@ -21,11 +21,11 @@ import (
 	"sync"
 	"math"
 	"fmt"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/log"
 	"time"
-	"gitlab.com/crankykernel/maker/pkg/idgenerator"
+	"gitlab.com/crankykernel/maker/idgenerator"
 	"gitlab.com/crankykernel/maker/pkg/maker"
-	"gitlab.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/db"
 )
 
 type TradeEventType string
@@ -111,8 +111,8 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 		if trade.State.Symbol == lastTrade.Symbol {
 
 			switch trade.State.Status {
-			case maker.TradeStatusPendingSell:
-			case maker.TradeStatusWatching:
+			case types.TradeStatusPendingSell:
+			case types.TradeStatusWatching:
 			default:
 				continue
 			}
@@ -132,8 +132,8 @@ func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
 
 func (s *TradeService) checkStopLoss(trade *maker.Trade) {
 	switch trade.State.Status {
-	case maker.TradeStatusPendingSell:
-	case maker.TradeStatusWatching:
+	case types.TradeStatusPendingSell:
+	case types.TradeStatusWatching:
 	default:
 		return
 	}
@@ -145,7 +145,7 @@ func (s *TradeService) checkStopLoss(trade *maker.Trade) {
 			"symbol": trade.State.Symbol,
 			"loss":   trade.State.ProfitPercent,
 		}).Infof("Stop Loss: Triggering market sell.")
-		if trade.State.Status == maker.TradeStatusPendingSell {
+		if trade.State.Status == types.TradeStatusPendingSell {
 			s.CancelSell(trade)
 		}
 		trade.State.StopLoss.Triggered = true
@@ -155,8 +155,8 @@ func (s *TradeService) checkStopLoss(trade *maker.Trade) {
 
 func (s *TradeService) checkTrailingProfit(trade *maker.Trade, price float64) {
 	switch trade.State.Status {
-	case maker.TradeStatusPendingSell:
-	case maker.TradeStatusWatching:
+	case types.TradeStatusPendingSell:
+	case types.TradeStatusWatching:
 	default:
 		return
 	}
@@ -253,7 +253,7 @@ func (s *TradeService) FindTradeByLocalID(localId string) *maker.Trade {
 
 func (s *TradeService) AbandonTrade(trade *maker.Trade) {
 	if !trade.IsDone() {
-		s.CloseTrade(trade, maker.TradeStatusAbandoned, time.Now())
+		s.CloseTrade(trade, types.TradeStatusAbandoned, time.Now())
 		s.BroadcastTradeUpdate(trade)
 	}
 }
@@ -315,7 +315,7 @@ func (s *TradeService) AddNewTrade(trade *maker.Trade) (string) {
 		}
 		trade.State.TradeID = localId.String()
 	}
-	trade.State.Status = maker.TradeStatusNew
+	trade.State.Status = types.TradeStatusNew
 
 	s.lock.Lock()
 	s.TradesByLocalID[trade.State.TradeID] = trade
@@ -364,7 +364,7 @@ func (s *TradeService) RemoveTrade(trade *maker.Trade) {
 }
 
 func (s *TradeService) FailTrade(trade *maker.Trade) {
-	s.CloseTrade(trade, maker.TradeStatusFailed, time.Now())
+	s.CloseTrade(trade, types.TradeStatusFailed, time.Now())
 	s.BroadcastTradeUpdate(trade)
 }
 
@@ -429,17 +429,17 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 			trade.State.BuyOrder.Quantity = report.Quantity
 			trade.State.BuyOrder.Price = report.Price
 			trade.State.BuyOrderId = report.OrderID
-			if trade.State.Status == maker.TradeStatusNew {
-				trade.State.Status = maker.TradeStatusPendingBuy
+			if trade.State.Status == types.TradeStatusNew {
+				trade.State.Status = types.TradeStatusPendingBuy
 			}
 			if trade.State.LastBuyStatus == "" {
 				trade.State.LastBuyStatus = report.CurrentOrderStatus
 			}
 		case binance.OrderStatusCanceled:
 			if trade.State.BuyFillQuantity == 0 {
-				trade.State.Status = maker.TradeStatusCanceled
+				trade.State.Status = types.TradeStatusCanceled
 			} else {
-				trade.State.Status = maker.TradeStatusWatching
+				trade.State.Status = types.TradeStatusWatching
 			}
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
 		case binance.OrderStatusPartiallyFilled:
@@ -451,7 +451,7 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 		case binance.OrderStatusFilled:
 			trade.AddBuyFill(report)
 			s.UpdateSellableQuantity(trade)
-			trade.State.Status = maker.TradeStatusWatching
+			trade.State.Status = types.TradeStatusWatching
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
 			s.TriggerLimitSell(trade)
 		}
@@ -459,12 +459,12 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	case binance.OrderSideSell:
 		switch report.CurrentOrderStatus {
 		case binance.OrderStatusNew:
-			if trade.State.Status == maker.TradeStatusDone {
+			if trade.State.Status == types.TradeStatusDone {
 				// Sometimes we get the fill before the new.
 				break
 			}
 			trade.State.SellOrderId = report.OrderID
-			trade.State.Status = maker.TradeStatusPendingSell
+			trade.State.Status = types.TradeStatusPendingSell
 			switch trade.State.SellOrder.Status {
 			case binance.OrderStatusPartiallyFilled:
 			case binance.OrderStatusFilled:
@@ -493,10 +493,10 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 				CommissionAmount: report.CommissionAmount,
 			}
 			trade.DoAddSellFill(fill)
-			trade.State.Status = maker.TradeStatusDone
+			trade.State.Status = types.TradeStatusDone
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		case binance.OrderStatusCanceled:
-			trade.State.Status = maker.TradeStatusWatching
+			trade.State.Status = types.TradeStatusWatching
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		default:
 			log.Printf("ERROR: Unhandled order status state %s for sell side.",
@@ -506,11 +506,11 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 	}
 
 	switch trade.State.Status {
-	case maker.TradeStatusDone:
+	case types.TradeStatusDone:
 		fallthrough
-	case maker.TradeStatusCanceled:
+	case types.TradeStatusCanceled:
 		fallthrough
-	case maker.TradeStatusFailed:
+	case types.TradeStatusFailed:
 		trade.State.CloseTime = &event.EventTime
 		s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
 	}
@@ -549,7 +549,7 @@ func (s *TradeService) TriggerLimitSell(trade *maker.Trade) {
 	}
 }
 
-func (s *TradeService) CloseTrade(trade *maker.Trade, status maker.TradeStatus, closeTime time.Time) {
+func (s *TradeService) CloseTrade(trade *maker.Trade, status types.TradeStatus, closeTime time.Time) {
 	if closeTime.IsZero() {
 		closeTime = time.Now()
 	}

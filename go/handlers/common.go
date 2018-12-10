@@ -18,7 +18,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/log"
 	"net/http"
 )
 

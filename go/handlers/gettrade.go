@@ -17,20 +17,21 @@ package handlers
 
 import (
 	"net/http"
-	"gitlab.com/crankykernel/maker/pkg/db"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"github.com/gorilla/mux"
+	"gitlab.com/crankykernel/maker/db"
+	"gitlab.com/crankykernel/maker/log"
 )
 
-func QueryTrades(w http.ResponseWriter, r *http.Request) {
-
-	queryOptions := db.TradeQueryOptions{}
-	queryOptions.IsClosed = true
-
-	trades, err := db.DbQueryTrades(queryOptions)
+func GetTrade(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	tradeId := vars["tradeId"]
+	trade, err := db.DbGetTradeByID(tradeId)
 	if err != nil {
-		log.WithError(err).Error("Failed to load trades from database.")
+		log.WithError(err).WithFields(log.Fields{
+			"tradeId": tradeId,
+		}).Warn("Failed to find trade by ID.")
+		WriteJsonResponse(w, http.StatusNotFound, "trade not found")
 		return
 	}
-
-	WriteJsonResponse(w, http.StatusOK, trades)
+	WriteJsonResponse(w, http.StatusOK, trade)
 }

@@ -17,7 +17,7 @@ package pkg
 
 import (
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/log"
 	"strings"
 	"sync"
 	"time"

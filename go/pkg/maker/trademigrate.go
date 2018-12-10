@@ -17,7 +17,7 @@ package maker
 
 import "gitlab.com/crankykernel/maker/types"
 
-func TradeV0ToTradeV1(old TradeStateV0) TradeState {
+func TradeStateV0ToTradeStateV1(old TradeStateV0) TradeState {
 	state := TradeState{}
 	state.Version = TRADE_STATE_VERSION
 	state.TradeID = old.LocalID

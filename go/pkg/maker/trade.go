@@ -27,112 +27,17 @@ const TRADE_STATE_VERSION = 1
 const DEFAULT_FEE = float64(0.001)
 const BNB_FEE = float64(0.00075)
 
-type TradeStatus string
+//type BuyOrder struct {
+//	Quantity float64
+//	Price    float64
+//}
 
-const (
-	TradeStatusNew         TradeStatus = "NEW"
-	TradeStatusFailed      TradeStatus = "FAILED"
-	TradeStatusPendingBuy  TradeStatus = "PENDING_BUY"
-	TradeStatusWatching    TradeStatus = "WATCHING"
-	TradeStatusPendingSell TradeStatus = "PENDING_SELL"
-	TradeStatusDone        TradeStatus = "DONE"
-	TradeStatusCanceled    TradeStatus = "CANCELED"
-	TradeStatusAbandoned   TradeStatus = "ABANDONED"
-)
-
-type BuyOrder struct {
-	Quantity float64
-	Price    float64
-}
-
-type OrderFill struct {
-	Price            float64
-	Quantity         float64
-	CommissionAsset  string
-	CommissionAmount float64
-}
-
-type TradeState struct {
-	Version int64
-	// Trade ID local to this app. Its actually a ULID, but saved as a string.
-	TradeID string
-
-	Symbol    string
-	OpenTime  time.Time
-	CloseTime *time.Time `json:",omitempty"`
-	Status    TradeStatus
-	Fee       float64
-
-	BuyOrderId int64
-
-	ClientOrderIDs map[string]bool
-
-	BuyOrder BuyOrder
-
-	BuySideFills    []OrderFill `json:",omitempty"`
-	BuyFillQuantity float64
-
-	// The amount that can be sold. This is the quantity adjusted to any lot
-	// size limitation like Binance's step size.
-	SellableQuantity float64
-
-	// The average buy price per unit not accounting for fees.
-	AverageBuyPrice float64
-
-	// The total cost of the buy, including fees.
-	BuyCost float64
-
-	// The buy price per unit accounting for fees.
-	EffectiveBuyPrice float64
-
-	SellOrderId int64
-
-	SellSideFills    []OrderFill `json:",omitempty"`
-	SellFillQuantity float64
-	AverageSellPrice float64
-	SellCost         float64
-
-	StopLoss struct {
-		Enabled   bool
-		Percent   float64
-		Triggered bool
-	}
-
-	LimitSell struct {
-		Enabled bool
-		Type    types.LimitSellType
-		Percent float64
-		Price   float64
-	}
-
-	TrailingProfit struct {
-		Enabled   bool
-		Percent   float64
-		Deviation float64
-		Activated bool
-		Price     float64
-		Triggered bool
-	}
-
-	// The profit in units of the quote asset.
-	Profit float64
-
-	// The profit as a percentage (0-100).
-	ProfitPercent float64
-
-	LastBuyStatus binance.OrderStatus
-
-	SellOrder struct {
-		Status   binance.OrderStatus
-		Type     string
-		Quantity float64
-		Price    float64
-	}
-
-	// The last known price for this symbol. Use to estimate profit. Source may
-	// not always be the last price, but could also be the last best bid or ask.
-	LastPrice float64
-}
+//type OrderFill struct {
+//	Price            float64
+//	Quantity         float64
+//	CommissionAsset  string
+//	CommissionAmount float64
+//}
 
 type Trade struct {
 	State TradeState
@@ -142,7 +47,7 @@ func NewTrade() *Trade {
 	return &Trade{
 		State: TradeState{
 			Version:        TRADE_STATE_VERSION,
-			Status:         TradeStatusNew,
+			Status:         types.TradeStatusNew,
 			Fee:            DEFAULT_FEE,
 			OpenTime:       time.Now(),
 			ClientOrderIDs: make(map[string]bool),
@@ -164,10 +69,10 @@ func NewTradeWithState(state TradeState) *Trade {
 
 func (t *Trade) IsDone() bool {
 	switch (t.State.Status) {
-	case TradeStatusDone:
-	case TradeStatusCanceled:
-	case TradeStatusFailed:
-	case TradeStatusAbandoned:
+	case types.TradeStatusDone:
+	case types.TradeStatusCanceled:
+	case types.TradeStatusFailed:
+	case types.TradeStatusAbandoned:
 	default:
 		return false
 	}

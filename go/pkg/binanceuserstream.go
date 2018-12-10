@@ -22,8 +22,8 @@ import (
 	"github.com/gorilla/websocket"
 	"strings"
 	"encoding/json"
-	"gitlab.com/crankykernel/maker/pkg/config"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/config"
+	"gitlab.com/crankykernel/maker/log"
 )
 
 type StreamEventType string

@@ -30,3 +30,16 @@ const (
 	LimitSellTypePercent LimitSellType = "PERCENT"
 	LimitSellTypePrice   LimitSellType = "PRICE"
 )
+
+type TradeStatus string
+
+const (
+	TradeStatusNew         TradeStatus = "NEW"
+	TradeStatusFailed      TradeStatus = "FAILED"
+	TradeStatusPendingBuy  TradeStatus = "PENDING_BUY"
+	TradeStatusWatching    TradeStatus = "WATCHING"
+	TradeStatusPendingSell TradeStatus = "PENDING_SELL"
+	TradeStatusDone        TradeStatus = "DONE"
+	TradeStatusCanceled    TradeStatus = "CANCELED"
+	TradeStatusAbandoned   TradeStatus = "ABANDONED"
+)

@@ -16,8 +16,9 @@
 package maker
 
 import (
-	"time"
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/types"
+	"time"
 )
 
 type TradeStateV0 struct {
@@ -29,14 +30,17 @@ type TradeStateV0 struct {
 	Symbol    string
 	OpenTime  time.Time
 	CloseTime *time.Time `json:",omitempty"`
-	Status    TradeStatus
+	Status    types.TradeStatus
 	Fee       float64
 
 	BuyOrderId int64
 
 	ClientOrderIDs map[string]bool
 
-	BuyOrder BuyOrder
+	BuyOrder struct {
+		Quantity float64
+		Price    float64
+	}
 
 	BuySideFills    []OrderFill `json:",omitempty"`
 	BuyFillQuantity float64
@@ -97,4 +101,3 @@ type TradeStateV0 struct {
 	// not always be the last price, but could also be the last best bid or ask.
 	LastPrice float64
 }
-

@@ -16,10 +16,11 @@
 package pkg
 
 import (
-	"gitlab.com/crankykernel/maker/pkg/db"
+	"gitlab.com/crankykernel/maker/db"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/pkg/maker"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/types"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func restoreTrades(tradeService *TradeService) {
 		position := maker.NewTradeWithState(state)
 		tradeService.RestoreTrade(position)
 
-		if position.State.Status == maker.TradeStatusNew {
+		if position.State.Status == types.TradeStatusNew {
 			var clientOrderId string = ""
 			for clientOrderId = range position.State.ClientOrderIDs {
 				break
@@ -49,9 +50,9 @@ func restoreTrades(tradeService *TradeService) {
 
 			switch order.Status {
 			case binance.OrderStatusNew:
-				position.State.Status = maker.TradeStatusPendingBuy
+				position.State.Status = types.TradeStatusPendingBuy
 			case binance.OrderStatusPartiallyFilled:
-				position.State.Status = maker.TradeStatusPendingBuy
+				position.State.Status = types.TradeStatusPendingBuy
 				trades := tradeHistoryCache[state.Symbol]
 				if trades == nil {
 					trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)
@@ -73,7 +74,7 @@ func restoreTrades(tradeService *TradeService) {
 					}
 				}
 			case binance.OrderStatusFilled:
-				position.State.Status = maker.TradeStatusWatching
+				position.State.Status = types.TradeStatusWatching
 				trades := tradeHistoryCache[state.Symbol]
 				if trades == nil {
 					trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)
@@ -99,7 +100,7 @@ func restoreTrades(tradeService *TradeService) {
 					order.Status)
 				log.Println(log.ToJson(order))
 			}
-		} else if position.State.Status == maker.TradeStatusPendingBuy {
+		} else if position.State.Status == types.TradeStatusPendingBuy {
 			order, err := binanceRestClient.GetOrderByOrderId(
 				position.State.Symbol, position.State.BuyOrderId)
 			if err != nil {
@@ -118,7 +119,7 @@ func restoreTrades(tradeService *TradeService) {
 			}
 		}
 
-		if position.State.Status == maker.TradeStatusPendingSell {
+		if position.State.Status == types.TradeStatusPendingSell {
 			order, err := binanceRestClient.GetOrderByOrderId(
 				position.State.Symbol, position.State.SellOrderId)
 			if err != nil {
@@ -133,7 +134,7 @@ func restoreTrades(tradeService *TradeService) {
 						"symbol":  state.Symbol,
 						"tradeId": state.TradeID,
 					}).Infof("Outstanding sell order has been canceled.")
-					position.State.Status = maker.TradeStatusWatching
+					position.State.Status = types.TradeStatusWatching
 				} else if order.Status == binance.OrderStatusFilled {
 					trades := tradeHistoryCache[state.Symbol]
 					if trades == nil {
@@ -166,7 +167,7 @@ func restoreTrades(tradeService *TradeService) {
 							"closeTime": closeTime,
 							"tradeId":   position.State.TradeID,
 						}).Infof("Closing trade.")
-						tradeService.CloseTrade(position, maker.TradeStatusDone, closeTime)
+						tradeService.CloseTrade(position, types.TradeStatusDone, closeTime)
 					}
 				} else {
 					log.WithFields(log.Fields{

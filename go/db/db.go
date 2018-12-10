@@ -20,7 +20,7 @@ import (
 	"database/sql"
 	"time"
 	"encoding/json"
-	"gitlab.com/crankykernel/maker/pkg/log"
+	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/pkg/maker"
 	"strings"
 )
@@ -110,7 +110,7 @@ func initDb(db *sql.DB) error {
 				continue
 			}
 
-			tradeState := maker.TradeV0ToTradeV1(tradeState0)
+			tradeState := maker.TradeStateV0ToTradeStateV1(tradeState0)
 			TxDbUpdateTradeState(tx, &tradeState)
 			count += 1
 		}

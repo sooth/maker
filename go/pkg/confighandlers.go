@@ -18,10 +18,10 @@ package pkg
 import (
 	"net/http"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/pkg/log"
-	"gitlab.com/crankykernel/maker/pkg/config"
+	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/config"
 	"encoding/json"
-	"gitlab.com/crankykernel/maker/pkg/handlers"
+	"gitlab.com/crankykernel/maker/handlers"
 )
 
 func savePreferencesHandler(w http.ResponseWriter, r *http.Request) {
