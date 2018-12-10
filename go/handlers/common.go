@@ -22,11 +22,13 @@ import (
 	"net/http"
 )
 
-func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) error {
+func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	encoder := json.NewEncoder(w)
-	return encoder.Encode(body)
+	if err := encoder.Encode(body); err != nil {
+		log.WithError(err).Errorf("Failed to write JSON response to client")
+	}
 }
 
 /// WriteJsonError writes a JSON formatted error response to the web client.
@@ -38,9 +40,7 @@ func WriteJsonError(w http.ResponseWriter, statusCode int, message string) {
 	if message != "" {
 		body["message"] = message
 	}
-	if err := WriteJsonResponse(w, statusCode, body); err != nil {
-		log.WithError(err).Errorf("Failed to write HTTP error response to client.")
-	}
+	WriteJsonResponse(w, statusCode, body)
 }
 
 func RequireFormValue(w http.ResponseWriter, r *http.Request, field string) bool {
