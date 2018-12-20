@@ -24,6 +24,7 @@ import (
 	"gitlab.com/crankykernel/maker/types"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
@@ -33,6 +34,8 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			Type:        binance.OrderTypeLimit,
 			TimeInForce: binance.TimeInForceGTC,
 		}
+
+		log.Printf("params: %v", log.ToJson(params))
 
 		var requestBody handlers.BuyOrderRequest
 		decoder := json.NewDecoder(r.Body)
@@ -87,10 +90,15 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		params.NewClientOrderId = orderId
 
 		trade := types.NewTrade()
+		trade.AddHistory(types.HistoryEntry{
+			Timestamp: time.Now(),
+			Type: types.Created,
+			Fields: requestBody,
+		})
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
 
-		buyService := NewBinanceBuyService()
+		buyService := NewBinancePriceService()
 
 		switch requestBody.PriceSource {
 		case types.PriceSourceManual:

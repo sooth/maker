@@ -66,6 +66,10 @@ func (t *Trade) IsDone() bool {
 	return true
 }
 
+func (s *Trade) AddHistory(history HistoryEntry) {
+	s.State.History = append(s.State.History, history)
+}
+
 func (s *Trade) FeeAsset() string {
 	lastFillIndex := len(s.State.BuySideFills) - 1
 	if lastFillIndex < 0 {

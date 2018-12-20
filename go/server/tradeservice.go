@@ -411,7 +411,14 @@ func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
 
 	log.WithFields(log.Fields{
 		"tradeId": trade.State.TradeID,
+		"symbol": trade.State.Symbol,
 	}).Debugf("Received execution report: %s", log.ToJson(report))
+
+	trade.AddHistory(types.HistoryEntry{
+		Timestamp: time.Now(),
+		Type: types.ExecutionReport,
+		Fields: report,
+	})
 
 	_, err := s.binanceExchangeInfo.GetStepSize(trade.State.Symbol)
 	if err != nil {

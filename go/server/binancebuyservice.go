@@ -21,19 +21,19 @@ import (
 	"gitlab.com/crankykernel/maker/types"
 )
 
-type BinanceBuyService struct {
+type BinancePriceService struct {
 	anonymousClient *binance.RestClient
 }
 
-func NewBinanceBuyService() *BinanceBuyService {
-	return &BinanceBuyService{
+func NewBinancePriceService() *BinancePriceService {
+	return &BinancePriceService{
 		anonymousClient: binance.NewAnonymousClient(),
 	}
 }
 
 // GetLastPrice gets the most current close price from Binance using the REST
 // API.
-func (s *BinanceBuyService) GetLastPrice(symbol string) (float64, error) {
+func (s *BinancePriceService) GetLastPrice(symbol string) (float64, error) {
 	ticker, err := s.anonymousClient.GetPriceTicker(symbol)
 	if err != nil {
 		return 0, err
@@ -43,7 +43,7 @@ func (s *BinanceBuyService) GetLastPrice(symbol string) (float64, error) {
 
 // GetBestBidPrice gets the most current best bid price from Binance using
 // the REST API.
-func (s *BinanceBuyService) GetBestBidPrice(symbol string) (float64, error) {
+func (s *BinancePriceService) GetBestBidPrice(symbol string) (float64, error) {
 	ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
 	if err != nil {
 		return 0, err
@@ -53,7 +53,7 @@ func (s *BinanceBuyService) GetBestBidPrice(symbol string) (float64, error) {
 
 // GetBestBidPrice gets the most current best bid price from Binance using
 // the REST API.
-func (s *BinanceBuyService) GetBestAskPrice(symbol string) (float64, error) {
+func (s *BinancePriceService) GetBestAskPrice(symbol string) (float64, error) {
 	ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
 	if err != nil {
 		return 0, err
@@ -61,7 +61,7 @@ func (s *BinanceBuyService) GetBestAskPrice(symbol string) (float64, error) {
 	return ticker.AskPrice, nil
 }
 
-func (s *BinanceBuyService) GetPrice(symbol string, priceSource types.PriceSource) (float64, error) {
+func (s *BinancePriceService) GetPrice(symbol string, priceSource types.PriceSource) (float64, error) {
 	switch priceSource {
 	case types.PriceSourceLast:
 		return s.GetLastPrice(symbol)

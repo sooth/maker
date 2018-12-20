@@ -27,11 +27,26 @@ type OrderFill struct {
 	CommissionAmount float64
 }
 
+type HistoryType string
+
+const (
+	Created         HistoryType = "CREATED"
+	ExecutionReport HistoryType = "EXECUTION_REPORT"
+)
+
+type HistoryEntry struct {
+	Timestamp time.Time
+	Type      HistoryType
+	Fields    interface{}
+}
+
 type TradeState struct {
 	Version int64
 
 	// Trade ID local to this app. Its actually a ULID, but saved as a string.
 	TradeID string
+
+	History []HistoryEntry
 
 	Symbol    string
 	OpenTime  time.Time
