@@ -16,15 +16,17 @@
 package server
 
 import (
+	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/db"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
 	"time"
 )
 
-func restoreTrades(tradeService *TradeService) {
-	binanceRestClient := getBinanceRestClient()
+func restoreTrades(tradeService *tradeservice.TradeService) {
+	binanceRestClient := binanceex.GetBinanceRestClient()
 	tradeStates, err := db.DbRestoreTradeState()
 	if err != nil {
 		log.Fatalf("error: failed to restore trade state: %v", err)

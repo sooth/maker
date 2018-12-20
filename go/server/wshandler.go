@@ -17,6 +17,8 @@ package server
 
 import (
 	"gitlab.com/crankykernel/maker/binanceex"
+	"gitlab.com/crankykernel/maker/context"
+	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
 	"net/http"
 	"github.com/gorilla/websocket"
@@ -28,10 +30,10 @@ import (
 // This handler implements the read-only websocket that all clients connect
 // to for state updates.
 type UserWebSocketHandler struct {
-	appContext *ApplicationContext
+	appContext *context.ApplicationContext
 }
 
-func NewUserWebSocketHandler(appContext *ApplicationContext) *UserWebSocketHandler {
+func NewUserWebSocketHandler(appContext *context.ApplicationContext) *UserWebSocketHandler {
 	return &UserWebSocketHandler{
 		appContext: appContext,
 	}
@@ -138,12 +140,12 @@ Loop:
 		case trade := <-tradeChannel:
 			var message *MakerMessage
 			switch trade.EventType {
-			case TradeEventTypeUpdate:
+			case tradeservice.TradeEventTypeUpdate:
 				message = &MakerMessage{
 					Type:  MakerMessageTypeTrade,
 					Trade: trade.TradeState,
 				}
-			case TradeEventTypeArchive:
+			case tradeservice.TradeEventTypeArchive:
 				message = &MakerMessage{
 					Type:    MakerMessageTypeTradeArchived,
 					TradeID: trade.TradeID,

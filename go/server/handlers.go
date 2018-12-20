@@ -21,8 +21,10 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
+	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/handlers"
 	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -32,7 +34,7 @@ import (
 	"gitlab.com/crankykernel/maker/db"
 )
 
-func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
+func archiveTradeHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		tradeId := vars["tradeId"]
@@ -64,7 +66,7 @@ func archiveTradeHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func abandonTradeHandler(tradeService *TradeService) http.HandlerFunc {
+func abandonTradeHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		tradeId := vars["tradeId"]
@@ -90,7 +92,7 @@ func abandonTradeHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func updateTradeStopLossSettingsHandler(tradeService *TradeService) http.HandlerFunc {
+func updateTradeStopLossSettingsHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
@@ -131,7 +133,7 @@ func updateTradeStopLossSettingsHandler(tradeService *TradeService) http.Handler
 	}
 }
 
-func updateTradeTrailingProfitSettingsHandler(tradeService *TradeService) http.HandlerFunc {
+func updateTradeTrailingProfitSettingsHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
@@ -175,7 +177,7 @@ func updateTradeTrailingProfitSettingsHandler(tradeService *TradeService) http.H
 	}
 }
 
-func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
+func deleteBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			handlers.WriteBadRequestError(w)
@@ -201,7 +203,7 @@ func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
 			"tradeId": tradeId,
 		}).Infof("Cancelling buy order.")
 
-		response, err := getBinanceRestClient().CancelOrder(trade.State.Symbol,
+		response, err := binanceex.GetBinanceRestClient().CancelOrder(trade.State.Symbol,
 			trade.State.BuyOrderId)
 		if err != nil {
 			log.WithError(err).Errorf("Failed to cancel buy order.")
@@ -212,7 +214,7 @@ func deleteBuyHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func DeleteSellHandler(tradeService *TradeService) http.HandlerFunc {
+func DeleteSellHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		tradeId := r.FormValue("trade_id")
@@ -247,7 +249,7 @@ func DeleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 			return
 		}
 
-		response, err := getBinanceRestClient().CancelOrder(trade.State.Symbol,
+		response, err := binanceex.GetBinanceRestClient().CancelOrder(trade.State.Symbol,
 			trade.State.SellOrderId)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
@@ -264,7 +266,7 @@ func DeleteSellHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
+func limitSellByPercentHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		if err := r.ParseForm(); err != nil {
@@ -326,7 +328,7 @@ func limitSellByPercentHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
+func limitSellByPriceHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		if err := r.ParseForm(); err != nil {
@@ -394,7 +396,7 @@ func limitSellByPriceHandler(tradeService *TradeService) http.HandlerFunc {
 	}
 }
 
-func marketSellHandler(tradeService *TradeService) http.HandlerFunc {
+func marketSellHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 

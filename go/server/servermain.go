@@ -21,10 +21,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/binanceex"
-	"gitlab.com/crankykernel/maker/config"
+	"gitlab.com/crankykernel/maker/context"
 	"gitlab.com/crankykernel/maker/db"
 	"gitlab.com/crankykernel/maker/handlers"
 	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/tradeservice"
 	"net/http"
 	"os"
 	"os/exec"
@@ -42,20 +43,6 @@ var ServerFlags struct {
 	OpenBrowser    bool
 }
 
-func getBinanceRestClient() *binance.RestClient {
-	restClient := binance.NewAuthenticatedClient(
-		config.GetString("binance.api.key"),
-		config.GetString("binance.api.secret"))
-	return restClient
-}
-
-type ApplicationContext struct {
-	TradeService          *TradeService
-	BinanceStreamManager  *binanceex.BinanceStreamManager
-	BinanceUserDataStream *binanceex.BinanceUserDataStream
-	OpenBrowser           bool
-}
-
 func ServerMain() {
 
 	log.SetLevel(log.LogLevelDebug)
@@ -68,12 +55,12 @@ func ServerMain() {
 		log.Fatal("Hosts other than 127.0.0.1 not allowed yet.")
 	}
 
-	applicationContext := &ApplicationContext{}
+	applicationContext := &context.ApplicationContext{}
 	applicationContext.BinanceStreamManager = binanceex.NewBinanceStreamManager()
 
 	db.DbOpen()
 
-	tradeService := NewTradeService(applicationContext)
+	tradeService := tradeservice.NewTradeService(applicationContext.BinanceStreamManager)
 	applicationContext.TradeService = tradeService
 
 	restoreTrades(tradeService)
@@ -101,7 +88,7 @@ func ServerMain() {
 
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
 
-	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService)).Methods("POST")
+	router.HandleFunc("/api/binance/buy", handlers.PostBuyHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
 	router.HandleFunc("/api/binance/sell", DeleteSellHandler(tradeService)).Methods("DELETE")
 

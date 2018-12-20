@@ -13,19 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package server
+package tradeservice
 
 import (
+	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/binanceex"
-	"gitlab.com/crankykernel/maker/types"
-	"sync"
-	"math"
-	"fmt"
-	"gitlab.com/crankykernel/maker/log"
-	"time"
-	"gitlab.com/crankykernel/maker/idgenerator"
 	"gitlab.com/crankykernel/maker/db"
+	"gitlab.com/crankykernel/maker/idgenerator"
+	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/types"
+	"math"
+	"sync"
+	"time"
 )
 
 type TradeEventType string
@@ -56,20 +56,18 @@ type TradeService struct {
 	lock        sync.RWMutex
 
 	binanceStreamManager *binanceex.BinanceStreamManager
-	applicationContext   *ApplicationContext
 	tradeStreamChannel   chan *binance.StreamAggTrade
 
 	binanceExchangeInfo *binance.ExchangeInfoService
 }
 
-func NewTradeService(applicationContext *ApplicationContext) *TradeService {
+func NewTradeService(binanceStreamManager *binanceex.BinanceStreamManager) *TradeService {
 	tradeService := &TradeService{
 		TradesByLocalID:      make(map[string]*types.Trade),
 		TradesByClientID:     make(map[string]*types.Trade),
 		idGenerator:          idgenerator.NewIdGenerator(),
 		subscribers:          make(map[chan TradeEvent]bool),
-		applicationContext:   applicationContext,
-		binanceStreamManager: applicationContext.BinanceStreamManager,
+		binanceStreamManager: binanceStreamManager,
 		binanceExchangeInfo:  binance.NewExchangeInfoService(),
 	}
 
@@ -599,7 +597,7 @@ func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
 		Quantity:         quantity,
 		NewClientOrderId: clientOrderId,
 	}
-	_, err = getBinanceRestClient().PostOrder(order)
+	_, err = binanceex.GetBinanceRestClient().PostOrder(order)
 	return err
 }
 
@@ -656,7 +654,7 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 		NewClientOrderId: clientOrderId,
 	}
 	s0 := time.Now()
-	_, err = getBinanceRestClient().PostOrder(order)
+	_, err = binanceex.GetBinanceRestClient().PostOrder(order)
 	d := time.Now().Sub(s0)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -698,7 +696,7 @@ func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error
 		Price:            price,
 		NewClientOrderId: clientOrderId,
 	}
-	_, err = getBinanceRestClient().PostOrder(order)
+	_, err = binanceex.GetBinanceRestClient().PostOrder(order)
 	if err != nil {
 		log.WithFields(log.Fields{
 		}).WithError(err).Error("Failed to send sell order.")
@@ -743,7 +741,7 @@ func (s *TradeService) CancelSell(trade *types.Trade) error {
 	}).Info("Cancelling sell order.")
 	log.Printf("Cancelling sell order: symbol=%s; orderId=%d",
 		trade.State.Symbol, trade.State.SellOrderId)
-	_, err := getBinanceRestClient().CancelOrder(
+	_, err := binanceex.GetBinanceRestClient().CancelOrder(
 		trade.State.Symbol, trade.State.SellOrderId)
 	return err
 }
