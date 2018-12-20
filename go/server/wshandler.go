@@ -16,6 +16,7 @@
 package server
 
 import (
+	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/types"
 	"net/http"
 	"github.com/gorilla/websocket"
@@ -115,9 +116,9 @@ Loop:
 			break Loop
 		case binanceUserEvent := <-binanceUserStreamChannel:
 			switch binanceUserEvent.EventType {
-			case EventTypeExecutionReport:
+			case binanceex.EventTypeExecutionReport:
 				// Do nothing.
-			case EventTypeOutboundAccountInfo:
+			case binanceex.EventTypeOutboundAccountInfo:
 				message := MakerMessage{
 					Type:                       MakerMessageTypeBinanceAccountInfo,
 					BinanceOutboundAccountInfo: &binanceUserEvent.OutboundAccountInfo,

@@ -20,6 +20,7 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/config"
 	"gitlab.com/crankykernel/maker/db"
 	"gitlab.com/crankykernel/maker/handlers"
@@ -50,8 +51,8 @@ func getBinanceRestClient() *binance.RestClient {
 
 type ApplicationContext struct {
 	TradeService          *TradeService
-	BinanceStreamManager  *BinanceStreamManager
-	BinanceUserDataStream *BinanceUserDataStream
+	BinanceStreamManager  *binanceex.BinanceStreamManager
+	BinanceUserDataStream *binanceex.BinanceUserDataStream
 	OpenBrowser           bool
 }
 
@@ -68,7 +69,7 @@ func ServerMain() {
 	}
 
 	applicationContext := &ApplicationContext{}
-	applicationContext.BinanceStreamManager = NewBinanceStreamManager()
+	applicationContext.BinanceStreamManager = binanceex.NewBinanceStreamManager()
 
 	db.DbOpen()
 
@@ -77,7 +78,7 @@ func ServerMain() {
 
 	restoreTrades(tradeService)
 
-	applicationContext.BinanceUserDataStream = NewBinanceUserDataStream()
+	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream()
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
 	go applicationContext.BinanceUserDataStream.Run()
 
@@ -86,7 +87,7 @@ func ServerMain() {
 			select {
 			case event := <-userStreamChannel:
 				switch event.EventType {
-				case EventTypeExecutionReport:
+				case binanceex.EventTypeExecutionReport:
 					if err := db.DbSaveBinanceRawExecutionReport(event.EventTime, event.Raw); err != nil {
 						log.Println(err)
 					}

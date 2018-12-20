@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/handlers"
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/types"
@@ -98,7 +99,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
 
-		buyService := NewBinancePriceService()
+		buyService := binanceex.NewBinancePriceService()
 
 		switch requestBody.PriceSource {
 		case types.PriceSourceManual:

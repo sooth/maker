@@ -17,6 +17,7 @@ package server
 
 import (
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/types"
 	"sync"
 	"math"
@@ -54,7 +55,7 @@ type TradeService struct {
 	subscribers map[chan TradeEvent]bool
 	lock        sync.RWMutex
 
-	binanceStreamManager *BinanceStreamManager
+	binanceStreamManager *binanceex.BinanceStreamManager
 	applicationContext   *ApplicationContext
 	tradeStreamChannel   chan *binance.StreamAggTrade
 
@@ -400,7 +401,7 @@ func (s *TradeService) FindTradeForReport(report binance.StreamExecutionReport) 
 
 // Note: Be sure to process reports even after a fill, as sometimes partial
 //       fills will be received after the fill report.
-func (s *TradeService) OnExecutionReport(event *UserStreamEvent) {
+func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 	report := event.ExecutionReport
 
 	trade := s.FindTradeForReport(report)
