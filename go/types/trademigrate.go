@@ -13,9 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package maker
-
-import "gitlab.com/crankykernel/maker/types"
+package types
 
 func TradeStateV0ToTradeStateV1(old TradeStateV0) TradeState {
 	state := TradeState{}
@@ -41,7 +39,7 @@ func TradeStateV0ToTradeStateV1(old TradeStateV0) TradeState {
 	state.SellCost = old.SellCost
 	state.StopLoss = old.StopLoss
 	state.LimitSell.Enabled = old.LimitSell.Enabled
-	state.LimitSell.Type = types.LimitSellTypePercent
+	state.LimitSell.Type = LimitSellTypePercent
 	state.LimitSell.Percent = old.LimitSell.Percent
 	state.TrailingProfit = old.TrailingProfit
 	state.Profit = old.Profit

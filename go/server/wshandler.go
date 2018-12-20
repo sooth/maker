@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package pkg
+package server
 
 import (
+	"gitlab.com/crankykernel/maker/types"
 	"net/http"
 	"github.com/gorilla/websocket"
 	"encoding/json"
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/pkg/maker"
 )
 
 // This handler implements the read-only websocket that all clients connect
@@ -164,7 +164,7 @@ Loop:
 
 type MakerMessage struct {
 	Type                       MakerMessageType                   `json:"messageType"`
-	Trade                      *maker.TradeState                  `json:"trade,omitempty"`
+	Trade                      *types.TradeState                  `json:"trade,omitempty"`
 	TradeID                    string                             `json:"tradeId,omitempty"`
 	BinanceAggTrade            *binance.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
 	BinanceOutboundAccountInfo *binance.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`

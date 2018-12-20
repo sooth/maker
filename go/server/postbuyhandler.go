@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package pkg
+package server
 
 import (
 	"encoding/json"
@@ -21,7 +21,6 @@ import (
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/handlers"
 	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/maker/pkg/maker"
 	"gitlab.com/crankykernel/maker/types"
 	"io/ioutil"
 	"net/http"
@@ -87,7 +86,7 @@ func PostBuyHandler(tradeService *TradeService) http.HandlerFunc {
 		}
 		params.NewClientOrderId = orderId
 
-		trade := maker.NewTrade()
+		trade := types.NewTrade()
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
 

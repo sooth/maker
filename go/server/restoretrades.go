@@ -13,12 +13,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package pkg
+package server
 
 import (
 	"gitlab.com/crankykernel/maker/db"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/pkg/maker"
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/types"
 	"time"
@@ -34,7 +33,7 @@ func restoreTrades(tradeService *TradeService) {
 	tradeHistoryCache := map[string][]binance.TradeResponse{}
 
 	for _, state := range tradeStates {
-		position := maker.NewTradeWithState(state)
+		position := types.NewTradeWithState(state)
 		tradeService.RestoreTrade(position)
 
 		if position.State.Status == types.TradeStatusNew {
@@ -64,7 +63,7 @@ func restoreTrades(tradeService *TradeService) {
 				for _, trade := range trades {
 					if trade.OrderID == order.OrderId {
 						log.Println(log.ToJson(trade))
-						fill := maker.OrderFill{
+						fill := types.OrderFill{
 							Price:            trade.Price,
 							Quantity:         trade.Quantity,
 							CommissionAsset:  trade.CommissionAsset,
@@ -86,7 +85,7 @@ func restoreTrades(tradeService *TradeService) {
 				for _, trade := range trades {
 					if trade.OrderID == order.OrderId {
 						log.Println(log.ToJson(trade))
-						fill := maker.OrderFill{
+						fill := types.OrderFill{
 							Price:            trade.Price,
 							Quantity:         trade.Quantity,
 							CommissionAsset:  trade.CommissionAsset,
@@ -146,7 +145,7 @@ func restoreTrades(tradeService *TradeService) {
 					}
 					for _, trade := range trades {
 						if trade.OrderID == state.SellOrderId {
-							fill := maker.OrderFill{
+							fill := types.OrderFill{
 								Price:            trade.Price,
 								Quantity:         trade.Quantity,
 								CommissionAmount: trade.Commission,

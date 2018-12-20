@@ -17,22 +17,22 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/crankykernel/maker/pkg"
+	"gitlab.com/crankykernel/maker/server"
 )
 
 var ServerCmd = &cobra.Command{
 	Use: "server",
 	Run: func(cmd *cobra.Command, args []string) {
-		pkg.ServerMain()
+		server.ServerMain()
 	},
 }
 
 func init() {
 	flags := ServerCmd.Flags()
-	flags.Int16VarP(&pkg.ServerFlags.Port, "port", "p", 6045, "Port")
-	flags.StringVar(&pkg.ServerFlags.Host, "host", "127.0.0.1", "Host to bind to")
-	flags.StringVar(&pkg.ServerFlags.LogFilename, "log", "maker.log", "Log filename")
-	flags.BoolVar(&pkg.ServerFlags.NoLog, "nolog", false, "Disable logging to file")
-	flags.BoolVar(&pkg.ServerFlags.OpenBrowser, "open", false, "Open browser")
+	flags.Int16VarP(&server.ServerFlags.Port, "port", "p", 6045, "Port")
+	flags.StringVar(&server.ServerFlags.Host, "host", "127.0.0.1", "Host to bind to")
+	flags.StringVar(&server.ServerFlags.LogFilename, "log", "maker.log", "Log filename")
+	flags.BoolVar(&server.ServerFlags.NoLog, "nolog", false, "Disable logging to file")
+	flags.BoolVar(&server.ServerFlags.OpenBrowser, "open", false, "Open browser")
 	rootCmd.AddCommand(ServerCmd)
 }

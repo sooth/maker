@@ -18,10 +18,10 @@ package db
 import (
 	"fmt"
 	"database/sql"
+	"gitlab.com/crankykernel/maker/types"
 	"time"
 	"encoding/json"
 	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/maker/pkg/maker"
 	"strings"
 )
 
@@ -100,7 +100,7 @@ func initDb(db *sql.DB) error {
 				continue
 			}
 
-			var tradeState0 maker.TradeStateV0
+			var tradeState0 types.TradeStateV0
 			if err := json.Unmarshal([]byte(data), &tradeState0); err != nil {
 				log.WithError(err).Error("Failed to unmarshal v0 trade state.")
 				continue
@@ -110,7 +110,7 @@ func initDb(db *sql.DB) error {
 				continue
 			}
 
-			tradeState := maker.TradeStateV0ToTradeStateV1(tradeState0)
+			tradeState := types.TradeStateV0ToTradeStateV1(tradeState0)
 			TxDbUpdateTradeState(tx, &tradeState)
 			count += 1
 		}
@@ -151,7 +151,7 @@ func DbSaveBinanceRawExecutionReport(timestamp time.Time, event []byte) error {
 	return nil
 }
 
-func DbSaveTrade(trade *maker.Trade) error {
+func DbSaveTrade(trade *types.Trade) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func DbSaveTrade(trade *maker.Trade) error {
 	return err
 }
 
-func TxDbUpdateTradeState(tx *sql.Tx, trade *maker.TradeState) error {
+func TxDbUpdateTradeState(tx *sql.Tx, trade *types.TradeState) error {
 	data, err := formatJson(trade)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func TxDbUpdateTradeState(tx *sql.Tx, trade *maker.TradeState) error {
 	return err
 }
 
-func DbUpdateTrade(trade *maker.Trade) error {
+func DbUpdateTrade(trade *types.Trade) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func DbUpdateTrade(trade *maker.Trade) error {
 	return err
 }
 
-func DbArchiveTrade(trade *maker.Trade) error {
+func DbArchiveTrade(trade *types.Trade) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -206,13 +206,13 @@ func DbArchiveTrade(trade *maker.Trade) error {
 	return err
 }
 
-func DbRestoreTradeState() ([]maker.TradeState, error) {
+func DbRestoreTradeState() ([]types.TradeState, error) {
 	rows, err := db.Query(`select id, data from binance_trade where archived = 0`)
 	if err != nil {
 		return nil, err
 	}
 
-	tradeStates := []maker.TradeState{}
+	tradeStates := []types.TradeState{}
 
 	for rows.Next() {
 		var localId string
@@ -220,7 +220,7 @@ func DbRestoreTradeState() ([]maker.TradeState, error) {
 		if err := rows.Scan(&localId, &data); err != nil {
 			return nil, err
 		}
-		var tradeState maker.TradeState
+		var tradeState types.TradeState
 		if err := json.Unmarshal([]byte(data), &tradeState); err != nil {
 			return nil, err
 		}
@@ -242,7 +242,7 @@ func formatJson(val interface{}) (string, error) {
 	return string(buf), nil
 }
 
-func DbGetTradeByID(tradeId string) (*maker.TradeState, error) {
+func DbGetTradeByID(tradeId string) (*types.TradeState, error) {
 	row := db.QueryRow(
 		`select data from binance_trade where id = ?`,
 		tradeId)
@@ -251,7 +251,7 @@ func DbGetTradeByID(tradeId string) (*maker.TradeState, error) {
 	if err != nil {
 		return nil, err
 	}
-	var tradeState maker.TradeState
+	var tradeState types.TradeState
 	err = json.Unmarshal([]byte(data), &tradeState)
 	if err != nil {
 		return nil, err
@@ -263,7 +263,7 @@ type TradeQueryOptions struct {
 	IsClosed bool
 }
 
-func DbQueryTrades(options TradeQueryOptions) ([]maker.TradeState, error) {
+func DbQueryTrades(options TradeQueryOptions) ([]types.TradeState, error) {
 
 	where := []string{}
 
@@ -283,7 +283,7 @@ func DbQueryTrades(options TradeQueryOptions) ([]maker.TradeState, error) {
 		return nil, err
 	}
 
-	tradeStates := []maker.TradeState{}
+	tradeStates := []types.TradeState{}
 
 	for rows.Next() {
 		var localId string
@@ -291,7 +291,7 @@ func DbQueryTrades(options TradeQueryOptions) ([]maker.TradeState, error) {
 		if err := rows.Scan(&localId, &data); err != nil {
 			return nil, err
 		}
-		var tradeState maker.TradeState
+		var tradeState types.TradeState
 		if err := json.Unmarshal([]byte(data), &tradeState); err != nil {
 			return nil, err
 		}

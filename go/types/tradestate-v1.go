@@ -13,24 +13,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package maker
+package types
 
 import (
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/types"
 	"time"
 )
 
-type TradeStateV0 struct {
+type OrderFill struct {
+	Price            float64
+	Quantity         float64
+	CommissionAsset  string
+	CommissionAmount float64
+}
+
+type TradeState struct {
 	Version int64
 
 	// Trade ID local to this app. Its actually a ULID, but saved as a string.
-	LocalID string
+	TradeID string
 
 	Symbol    string
 	OpenTime  time.Time
 	CloseTime *time.Time `json:",omitempty"`
-	Status    types.TradeStatus
+	Status    TradeStatus
 	Fee       float64
 
 	BuyOrderId int64
@@ -44,6 +50,10 @@ type TradeStateV0 struct {
 
 	BuySideFills    []OrderFill `json:",omitempty"`
 	BuyFillQuantity float64
+
+	// The amount that can be sold. This is the quantity adjusted to any lot
+	// size limitation like Binance's step size.
+	SellableQuantity float64
 
 	// The average buy price per unit not accounting for fees.
 	AverageBuyPrice float64
@@ -69,7 +79,9 @@ type TradeStateV0 struct {
 
 	LimitSell struct {
 		Enabled bool
+		Type    LimitSellType
 		Percent float64
+		Price   float64
 	}
 
 	TrailingProfit struct {
@@ -78,7 +90,6 @@ type TradeStateV0 struct {
 		Deviation float64
 		Activated bool
 		Price     float64
-		// Set to true when the sell order has been sent.
 		Triggered bool
 	}
 

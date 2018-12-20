@@ -13,31 +13,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package maker
+package types
 
 import (
 	"time"
 	"math"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/types"
 )
 
 const TRADE_STATE_VERSION = 1
 
 const DEFAULT_FEE = float64(0.001)
 const BNB_FEE = float64(0.00075)
-
-//type BuyOrder struct {
-//	Quantity float64
-//	Price    float64
-//}
-
-//type OrderFill struct {
-//	Price            float64
-//	Quantity         float64
-//	CommissionAsset  string
-//	CommissionAmount float64
-//}
 
 type Trade struct {
 	State TradeState
@@ -47,7 +34,7 @@ func NewTrade() *Trade {
 	return &Trade{
 		State: TradeState{
 			Version:        TRADE_STATE_VERSION,
-			Status:         types.TradeStatusNew,
+			Status:         TradeStatusNew,
 			Fee:            DEFAULT_FEE,
 			OpenTime:       time.Now(),
 			ClientOrderIDs: make(map[string]bool),
@@ -69,10 +56,10 @@ func NewTradeWithState(state TradeState) *Trade {
 
 func (t *Trade) IsDone() bool {
 	switch (t.State.Status) {
-	case types.TradeStatusDone:
-	case types.TradeStatusCanceled:
-	case types.TradeStatusFailed:
-	case types.TradeStatusAbandoned:
+	case TradeStatusDone:
+	case TradeStatusCanceled:
+	case TradeStatusFailed:
+	case TradeStatusAbandoned:
 	default:
 		return false
 	}
@@ -89,13 +76,13 @@ func (s *Trade) FeeAsset() string {
 
 func (t *Trade) SetLimitSellByPercent(percent float64) {
 	t.State.LimitSell.Enabled = true
-	t.State.LimitSell.Type = types.LimitSellTypePercent
+	t.State.LimitSell.Type = LimitSellTypePercent
 	t.State.LimitSell.Percent = percent
 }
 
 func (t *Trade) SetLimitSellByPrice(price float64) {
 	t.State.LimitSell.Enabled = true
-	t.State.LimitSell.Type = types.LimitSellTypePrice
+	t.State.LimitSell.Type = LimitSellTypePrice
 	t.State.LimitSell.Price = price
 }
 
