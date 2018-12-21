@@ -14,7 +14,7 @@ dist: GOOS   := $(shell go env GOOS)
 dist: GOARCH := $(shell go env GOARCH)
 dist: DIR    := ../dist/maker-$(VERSION)-$(GOOS)-$(GOARCH)
 dist:
-	rm -rf dist/$(OUTDIR) && mkdir -p dist/$(OUTDIR)
+	rm -rf dist/$(DIR) && mkdir -p dist/$(DIR)
 	cd webapp && $(MAKE)
 	GOARCH=$(GOARCH) DIR=../dist/$(DIR) $(MAKE) -C go
 	cp README.md LICENSE.txt ./dist/$(DIR)
