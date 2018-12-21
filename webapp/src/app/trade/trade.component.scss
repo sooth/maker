@@ -54,8 +54,14 @@
     margin: 0;
     border: 0;
     outline: none;
+    cursor: pointer;
 }
 
 .wrapper-button:hover {
     background: #f7f7f7;
+}
+
+.radio {
+    -moz-appearance: radio;
+    -webkit-appearance: radio;
 }

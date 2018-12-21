@@ -78,7 +78,9 @@ AGPL v3.
 
 ### Unreleased
 - Update frontend to Angular 7.
-- Reconnect os loss of connection from a symbol trade stream.
+- Reconnect on loss of connection from a symbol trade stream.
+- Fix trailing profit values on toggle on Firefox. https://gitlab.com/crankykernel/maker/issues/22
+- Make limit order sell by value/percent buttons appear like radio buttons, as that is how they behave.
 
 ### 0.2.1
 

@@ -178,10 +178,14 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                     disabled: !this.orderFormSettings.trailingProfitEnabled,
                 }],
             });
-            s = this.trailingProfitForm.valueChanges.subscribe((data) => {
+            let s = this.trailingProfitForm.valueChanges.subscribe((data) => {
                 this.orderFormSettings.trailingProfitEnabled = data.enabled;
-                this.orderFormSettings.trailingProfitPercent = data.percent;
-                this.orderFormSettings.trailingProfitDeviation = data.deviation;
+                if (data.percent != undefined) {
+                    this.orderFormSettings.trailingProfitPercent = data.percent;
+                }
+                if (data.percent != undefined) {
+                    this.orderFormSettings.trailingProfitDeviation = data.deviation;
+                }
                 if (data.enabled) {
                     this.trailingProfitForm.controls.percent.enable({emitEvent: false});
                     this.trailingProfitForm.controls.deviation.enable({emitEvent: false});
