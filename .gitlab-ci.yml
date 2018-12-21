@@ -1,8 +1,10 @@
-image: fedora:29
+image: centos:7
 
 before_script:
+  - yum -y install epel-release
   - yum -y install git make gcc mingw64-gcc mingw32-gcc zip
-  - yum -y install go nodejs npm
+  - (cd /usr/local && curl -L -o - https://nodejs.org/dist/v10.14.2/node-v10.14.2-linux-x64.tar.gz | tar zxf - --strip-components=1)
+  - (cd /usr/local && curl -L -o - https://dl.google.com/go/go1.11.4.linux-amd64.tar.gz | tar zxf -)
 
 build:
   script: |
