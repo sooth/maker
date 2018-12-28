@@ -112,7 +112,6 @@ export class MakerService {
         this.http.post(`/api/binance/trade/${trade.TradeID}/trailingProfit`, null, {
             params: params,
         }).subscribe((response) => {
-            console.log(response);
         });
     }
 

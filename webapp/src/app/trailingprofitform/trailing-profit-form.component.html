@@ -34,7 +34,7 @@
 
       <div class="form-row">
         <div class="col" *ngIf="trade && trade.Status != TradeStatus.DONE">
-          <button type="submit" (click)="onSubmit()"
+          <button type="submit" (click)="onSubmit(); $event.preventDefault()"
                   class="btn btn-primary btn-block">
             Update
           </button>
