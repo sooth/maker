@@ -745,6 +745,18 @@ func (s *TradeService) MakeOrderID() (string, error) {
 func (s *TradeService) UpdateTrailingProfit(trade *types.Trade, enable bool,
 	percent float64, deviation float64) {
 	trade.SetTrailingProfit(enable, percent, deviation)
+	log.WithFields(log.Fields{
+		"symbol":    trade.State.Symbol,
+		"tradeId":   trade.State.TradeID,
+		"percent":   percent,
+		"deviation": deviation,
+		"enabled":   enable,
+	}).Infof("Trailing profit settings updated")
+	trade.AddHistoryEntry(types.HistoryTypeTrailingProfitUpdate, map[string]interface{}{
+		"enabled":   enable,
+		"percent":   percent,
+		"deviation": deviation,
+	})
 	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
@@ -788,7 +800,7 @@ func (s *TradeService) CancelBuy(trade *types.Trade) error {
 	if err != nil {
 		trade.AddHistoryEntry(types.HistoryTypeBuyCanceled, map[string]interface{}{
 			"success": false,
-			"error": fmt.Sprintf("%v", err),
+			"error":   fmt.Sprintf("%v", err),
 		})
 	} else {
 		trade.AddHistoryEntry(types.HistoryTypeBuyCanceled, map[string]interface{}{

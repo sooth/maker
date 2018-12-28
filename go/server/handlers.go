@@ -174,6 +174,8 @@ func updateTradeTrailingProfitSettingsHandler(tradeService *tradeservice.TradeSe
 		}
 
 		tradeService.UpdateTrailingProfit(trade, enable, percent, deviation)
+
+		WriteJsonResponse(w, http.StatusOK, nil)
 	}
 }
 
