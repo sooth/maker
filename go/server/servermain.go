@@ -23,7 +23,6 @@ import (
 	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/context"
 	"gitlab.com/crankykernel/maker/db"
-	"gitlab.com/crankykernel/maker/handlers"
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/tradeservice"
 	"net/http"
@@ -88,7 +87,7 @@ func ServerMain() {
 
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
 
-	router.HandleFunc("/api/binance/buy", handlers.PostBuyHandler(tradeService)).Methods("POST")
+	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
 	router.HandleFunc("/api/binance/sell", DeleteSellHandler(tradeService)).Methods("DELETE")
 
@@ -114,17 +113,17 @@ func ServerMain() {
 	router.HandleFunc("/api/binance/trade/{tradeId}/abandon",
 		abandonTradeHandler(tradeService)).Methods("POST")
 
-	router.HandleFunc("/api/trade/query", handlers.QueryTrades).
+	router.HandleFunc("/api/trade/query", queryTradesHandler).
 		Methods("GET")
 	router.HandleFunc("/api/trade/{tradeId}",
-		handlers.GetTrade).Methods("GET")
+		getTradeHandler).Methods("GET")
 
 	router.HandleFunc("/api/binance/account/test",
-		handlers.BinanceTestHandler).Methods("GET")
+		BinanceTestHandler).Methods("GET")
 	router.HandleFunc("/api/binance/config",
-		handlers.SaveBinanceConfigHandler).Methods("POST")
+		SaveBinanceConfigHandler).Methods("POST")
 	router.HandleFunc("/api/config/preferences",
-		handlers.SavePreferencesHandler).Methods("POST");
+		SavePreferencesHandler).Methods("POST");
 	binanceApiProxyHandler := http.StripPrefix("/proxy/binance",
 		binance.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)

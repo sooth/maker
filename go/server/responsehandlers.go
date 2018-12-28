@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package handlers
+package server
 
 import (
 	"encoding/json"
@@ -26,8 +26,10 @@ func WriteJsonResponse(w http.ResponseWriter, statusCode int, body interface{}) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	encoder := json.NewEncoder(w)
-	if err := encoder.Encode(body); err != nil {
-		log.WithError(err).Errorf("Failed to write JSON response to client")
+	if body != nil {
+		if err := encoder.Encode(body); err != nil {
+			log.WithError(err).Errorf("Failed to write JSON response to client")
+		}
 	}
 }
 

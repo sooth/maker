@@ -138,7 +138,7 @@ func (s *TradeService) checkStopLoss(trade *types.Trade) {
 	if trade.State.StopLoss.Triggered {
 		return
 	}
-	if trade.State.ProfitPercent < math.Abs(trade.State.StopLoss.Percent) * -1 {
+	if trade.State.ProfitPercent < math.Abs(trade.State.StopLoss.Percent)*-1 {
 		log.WithFields(log.Fields{
 			"symbol": trade.State.Symbol,
 			"loss":   trade.State.ProfitPercent,
@@ -410,13 +410,13 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 
 	log.WithFields(log.Fields{
 		"tradeId": trade.State.TradeID,
-		"symbol": trade.State.Symbol,
+		"symbol":  trade.State.Symbol,
 	}).Debugf("Received execution report: %s", log.ToJson(report))
 
 	trade.AddHistory(types.HistoryEntry{
 		Timestamp: time.Now(),
-		Type: types.ExecutionReport,
-		Fields: report,
+		Type:      types.HistoryTypeExecutionReport,
+		Fields:    report,
 	})
 
 	_, err := s.binanceExchangeInfo.GetStepSize(trade.State.Symbol)
@@ -543,13 +543,13 @@ func (s *TradeService) TriggerLimitSell(trade *types.Trade) {
 		} else {
 			log.WithFields(log.Fields{
 				"tradeId": trade.State.TradeID,
-				"symbol": trade.State.Symbol,
+				"symbol":  trade.State.Symbol,
 			}).Errorf("Unknown limit sell type: %v", trade.State.LimitSell.Type)
 		}
 	} else {
 		log.WithFields(log.Fields{
 			"tradeId": trade.State.TradeID,
-			"symbol": trade.State.Symbol,
+			"symbol":  trade.State.Symbol,
 		}).Debug("Limit sell not enabled.")
 	}
 }
@@ -668,7 +668,23 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 		"symbol":          trade.State.Symbol,
 		"tradeId":         trade.State.TradeID,
 	}).Info("Sell order posted.")
+
+	trade.AddHistoryEntry(types.HistoryTypeSellOrder, map[string]interface{}{
+		"sellOrderType": "limitSellByPercent",
+		"percent":       percent,
+		"price":         price,
+		"quantity":      quantity,
+		"clientOrderId": clientOrderId,
+	})
+
+	trade.State.LimitSell.Enabled = true
+	trade.State.LimitSell.Percent = percent
+	trade.State.LimitSell.Price = price
+	trade.State.LimitSell.Type = types.LimitSellTypePercent
+
 	db.DbUpdateTrade(trade)
+	s.BroadcastTradeUpdate(trade)
+
 	return nil
 }
 
@@ -743,6 +759,43 @@ func (s *TradeService) CancelSell(trade *types.Trade) error {
 		trade.State.Symbol, trade.State.SellOrderId)
 	_, err := binanceex.GetBinanceRestClient().CancelOrder(
 		trade.State.Symbol, trade.State.SellOrderId)
+	if err == nil {
+		trade.AddHistoryEntry(types.HistoryTypeSellCanceled, map[string]interface{}{
+			"sellOrderId": trade.State.SellOrderId,
+			"success":     true,
+		})
+		trade.State.LimitSell.Enabled = false
+	} else {
+		log.WithError(err).WithFields(log.Fields{
+			"symbol":  trade.State.Symbol,
+			"tradeId": trade.State.TradeID,
+			"orderId": trade.State.SellOrderId,
+		}).Errorf("Failed to cancel sell order")
+		trade.AddHistoryEntry(types.HistoryTypeSellCanceled, map[string]interface{}{
+			"sellOrderId": trade.State.SellOrderId,
+			"success":     false,
+			"error":       fmt.Sprintf("%v", err),
+		})
+	}
+	db.DbUpdateTrade(trade)
+	s.BroadcastTradeUpdate(trade)
+	return err
+}
+
+func (s *TradeService) CancelBuy(trade *types.Trade) error {
+	_, err := binanceex.GetBinanceRestClient().CancelOrder(
+		trade.State.Symbol, trade.State.BuyOrderId)
+	if err != nil {
+		trade.AddHistoryEntry(types.HistoryTypeBuyCanceled, map[string]interface{}{
+			"success": false,
+			"error": fmt.Sprintf("%v", err),
+		})
+	} else {
+		trade.AddHistoryEntry(types.HistoryTypeBuyCanceled, map[string]interface{}{
+			"success": true,
+		})
+	}
+	db.DbUpdateTrade(trade)
 	return err
 }
 

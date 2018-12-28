@@ -30,8 +30,11 @@ type OrderFill struct {
 type HistoryType string
 
 const (
-	Created         HistoryType = "CREATED"
-	ExecutionReport HistoryType = "EXECUTION_REPORT"
+	HistoryTypeCreated         HistoryType = "CREATED"
+	HistoryTypeExecutionReport HistoryType = "EXECUTION_REPORT"
+	HistoryTypeSellOrder       HistoryType = "SELL_ORDER"
+	HistoryTypeBuyCanceled     HistoryType = "BUY_CANCELED"
+	HistoryTypeSellCanceled    HistoryType = "SELL_CANCELED"
 )
 
 type HistoryEntry struct {

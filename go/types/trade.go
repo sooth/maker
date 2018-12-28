@@ -70,6 +70,15 @@ func (s *Trade) AddHistory(history HistoryEntry) {
 	s.State.History = append(s.State.History, history)
 }
 
+func (s *Trade) AddHistoryEntry(historyType HistoryType, fields interface{}) {
+	entry := HistoryEntry{
+		Timestamp: time.Now(),
+		Type: historyType,
+		Fields: fields,
+	}
+	s.State.History = append(s.State.History, entry)
+}
+
 func (s *Trade) FeeAsset() string {
 	lastFillIndex := len(s.State.BuySideFills) - 1
 	if lastFillIndex < 0 {
