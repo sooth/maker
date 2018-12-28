@@ -92,6 +92,14 @@ func abandonTradeHandler(tradeService *tradeservice.TradeService) http.HandlerFu
 	}
 }
 
+// Update the stop loss settings for a trade.
+//
+// Router vars:
+// - tradeId: The trade ID to update.
+//
+// Query string parameters:
+// - enable: boolean
+// - percent: floating point number where 5.0 means 5.0 percent.
 func updateTradeStopLossSettingsHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
@@ -125,14 +133,22 @@ func updateTradeStopLossSettingsHandler(tradeService *tradeservice.TradeService)
 		if trade == nil {
 			log.Printf("Failed to find trade with ID %s.", tradeId)
 			WriteJsonError(w, http.StatusNotFound, "")
+		} else {
+			tradeService.UpdateStopLoss(trade, enable, percent)
+			WriteJsonResponse(w, http.StatusOK, nil)
 		}
-
-		log.Printf("Updating stop loss for trade %s: enable=%v; percent=%v",
-			tradeId, enable, percent)
-		tradeService.UpdateStopLoss(trade, enable, percent)
 	}
 }
 
+// Update trailing profit settings for a trade.
+//
+// Router paths vars:
+// - tradeId
+//
+// Query string parameters:
+// - enable
+// - percent
+// - deviation
 func updateTradeTrailingProfitSettingsHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
@@ -171,11 +187,10 @@ func updateTradeTrailingProfitSettingsHandler(tradeService *tradeservice.TradeSe
 		if trade == nil {
 			log.Printf("Failed to find trade with ID %s.", tradeId)
 			WriteJsonError(w, http.StatusNotFound, "")
+		} else {
+			tradeService.UpdateTrailingProfit(trade, enable, percent, deviation)
+			WriteJsonResponse(w, http.StatusOK, nil)
 		}
-
-		tradeService.UpdateTrailingProfit(trade, enable, percent, deviation)
-
-		WriteJsonResponse(w, http.StatusOK, nil)
 	}
 }
 
@@ -579,8 +594,8 @@ func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 		trade := types.NewTrade()
 		trade.AddHistory(types.HistoryEntry{
 			Timestamp: time.Now(),
-			Type: types.HistoryTypeCreated,
-			Fields: requestBody,
+			Type:      types.HistoryTypeCreated,
+			Fields:    requestBody,
 		})
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
@@ -615,7 +630,6 @@ func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 
 		tradeId := tradeService.AddNewTrade(trade)
 		commonLogFields["tradeId"] = tradeId;
-
 		if requestBody.LimitSellEnabled {
 			if requestBody.LimitSellType == types.LimitSellTypePercent {
 				log.WithFields(commonLogFields).Infof("Setting limit sell at %f percent.",

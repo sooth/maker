@@ -36,6 +36,7 @@ const (
 	HistoryTypeBuyCanceled          HistoryType = "BUY_CANCELED"
 	HistoryTypeSellCanceled         HistoryType = "SELL_CANCELED"
 	HistoryTypeTrailingProfitUpdate HistoryType = "TRAILING_PROFIT_UPDATE"
+	HistoryTypeStopLossUpdate       HistoryType = "STOP_LOSS_UPDATE"
 )
 
 type HistoryEntry struct {

@@ -729,6 +729,16 @@ func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error
 
 func (s *TradeService) UpdateStopLoss(trade *types.Trade, enable bool, percent float64) {
 	trade.SetStopLoss(enable, percent)
+	log.WithFields(log.Fields{
+		"symbol":  trade.State.Symbol,
+		"tradeId": trade.State.TradeID,
+		"enable":  enable,
+		"percent": percent,
+	}).Infof("Stop loss settings updated")
+	trade.AddHistoryEntry(types.HistoryTypeStopLossUpdate, map[string]interface{}{
+		"enable":  enable,
+		"percent": percent,
+	})
 	db.DbUpdateTrade(trade)
 	s.BroadcastTradeUpdate(trade)
 }
@@ -753,7 +763,7 @@ func (s *TradeService) UpdateTrailingProfit(trade *types.Trade, enable bool,
 		"enabled":   enable,
 	}).Infof("Trailing profit settings updated")
 	trade.AddHistoryEntry(types.HistoryTypeTrailingProfitUpdate, map[string]interface{}{
-		"enabled":   enable,
+		"enable":    enable,
 		"percent":   percent,
 		"deviation": deviation,
 	})
