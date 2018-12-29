@@ -13,27 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {
-    AfterViewInit,
-    Component,
-    OnDestroy,
-    OnInit,
-    ViewChild
-} from "@angular/core";
-import {
-    AccountInfo,
-    AggTrade,
-    Balance,
-    BinanceApiService,
-    PriceTicker
-} from "../binance-api.service";
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
+import {AccountInfo, AggTrade, Balance, BinanceApiService, PriceTicker} from "../binance-api.service";
 import {Observable} from "rxjs";
-import {
-    BinanceService,
-    LimitSellType,
-    OpenTradeOptions,
-    PriceSource
-} from "../binance.service";
+import {BinanceService, LimitSellType, OpenTradeOptions, PriceSource} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
 import {Subscription} from "rxjs/Subscription";
 import * as Mousetrap from "mousetrap";
@@ -78,6 +61,9 @@ interface SavedState {
 })
 export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
+    OFFSET_TYPE_NONE = "NONE";
+    OFFSET_TYPE_ABSOLUTE = "ABSOLUTE";
+
     private localStorageKey = "binance.trade.component";
 
     BuyPriceSource = PriceSource;
@@ -115,12 +101,20 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         buyLimitPercent: number;
         manualPrice: string;
         limitSellPrice: string;
+
+        offsetType: string;
+        offsetValue: number;
+        offsetPercent: number;
     } = {
         amount: null,
         quoteAmount: null,
         buyLimitPercent: null,
         manualPrice: null,
         limitSellPrice: null,
+
+        offsetType: this.OFFSET_TYPE_NONE,
+        offsetValue: 0.0,
+        offsetPercent: 0,
     };
 
     balances: { [key: string]: Balance } = {};
@@ -322,41 +316,41 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         this.api.getPriceTicker(symbol)
-                .subscribe((ticker: PriceTicker) => {
-                    this.lastPriceMap[ticker.symbol] = ticker.price;
-                    this.updateOrderFormAssetAmount();
-                    this.orderForm.manualPrice = ticker.price.toFixed(8);
-                    this.orderForm.limitSellPrice = ticker.price.toFixed(8);
-                });
+            .subscribe((ticker: PriceTicker) => {
+                this.lastPriceMap[ticker.symbol] = ticker.price;
+                this.updateOrderFormAssetAmount();
+                this.orderForm.manualPrice = ticker.price.toFixed(8);
+                this.orderForm.limitSellPrice = ticker.price.toFixed(8);
+            });
         this.priceStepSize = this.binance.symbolMap[symbol].tickSize;
 
         this.api.getBookTicker(symbol)
-                .subscribe((ticker) => {
-                    this.bidAskMap[symbol] = {
-                        bid: ticker.bidPrice,
-                        ask: ticker.askPrice,
-                    };
-                });
+            .subscribe((ticker) => {
+                this.bidAskMap[symbol] = {
+                    bid: ticker.bidPrice,
+                    ask: ticker.askPrice,
+                };
+            });
 
         if (this.depthSubscription) {
             this.depthSubscription.unsubscribe();
         }
         this.depthSubscription = this.binance.subscribeToDepth(symbol)
-                .subscribe((depth) => {
-                    this.bidAskMap[depth.symbol] = {
-                        bid: depth.bids[0].price,
-                        ask: depth.asks[0].price,
-                    };
-                });
+            .subscribe((depth) => {
+                this.bidAskMap[depth.symbol] = {
+                    bid: depth.bids[0].price,
+                    ask: depth.asks[0].price,
+                };
+            });
 
         if (this.tradeSubscription) {
             this.tradeSubscription.unsubscribe();
         }
         this.tradeSubscription = this.binance.subscribeAggTradeStream(symbol)
-                .subscribe((aggTrade) => {
-                    this.lastPriceMap[symbol] = aggTrade.price;
-                    this.onAggTrade(aggTrade);
-                });
+            .subscribe((aggTrade) => {
+                this.lastPriceMap[symbol] = aggTrade.price;
+                this.onAggTrade(aggTrade);
+            });
 
         this.saveState();
     }
@@ -400,6 +394,12 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             price: +this.orderForm.manualPrice,
         };
 
+        if (this.orderFormSettings.priceSource != PriceSource.MANUAL) {
+            if (this.orderForm.offsetType == this.OFFSET_TYPE_ABSOLUTE) {
+                options.offsetValue = +this.orderForm.offsetValue;
+            }
+        }
+
         if (this.orderFormSettings.limitSellEnabled) {
             options.limitSellEnabled = true;
             options.limitSellType = LimitSellType.PERCENT;
@@ -431,7 +431,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
         if (this.orderFormSettings.limitSellPriceEnabled) {
             this.orderForm.limitSellPrice =
-                    this.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
+                this.lastPriceMap[this.orderFormSettings.symbol].toFixed(8);
         }
 
     }

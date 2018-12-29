@@ -195,4 +195,6 @@ export interface OpenTradeOptions {
     trailingProfitEnabled?: boolean;
     trailingProfitPercent?: number;
     trailingProfitDeviation?: number;
+
+    offsetValue?: number;
 }

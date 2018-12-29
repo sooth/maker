@@ -23,6 +23,7 @@ import (
 	"gitlab.com/crankykernel/maker/idgenerator"
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/types"
+	"gitlab.com/crankykernel/maker/util"
 	"math"
 	"sync"
 	"time"
@@ -566,9 +567,9 @@ func (s *TradeService) CloseTrade(trade *types.Trade, status types.TradeStatus, 
 
 // Return the sellable quantity adjusted for lot size.
 func (s *TradeService) FixQuantityToStepSize(quantity float64, stepSize float64) float64 {
-	fixedQuantity := roundx(quantity, 1/stepSize)
+	fixedQuantity := util.Roundx(quantity, 1/stepSize)
 	if fixedQuantity > quantity {
-		fixedQuantity = roundx(fixedQuantity-stepSize, 1/stepSize)
+		fixedQuantity = util.Roundx(fixedQuantity-stepSize, 1/stepSize)
 	}
 	return fixedQuantity
 }
@@ -613,7 +614,7 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 	price := trade.State.BuyCost *
 		(1 + trade.State.Fee) * (1 + (percent / 100)) /
 		trade.State.SellableQuantity
-	price = roundx(price, 1/symbolInfo.TickSize)
+	price = util.Roundx(price, 1/symbolInfo.TickSize)
 
 	tickSize := symbolInfo.TickSize
 	if price <= trade.State.EffectiveBuyPrice {
@@ -819,8 +820,4 @@ func (s *TradeService) CancelBuy(trade *types.Trade) error {
 	}
 	db.DbUpdateTrade(trade)
 	return err
-}
-
-func roundx(val float64, x float64) float64 {
-	return math.Round(val*x) / x
 }

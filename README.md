@@ -81,6 +81,8 @@ AGPL v3.
 - Reconnect on loss of connection from a symbol trade stream.
 - Fix trailing profit values on toggle on Firefox. https://gitlab.com/crankykernel/maker/issues/22
 - Make limit order sell by value/percent buttons appear like radio buttons, as that is how they behave.
+- Group the trailing profit, stop loss and limit sell into the trade card, so they are wrapped in the same border.
+- Add a buy offset, which is an absolute value of the quote currency to adjust the buy price buy.
 
 ### 0.2.1
 

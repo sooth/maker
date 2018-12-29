@@ -14,6 +14,14 @@
     padding-bottom: 10px;
 }
 
+.input-group-prepend {
+    .form-control {
+        border-top-right-radius: 0;
+        z-index: 1029;
+        border-bottom-right-radius: 0;
+    }
+}
+
 // Tighten up the spacing between columns without changing the spacing before
 // the first and after the last.
 .col, .col-3, .col-4, .col-7 {
@@ -45,6 +53,12 @@ input:disabled {
 
 .input-group {
     @extend .input-group-sm;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 // A button that wraps a checkbox and a label.
