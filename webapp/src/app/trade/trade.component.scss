@@ -54,7 +54,11 @@
     margin: 0;
     border: 0;
     outline: none;
-    cursor: pointer;
+    cursor: pointer !important;
+
+    label {
+        cursor: pointer;
+    }
 }
 
 .wrapper-button:hover {
