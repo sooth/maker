@@ -347,7 +347,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                         bid: depth.bids[0].price,
                         ask: depth.asks[0].price,
                     };
-                    this.onLimitPriceChange();
                 });
 
         if (this.tradeSubscription) {
@@ -369,9 +368,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     private onAggTrade(trade: AggTrade) {
         if (trade.symbol === this.orderFormSettings.symbol) {
             this.updateOrderFormAssetAmount();
-
-            /* For now, update the limit price % estimate here as well. */
-            this.onLimitPriceChange();
         }
     }
 
@@ -462,14 +458,5 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 break;
         }
         return 0;
-    }
-
-    limitPricePercentEstimate: number = 0;
-
-    onLimitPriceChange() {
-        const price = this.getPrice() * (1 + 0.001);
-        const limitPrice = (+this.orderForm.limitSellPrice) * (1 - 0.001);
-        const percent = (limitPrice - price) / price * 100;
-        this.limitPricePercentEstimate = percent;
     }
 }

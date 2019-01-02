@@ -128,9 +128,170 @@
                     </button>
                   </div>
                 </div>
+
+              <div class="row mt-2">
+                <div class="col-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <form *ngIf="trailingProfitForm" [formGroup]="trailingProfitForm">
+                        <div class="form-row">
+                          <div class="form-group col">
+                            <button type="button"
+                                    class="wrapper-button"
+                                    (click)="trailingProfitForm.get('enabled').setValue(!trailingProfitForm.get('enabled').value)"
+                            >
+                              <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="trailingProfitEnabled"
+                                       formControlName="enabled"
+                                >
+                                <label class="form-check-label">Trailing
+                                  Profit</label>
+                              </div>
+                            </button>
+
+                            <div class="input-group"
+                                 style="width: 100%;">
+                              <input type="number" class="form-control"
+                                     step="0.1"
+                                     title="Stop percent"
+                                     placeholder="Percent..."
+                                     name="trailingProfitPercent"
+                                     formControlName="percent"
+                              >
+                              <div class="input-group-append">
+                                <span class="input-group-text">%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group col">
+                            <label>Deviation</label>
+                            <div class="input-group"
+                                 style="width: 100%;">
+                              <input type="number" class="form-control"
+                                     title="Deviation"
+                                     step="0.1"
+                                     placeholder="Deviation..."
+                                     name="trailingProfitDeviation"
+                                     formControlName="deviation"
+                              >
+                              <div class="input-group-append">
+                                <span class="input-group-text">%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-3">
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="form-row">
+
+                        <div class="form-group col">
+                          <button type="button"
+                                  class="wrapper-button"
+                                  (click)="orderFormSettings.stopLossEnabled = !orderFormSettings.stopLossEnabled; saveState()">
+                            <div class="form-check">
+                              <input class="form-check-input" type="checkbox"
+                                     (click)="$event.stopPropagation(); saveState();"
+                                     [(ngModel)]="orderFormSettings.stopLossEnabled">
+                              <label class="form-check-label">Stop Loss</label>
+                            </div>
+                          </button>
+                          <div class="input-group">
+                            <input type="number" step="0.1" class="form-control"
+                                   placeholder="Percent..."
+                                   (change)="saveState()"
+                                   [disabled]="!orderFormSettings.stopLossEnabled"
+                                   [(ngModel)]="orderFormSettings.stopLossPercent">
+                            <div class="input-group-append">
+                              <div class="input-group-text">%</div>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="form-row">
+
+                        <div class="form-group col">
+                          <button type="button"
+                                  class="wrapper-button"
+                                  (click)="toggleLimitSellType('PERCENT'); saveState()">
+                            <div class="form-check"
+                                 title="Place limit order on buy execution.">
+                              <input class="form-check-input radio" type="checkbox"
+                                     (click)="toggleLimitSellType('PERCENT'); $event.stopPropagation(); saveState();"
+                                     [(ngModel)]="orderFormSettings.limitSellEnabled">
+                              <label class="form-check-label">Limit Sell at %</label>
+                            </div>
+                          </button>
+                          <div class="input-group">
+                            <input type="number" class="form-control"
+                                   title="Percent"
+                                   placeholder="Percent..."
+                                   step="0.1"
+                                   (change)="saveState();"
+                                   [value]="orderFormSettings.limitSellPercent"
+                                   [disabled]="!orderFormSettings.limitSellEnabled"
+                                   [(ngModel)]="orderFormSettings.limitSellPercent">
+                            <div class="input-group-append">
+                              <div class="input-group-text">%</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="form-group col">
+                          <button type="button"
+                                  class="wrapper-button"
+                                  (click)="toggleLimitSellType('PRICE'); saveState()">
+                            <div class="form-check"
+                                 title="Place limit order on buy execution.">
+                              <input class="form-check-input radio" type="checkbox"
+                                     (click)="toggleLimitSellType('PRICE'); $event.stopPropagation(); saveState();"
+                                     [(ngModel)]="orderFormSettings.limitSellPriceEnabled">
+                              <label class="form-check-label">Limit Sell at Price</label>
+                            </div>
+                          </button>
+                          <div class="input-group">
+                            <input type="number" class="form-control"
+                                   title="Price"
+                                   placeholder="Price..."
+                                   [step]="priceStepSize"
+                                   (change)="orderForm.limitSellPrice = toFixed(orderForm.limitSellPrice, 8); onLimitPriceChange()"
+                                   [value]="orderForm.limitSellPrice"
+                                   [disabled]="!orderFormSettings.limitSellPriceEnabled"
+                                   [(ngModel)]="orderForm.limitSellPrice">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div class="col-3">
+              </div> <!-- End row. -->
+
+            </div> <!-- End card body. -->
+          </div>
+        </div>
+      </div> <!-- End col. -->
+
+      <div class="col-3">
+        <div class="card" style="height: 100%;">
+          <div class="card-body">
+            <div class="row">
+              <div class="col">
                 <table style="font-size: 0.95rem;">
                   <!-- Quote asset balance. -->
                   <tr>
@@ -208,163 +369,6 @@
                 </table>
 
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row mt-2">
-      <div class="col col-4">
-        <div class="card">
-          <div class="card-body">
-            <form *ngIf="trailingProfitForm" [formGroup]="trailingProfitForm">
-              <div class="form-row mb-2">
-                <div class="form-group col">
-                  <button type="button"
-                          class="wrapper-button"
-                          (click)="trailingProfitForm.get('enabled').setValue(!trailingProfitForm.get('enabled').value)"
-                  >
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox"
-                             name="trailingProfitEnabled"
-                             formControlName="enabled"
-                      >
-                      <label class="form-check-label">Trailing
-                        Profit</label>
-                    </div>
-                  </button>
-
-                  <div class="input-group"
-                       style="width: 100%;">
-                    <input type="number" class="form-control"
-                           step="0.1"
-                           title="Stop percent"
-                           placeholder="Percent..."
-                           name="trailingProfitPercent"
-                           formControlName="percent"
-                    >
-                    <div class="input-group-append">
-                      <span class="input-group-text">%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-group col">
-                  <label>Deviation</label>
-                  <div class="input-group"
-                       style="width: 100%;">
-                    <input type="number" class="form-control"
-                           title="Deviation"
-                           step="0.1"
-                           placeholder="Deviation..."
-                           name="trailingProfitDeviation"
-                           formControlName="deviation"
-                    >
-                    <div class="input-group-append">
-                      <span class="input-group-text">%</span>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="col-3">
-        <div class="card">
-          <div class="card-body">
-            <div class="form-row mb-2">
-
-              <div class="form-group col">
-                <button type="button"
-                        class="wrapper-button"
-                        (click)="orderFormSettings.stopLossEnabled = !orderFormSettings.stopLossEnabled; saveState()">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox"
-                           (click)="$event.stopPropagation(); saveState();"
-                           [(ngModel)]="orderFormSettings.stopLossEnabled">
-                    <label class="form-check-label">Stop Loss</label>
-                  </div>
-                </button>
-                <div class="input-group">
-                  <input type="number" step="0.1" class="form-control"
-                         placeholder="Percent..."
-                         (change)="saveState()"
-                         [disabled]="!orderFormSettings.stopLossEnabled"
-                         [(ngModel)]="orderFormSettings.stopLossPercent">
-                  <div class="input-group-append">
-                    <div class="input-group-text">%</div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="card">
-          <div class="card-body">
-            <div class="form-row mb-2">
-
-              <div class="form-group col">
-                <button type="button"
-                        class="wrapper-button"
-                        (click)="toggleLimitSellType('PERCENT'); saveState()">
-                  <div class="form-check"
-                       title="Place limit order on buy execution.">
-                    <input class="form-check-input radio" type="checkbox"
-                           (click)="toggleLimitSellType('PERCENT'); $event.stopPropagation(); saveState();"
-                           [(ngModel)]="orderFormSettings.limitSellEnabled">
-                    <label class="form-check-label">Limit Sell at %</label>
-                  </div>
-                </button>
-                <div class="input-group">
-                  <input type="number" class="form-control"
-                         title="Percent"
-                         placeholder="Percent..."
-                         step="0.1"
-                         (change)="saveState();"
-                         [value]="orderFormSettings.limitSellPercent"
-                         [disabled]="!orderFormSettings.limitSellEnabled"
-                         [(ngModel)]="orderFormSettings.limitSellPercent">
-                  <div class="input-group-append">
-                    <div class="input-group-text">%</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group col">
-                <button type="button"
-                        class="wrapper-button"
-                        (click)="toggleLimitSellType('PRICE'); saveState()">
-                  <div class="form-check"
-                       title="Place limit order on buy execution.">
-                    <input class="form-check-input radio" type="checkbox"
-                           (click)="toggleLimitSellType('PRICE'); $event.stopPropagation(); saveState();"
-                           [(ngModel)]="orderFormSettings.limitSellPriceEnabled">
-                    <label class="form-check-label">Limit Sell at Price</label>
-                  </div>
-                </button>
-                <div class="input-group">
-                  <input type="number" class="form-control"
-                         title="Price"
-                         placeholder="Price..."
-                         [step]="priceStepSize"
-                         (change)="orderForm.limitSellPrice = toFixed(orderForm.limitSellPrice, 8); onLimitPriceChange()"
-                         [value]="orderForm.limitSellPrice"
-                         [disabled]="!orderFormSettings.limitSellPriceEnabled"
-                         [(ngModel)]="orderForm.limitSellPrice">
-                  <div class="input-group-append">
-                    <div class="input-group-text" title="Estimate profit at 0.1% fee.">
-                      {{limitPricePercentEstimate | number:".3-3"}}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         </div>
