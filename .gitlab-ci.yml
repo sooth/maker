@@ -21,9 +21,9 @@ build:
     export PATH=/opt/osxcross/target/bin:$GOPATH/bin:/usr/local/go/bin:$PATH
     make install-deps
     GOOS=linux GOARCH=amd64 make dist
-    CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 make dist
-    CC=i686-w64-mingw32-gcc GOOS=windows GOARCH=386 make dist
-    CC=o64-clang GOOS=darwin GOARCH=amd64 make dist
+    SKIP_WEBAPP=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 make dist
+    SKIP_WEBAPP=1 CC=i686-w64-mingw32-gcc GOOS=windows GOARCH=386 make dist
+    SKIP_WEBAPP=1 CC=o64-clang GOOS=darwin GOARCH=amd64 make dist
     cp dist/*.zip ${CI_PROJECT_DIR}
 
   artifacts:

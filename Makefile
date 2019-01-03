@@ -16,7 +16,9 @@ dist: DISTNAME := maker-$(VERSION)-$(GOOS)-$(GOARCH)
 dist: DIR      := ../dist/$(DISTNAME)
 dist:
 	rm -rf dist/$(DIR) && mkdir -p dist/$(DIR)
+ifndef SKIP_WEBAPP
 	cd webapp && $(MAKE)
+endif
 	GOARCH=$(GOARCH) DIR=../dist/$(DIR) $(MAKE) -C go
 	cp README.md LICENSE.txt ./dist/$(DIR)
 	(cd dist && zip -r $(DISTNAME).zip $(DISTNAME))
