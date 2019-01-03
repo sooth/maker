@@ -79,19 +79,31 @@ AGPL v3.
 
 ## ChangeLog
 
-### Unreleased
-- Update frontend to Angular 7.
+### 0.3.0 - 2019-01-03
+- Update the web based user interface to Angular 7.
 - Reconnect on loss of connection from a symbol trade stream.
-- Fix trailing profit values on toggle on Firefox. https://gitlab.com/crankykernel/maker/issues/22
-- Make limit order sell by value/percent buttons appear like radio buttons, as that is how they behave.
-- Group the trailing profit, stop loss and limit sell into the trade card, so they are wrapped in the same border.
-- Add a buy offset, which is an absolute value of the quote currency to adjust the buy price buy.
+- Fix trailing profit values on toggle on
+  Firefox. https://gitlab.com/crankykernel/maker/issues/22
+- Make limit order sell by value/percent buttons appear like radio
+  buttons, as that is how they behave.
+- Group the trailing profit, stop loss and limit sell into the trade
+  card, so they are wrapped in the same border.
+- Add a buy offset, which is an absolute value of the quote currency
+  to adjust the buy price buy.
 - (gitlab-ci) Add a MacOS build.
 - (gitlab-ci) Remove 32 bit Windows build.
+- More detailed logging to the log file.
+- Each trade now contains a history of actions on the trade (may still
+  be incomplete but its a start).
+- Many UI tweaks and minor fixes/enhancements.
+
+[Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.2.1...0.3.0)
 
 ### 0.2.1
 
 - Update for new Binance fee discount of 25%.
+
+[Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.2.0...0.2.1)
 
 ### 0.2.0
 
@@ -102,6 +114,8 @@ AGPL v3.
 - Fixed issue where not all buy fills were being handled. In
   particular when a partial fill came after the fill.
 - Rename "quick sell" to "limit sell" and add tooltip.
+
+[Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.1.0...0.2.0)
 
 ### 0.1.1
 
