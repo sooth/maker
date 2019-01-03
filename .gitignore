@@ -3,6 +3,7 @@
 /maker.db
 /maker.yaml
 /maker.log
+/maker
 *-packr.go
 *~
 /dist

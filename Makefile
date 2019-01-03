@@ -5,6 +5,7 @@ VERSION :=	$(shell cat VERSION)
 all:
 	cd webapp && $(MAKE) $@
 	cd go && $(MAKE) $@
+	cp go/maker .
 
 install-deps:
 	cd webapp && $(MAKE) $@

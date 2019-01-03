@@ -44,13 +44,16 @@ Then using your web browser visit http://localhost:6045.
 - Most testing has currently been done on BTC pairs.
 - The application must remain running for trailing profit and stop
   loss to execute.
-- This is PRE BETA software. Use at your own risk.
+- This is **PRE BETA** software. Use at your own risk.
 
 ## Building
 
 Before building _Maker_ you must install Go and Node.
-- Node 8.11.3+
-- Go 1.10.3+
+- Node 10.15.0+
+- Go 1.11.4+
+
+The build process is known to work on Linux. It should also work on
+MacOS, but probably won't work on Windows.
 
 A Makefile is used to complete some steps of the build, so install
 _make_ as well.
@@ -83,6 +86,8 @@ AGPL v3.
 - Make limit order sell by value/percent buttons appear like radio buttons, as that is how they behave.
 - Group the trailing profit, stop loss and limit sell into the trade card, so they are wrapped in the same border.
 - Add a buy offset, which is an absolute value of the quote currency to adjust the buy price buy.
+- (gitlab-ci) Add a MacOS build.
+- (gitlab-ci) Remove 32 bit Windows build.
 
 ### 0.2.1
 
