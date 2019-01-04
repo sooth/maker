@@ -18,16 +18,20 @@ package binanceex
 import (
 	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/types"
+	"gitlab.com/crankykernel/maker/util"
 )
 
 type BinancePriceService struct {
-	anonymousClient *binance.RestClient
+	anonymousClient     *binance.RestClient
+	exchangeInfoService *binance.ExchangeInfoService
 }
 
-func NewBinancePriceService() *BinancePriceService {
+func NewBinancePriceService(exchangeInfoService *binance.ExchangeInfoService) *BinancePriceService {
 	return &BinancePriceService{
-		anonymousClient: binance.NewAnonymousClient(),
+		anonymousClient:     binance.NewAnonymousClient(),
+		exchangeInfoService: exchangeInfoService,
 	}
 }
 
@@ -59,6 +63,16 @@ func (s *BinancePriceService) GetBestAskPrice(symbol string) (float64, error) {
 		return 0, err
 	}
 	return ticker.AskPrice, nil
+}
+
+func (s *BinancePriceService) AdjustPriceByTicks(symbol string, price float64, ticks int64) float64 {
+	tickSize, err := s.exchangeInfoService.GetTickSize(symbol)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"symbol": symbol,
+		}).Errorf("Failed to lookup tick size")
+	}
+	return util.Round8(price + (tickSize * float64(ticks)))
 }
 
 func (s *BinancePriceService) GetPrice(symbol string, priceSource types.PriceSource) (float64, error) {

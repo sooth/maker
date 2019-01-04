@@ -55,12 +55,6 @@ input:disabled {
     @extend .input-group-sm;
 }
 
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
 // A button that wraps a checkbox and a label.
 .wrapper-button {
     background: transparent;

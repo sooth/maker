@@ -62,7 +62,7 @@ interface SavedState {
 export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     OFFSET_TYPE_NONE = "NONE";
-    OFFSET_TYPE_ABSOLUTE = "ABSOLUTE";
+    OFFSET_TYPE_TICKS = "TICKS";
 
     private localStorageKey = "binance.trade.component";
 
@@ -103,8 +103,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         limitSellPrice: string;
 
         offsetType: string;
-        offsetValue: number;
-        offsetPercent: number;
+        offsetTicks: number;
     } = {
         amount: null,
         quoteAmount: null,
@@ -113,8 +112,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         limitSellPrice: null,
 
         offsetType: this.OFFSET_TYPE_NONE,
-        offsetValue: 0.0,
-        offsetPercent: 0,
+        offsetTicks: 0,
     };
 
     balances: { [key: string]: Balance } = {};
@@ -392,11 +390,15 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             trailingProfitPercent: this.orderFormSettings.trailingProfitPercent,
             trailingProfitDeviation: this.orderFormSettings.trailingProfitDeviation,
             price: +this.orderForm.manualPrice,
+
+            offsetTicks: 0,
         };
 
         if (this.orderFormSettings.priceSource != PriceSource.MANUAL) {
-            if (this.orderForm.offsetType == this.OFFSET_TYPE_ABSOLUTE) {
-                options.offsetValue = +this.orderForm.offsetValue;
+            switch (this.orderForm.offsetType) {
+                case this.OFFSET_TYPE_TICKS:
+                    options.offsetTicks = +this.orderForm.offsetTicks;
+                    break;
             }
         }
 

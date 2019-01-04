@@ -124,29 +124,30 @@
                         <div class="input-group-prepend">
                           <select class="form-control" [(ngModel)]="orderForm.offsetType">
                             <option value="NONE">None</option>
-                            <option value="ABSOLUTE">Absolute</option>
+                            <option value="TICKS">Ticks</option>
                           </select>
                         </div>
                         <input *ngIf="orderForm.offsetType == 'NONE'"
                                class="form-control"
                                disabled>
-                        <input *ngIf="orderForm.offsetType == 'PERCENT'"
-                               type="number" class="form-control"
-                               [(ngModel)]="orderForm.offsetPercent"
-                               [step]="0.1">
-                        <input *ngIf="orderForm.offsetType == 'ABSOLUTE'"
-                               type="number" class="form-control"
-                               [(ngModel)]="orderForm.offsetValue"
-                               (change)="orderForm.offsetValue = toFixed(orderForm.offsetValue, 8);"
-                               [step]="priceStepSize">
-                        <div class="input-group-append" *ngIf="orderForm.offsetType == 'ABSOLUTE'">
+                        <input *ngIf="orderForm.offsetType == 'TICKS'"
+                               type="number"
+                               class="form-control"
+                               [(ngModel)]="orderForm.offsetTicks"
+                        >
+                        <div class="input-group-append" *ngIf="orderForm.offsetType == 'TICKS'">
                           <button type="button" class="btn btn-outline-secondary"
-                                  (click)="orderForm.offsetValue = toFixed(+orderForm.offsetValue + priceStepSize, 8);"
+                                  (click)="orderForm.offsetTicks = orderForm.offsetTicks + 1;"
                           >+
                           </button>
                           <button type="button" class="btn btn-outline-secondary"
-                                  (click)="orderForm.offsetValue = toFixed(+orderForm.offsetValue - priceStepSize, 8);"
-                          >-</button>
+                                  (click)="orderForm.offsetTicks = orderForm.offsetTicks - 1;"
+                          >-
+                          </button>
+                          <button type="button" class="btn btn-outline-secondary"
+                                  (click)="orderForm.offsetTicks = 0;"
+                          >0
+                          </button>
                         </div>
                       </div>
                     </div>

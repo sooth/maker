@@ -27,7 +27,6 @@ import (
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
-	"gitlab.com/crankykernel/maker/util"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
@@ -510,7 +509,8 @@ func getTradeHandler(w http.ResponseWriter, r *http.Request) {
 	WriteJsonResponse(w, http.StatusOK, trade)
 }
 
-func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
+func PostBuyHandler(tradeService *tradeservice.TradeService,
+	binancePriceService *binanceex.BinancePriceService) http.HandlerFunc {
 	type BuyOrderRequest struct {
 		Symbol                  string              `json:"symbol"`
 		Quantity                float64             `json:"quantity"`
@@ -525,8 +525,7 @@ func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 		TrailingProfitPercent   float64             `json:"trailingProfitPercent"`
 		TrailingProfitDeviation float64             `json:"trailingProfitDeviation"`
 		Price                   float64             `json:"price"`
-		OffsetValue             float64             `json:"offsetValue"`
-		OffsetPercent           float64             `json:"offsetPercent"`
+		OffsetTicks             int64               `json:"offsetTicks"`
 	}
 
 	type BuyOrderResponse struct {
@@ -603,8 +602,6 @@ func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 		trade.State.Symbol = params.Symbol
 		trade.AddClientOrderID(params.NewClientOrderId)
 
-		binancePriceService := binanceex.NewBinancePriceService()
-
 		switch requestBody.PriceSource {
 		case types.PriceSourceManual:
 			params.Price = requestBody.Price
@@ -618,14 +615,14 @@ func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 					fmt.Sprintf("Failed to get price: %v", err))
 				return
 			}
-			if requestBody.OffsetValue != 0 {
-				newPrice := util.Round8(params.Price + requestBody.OffsetValue)
+			if requestBody.OffsetTicks != 0 {
+				newPrice := binancePriceService.AdjustPriceByTicks(requestBody.Symbol,
+					params.Price, requestBody.OffsetTicks)
 				log.WithFields(log.Fields{
-					"symbol": requestBody.Symbol,
-					"offsetPrice": requestBody.OffsetValue,
-					"price": params.Price,
-					"newPrice": newPrice,
-				}).Debugf("Adjusting price with offset value")
+					"offsetTicks": requestBody.OffsetTicks,
+					"price":       fmt.Sprintf("%.8f", params.Price),
+					"newPrice":    fmt.Sprintf("%.8f", newPrice),
+				}).Infof("Price adjusted by ticks")
 				params.Price = newPrice
 			}
 		}
@@ -670,8 +667,7 @@ func PostBuyHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 			"trailingProfitEnabled":   requestBody.TrailingProfitEnabled,
 			"trailingProfitPercent":   requestBody.TrailingProfitPercent,
 			"trailingProfitDeviation": requestBody.TrailingProfitDeviation,
-			"offsetValue":             requestBody.OffsetValue,
-			"offsetPercent":           requestBody.OffsetPercent,
+			"offsetTicks":             requestBody.OffsetTicks,
 		}).Infof("Posting BUY order for %s", params.Symbol)
 
 		response, err := binanceex.GetBinanceRestClient().PostOrder(params)

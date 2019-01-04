@@ -31,6 +31,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"time"
 )
 
 var ServerFlags struct {
@@ -40,6 +41,18 @@ var ServerFlags struct {
 	LogFilename    string
 	NoLog          bool
 	OpenBrowser    bool
+}
+
+func initBinanceExchangeInfoService() *binance.ExchangeInfoService {
+	exchangeInfoService := binance.NewExchangeInfoService()
+	exchangeInfoService.Update()
+	go func() {
+		for {
+			time.Sleep(1 * time.Minute)
+			exchangeInfoService.Update()
+		}
+	}()
+	return exchangeInfoService
 }
 
 func ServerMain() {
@@ -64,6 +77,9 @@ func ServerMain() {
 
 	restoreTrades(tradeService)
 
+	binanceExchangeInfoService := initBinanceExchangeInfoService()
+	binancePriceService := binanceex.NewBinancePriceService(binanceExchangeInfoService)
+
 	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream()
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
 	go applicationContext.BinanceUserDataStream.Run()
@@ -87,7 +103,7 @@ func ServerMain() {
 
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
 
-	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService)).Methods("POST")
+	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService, binancePriceService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
 	router.HandleFunc("/api/binance/sell", DeleteSellHandler(tradeService)).Methods("DELETE")
 

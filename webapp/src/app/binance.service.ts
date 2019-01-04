@@ -196,5 +196,5 @@ export interface OpenTradeOptions {
     trailingProfitPercent?: number;
     trailingProfitDeviation?: number;
 
-    offsetValue?: number;
+    offsetTicks?: number,
 }
