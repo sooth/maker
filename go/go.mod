@@ -6,7 +6,7 @@ require (
 	github.com/gobuffalo/packr v1.21.9
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
-	github.com/gorilla/websocket v1.2.0
+	github.com/gorilla/websocket v1.4.0
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/mattn/go-sqlite3 v1.9.0
 	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
@@ -17,8 +17,8 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
 	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
-	gitlab.com/crankykernel/cryptotrader v0.0.0-20180706233839-e82c919dcb46
-	golang.org/x/crypto v0.0.0-20190102171810-8d7daa0c54b3
+	gitlab.com/crankykernel/cryptotrader v0.0.0-20190104072305-bbfd323b1cfb
+	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
 	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598 // indirect
 	golang.org/x/tools v0.0.0-20190102213336-ca9055ed7d04 // indirect
