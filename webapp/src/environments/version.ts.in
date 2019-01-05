@@ -1,1 +1,2 @@
-export const VERSION = "@version@";
+export const VERSION = "@VERSION@";
+export const GIT_REVISION = "@GIT_REVISION@";

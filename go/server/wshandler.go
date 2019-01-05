@@ -20,6 +20,7 @@ import (
 	"gitlab.com/crankykernel/maker/context"
 	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
+	"gitlab.com/crankykernel/maker/version"
 	"net/http"
 	"github.com/gorilla/websocket"
 	"encoding/json"
@@ -97,10 +98,16 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	go h.readLoop(ws, doneChannel)
 	go h.writeLoop(ws, writeChannel)
 
+	ws.WriteJSON(map[string]interface{}{
+		"messageType": MakerMessageTypeVersion,
+		"version": version.Version,
+		"git_revision": version.GitRevision,
+	})
+
 	trades := h.appContext.TradeService.GetAllTrades()
 	for _, trade := range trades {
 		message := map[string]interface{}{
-			"messageType": "trade",
+			"messageType": MakerMessageTypeTrade,
 			"trade":       trade.State,
 		}
 		bytes, err := json.Marshal(message)
@@ -175,6 +182,7 @@ type MakerMessage struct {
 
 type MakerMessageType string
 
+const MakerMessageTypeVersion MakerMessageType = "version"
 const MakerMessageTypeTradeArchived MakerMessageType = "tradeArchived"
 const MakerMessageTypeTrade MakerMessageType = "trade"
 const MakerMessageTypeBinanceAggTrade MakerMessageType = "binanceAggTrade"

@@ -28,3 +28,8 @@ html {
         z-index: 2;
     }
 }
+
+// Disable opacity on toastr, it can be hard to see.
+.toast {
+    opacity: 1 !important;
+}

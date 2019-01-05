@@ -1,14 +1,17 @@
 VERSION :=	$(shell cat ../VERSION)
+GIT_REV	:=	$(shell git rev-parse --short HEAD)
 NG :=		./node_modules/.bin/ng
 
-all: ./src/environments/version.ts
+all: update-version
 	$(NG) build --prod --aot
 
 install-deps:
 	npm install
 
-./src/environments/version.ts: ../VERSION ./src/environments/version.ts.in
-	sed -e "s#@version@#$(VERSION)#g" ./src/environments/version.ts.in > \
+update-version:
+	sed -e "s#@VERSION@#$(VERSION)#g" \
+	    -e "s#@GIT_REVISION@#$(GIT_REV)#g" \
+		./src/environments/version.ts.in > \
 		./src/environments/version.ts
 
 clean:

@@ -24,6 +24,7 @@ export interface ToastrOptions {
     closeButton?: boolean;
     preventDuplicates?: boolean;
     preventOpenDuplicates?: boolean;
+    onHidden?: any;
 }
 
 @Injectable()

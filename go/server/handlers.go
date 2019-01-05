@@ -27,12 +27,21 @@ import (
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
+	"gitlab.com/crankykernel/maker/version"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 )
+
+func VersionHandler(w http.ResponseWriter, r *http.Request) {
+	response := map[string]string{
+		"version":      version.Version,
+		"git_revision": version.GitRevision,
+	}
+	WriteJsonResponse(w, http.StatusOK, response)
+}
 
 func archiveTradeHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

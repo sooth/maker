@@ -1,8 +1,13 @@
 VERSION :=	$(shell cat ../VERSION)
+GIT_REV	:=	$(shell git rev-parse --short HEAD)
 
 GOPATH ?=	$(HOME)/go
 CGO_ENABLED :=	1
 GO_TAGS :=	json1
+
+PACKAGE :=	gitlab.com/crankykernel/maker
+LDFLAGS :=	-X \"$(PACKAGE)/version.GitRevision=$(GIT_REV)\" \
+		-X \"$(PACKAGE)/version.Version=$(VERSION)\"
 
 APP :=		maker
 
@@ -15,7 +20,9 @@ $(APP): BIN ?= $(APP)$(EXE)
 $(APP): DIR ?= .
 $(APP):
 	test -e ../webapp/dist && $(GOPATH)/bin/packr -v -z || true
-	CGO_ENABLED=1 go build -o $(DIR)/$(BIN) --tags "$(GO_TAGS)"
+	CGO_ENABLED=1 go build -o $(DIR)/$(BIN) \
+		-ldflags "$(LDFLAGS)" \
+		-tags "$(GO_TAGS)"
 
 install-deps:
 	go get -u github.com/gobuffalo/packr/...

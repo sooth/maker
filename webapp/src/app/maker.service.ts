@@ -30,6 +30,8 @@ import {Logger, LoggerService} from "./logger.service";
 import {Observable} from "rxjs";
 import {ToastrService} from './toastr.service';
 import {LimitSellType} from './binance.service';
+import {GIT_REVISION, VERSION} from "../environments/version";
+import {version} from "punycode";
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -79,11 +81,30 @@ export class MakerService {
                             message.binanceOutboundAccountInfo);
                     this.binanceAccountInfo$.next(accountInfo);
                     break;
+                case MakerMessageType.VERSION:
+                    this.checkVersion(<VersionMessage>message);
+                    break;
                 default:
                     this.logger.log(`Unhandled message type: ${message.messageType}`);
+                    this.logger.log(message);
                     break;
             }
         };
+    }
+
+    private checkVersion(versionMesage: VersionMessage) {
+        console.log(`Client version: ${VERSION}; Server version: ${versionMesage.version}.`);
+        console.log(`Client git-rev: ${GIT_REVISION}; Server git-rev: ${versionMesage.git_revision}.`);
+        if (VERSION != versionMesage.version || GIT_REVISION != versionMesage.git_revision) {
+            this.toastr.warning("Backend has been updated. Reloading.", "", {
+                progressBar: true,
+                timeOut: 5000,
+                closeButton: false,
+                onHidden: () => {
+                    location.reload();
+                },
+            });
+        }
     }
 
     private onTrade(trade: TradeState) {
@@ -248,11 +269,17 @@ export interface MakerMessage {
 }
 
 export enum MakerMessageType {
+    VERSION = "version",
     TRADE = "trade",
     BINANCE_AGG_TRADE = "binanceAggTrade",
     TRADE_ARCHIVED = "tradeArchived",
     BINANCE_EXECUTION_REPORT = "binanceExecutionReport",
     BINANCE_OUTBOUND_ACCOUNT_INFO = "binanceOutboundAccountInfo",
+}
+
+interface VersionMessage extends MakerMessage {
+    version: string,
+    git_revision: string,
 }
 
 class MakerWebSocket {

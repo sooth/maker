@@ -25,6 +25,7 @@ import (
 	"gitlab.com/crankykernel/maker/db"
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/tradeservice"
+	"gitlab.com/crankykernel/maker/version"
 	"net/http"
 	"os"
 	"os/exec"
@@ -56,6 +57,9 @@ func initBinanceExchangeInfoService() *binance.ExchangeInfoService {
 }
 
 func ServerMain() {
+
+	log.Infof("This is Maker version %s (git revision %s)",
+		version.Version, version.GitRevision)
 
 	log.SetLevel(log.LogLevelDebug)
 
@@ -102,6 +106,7 @@ func ServerMain() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
+	router.HandleFunc("/api/version", VersionHandler).Methods("GET")
 
 	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService, binancePriceService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
