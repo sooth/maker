@@ -11,6 +11,7 @@ exchange servers.
 
 - Windows
 - Linux
+- MacOS
 
 ## Download
 
@@ -78,6 +79,12 @@ _make_ as well.
 AGPL v3.
 
 ## ChangeLog
+
+### unreleased
+- Reload UI if backend version
+  changes. https://gitlab.com/crankykernel/maker/issues/28
+- Make the price offset in terms of ticks, no an actual
+  value. https://gitlab.com/crankykernel/maker/issues/27
 
 ### 0.3.0 - 2019-01-03
 - Update the web based user interface to Angular 7.
