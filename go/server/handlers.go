@@ -43,6 +43,14 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	WriteJsonResponse(w, http.StatusOK, response)
 }
 
+// Return the Maker server time as milliseconds unix style.
+func TimeHandler(w http.ResponseWriter, r *http.Request) {
+	response := map[string]interface{}{
+		"serverTime": time.Now().UnixNano() / int64(time.Millisecond),
+	}
+	WriteJsonResponse(w, http.StatusOK, response)
+}
+
 func archiveTradeHandler(tradeService *tradeservice.TradeService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

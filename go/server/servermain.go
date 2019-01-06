@@ -107,6 +107,7 @@ func ServerMain() {
 
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
 	router.HandleFunc("/api/version", VersionHandler).Methods("GET")
+	router.HandleFunc("/api/time", TimeHandler).Methods("GET")
 
 	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService, binancePriceService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
