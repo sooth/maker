@@ -370,30 +370,19 @@ func (s *TradeService) FailTrade(trade *types.Trade) {
 func (s *TradeService) FindTradeForReport(report binance.StreamExecutionReport) *types.Trade {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
+
 	if trade, ok := s.TradesByClientID[report.ClientOrderID]; ok {
-		log.WithFields(log.Fields{
-			"clientOrderId": report.ClientOrderID,
-		}).Debugf("Found trade by clientOrderId.")
 		return trade
 	}
-
-	log.WithFields(log.Fields{
-		"clientOrderId":     report.ClientOrderID,
-		"origClientOrderId": report.OriginalClientOrderID,
-	}).Debugf("Failed to find trade by clientOrderId, trying origClientOrderId.")
 
 	if trade, ok := s.TradesByClientID[report.OriginalClientOrderID]; ok {
-		log.WithFields(log.Fields{
-			"clientOrderId":     report.ClientOrderID,
-			"origClientOrderId": report.OriginalClientOrderID,
-		}).Debugf("Found trade by origClientOrderId.")
 		return trade
 	}
 
 	log.WithFields(log.Fields{
 		"clientOrderId":     report.ClientOrderID,
 		"origClientOrderId": report.OriginalClientOrderID,
-	}).Debugf("Failed to find trade by origClientorderId.")
+	}).Debugf("Failed to find trade by orderId")
 
 	return nil
 }

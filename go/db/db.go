@@ -276,8 +276,6 @@ func DbQueryTrades(options TradeQueryOptions) ([]types.TradeState, error) {
 		sql = fmt.Sprintf("%s WHERE %s", sql, strings.Join(where, "AND "))
 	}
 
-	log.Println(sql)
-
 	rows, err := db.Query(sql)
 	if err != nil {
 		return nil, err
