@@ -16,16 +16,16 @@
 package server
 
 import (
+	"encoding/json"
+	"github.com/gorilla/websocket"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/binanceex"
 	"gitlab.com/crankykernel/maker/context"
+	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/types"
 	"gitlab.com/crankykernel/maker/version"
 	"net/http"
-	"github.com/gorilla/websocket"
-	"encoding/json"
-	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/cryptotrader/binance"
 )
 
 // This handler implements the read-only websocket that all clients connect
@@ -49,7 +49,7 @@ func (h *UserWebSocketHandler) readLoop(ws *websocket.Conn, doneChannel chan boo
 			break
 		}
 	}
-	log.Debugf("User WebSocket readLoop exiting.")
+	log.WithField("remoteAddr", ws.RemoteAddr()).Debug("Client websocket read-loop done")
 }
 
 func (h *UserWebSocketHandler) writeLoop(ws *websocket.Conn, writeChannel chan *MakerMessage) {
@@ -68,7 +68,7 @@ func (h *UserWebSocketHandler) writeLoop(ws *websocket.Conn, writeChannel chan *
 			return
 		}
 	}
-	log.Debugf("User WebSocket writeLoop exiting.")
+	log.WithField("remoteAddr", ws.RemoteAddr()).Debug("Client websocket write-loop done")
 }
 
 func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -99,8 +99,8 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	go h.writeLoop(ws, writeChannel)
 
 	ws.WriteJSON(map[string]interface{}{
-		"messageType": MakerMessageTypeVersion,
-		"version": version.Version,
+		"messageType":  MakerMessageTypeVersion,
+		"version":      version.Version,
 		"git_revision": version.GitRevision,
 	})
 
@@ -169,7 +169,9 @@ Loop:
 
 	writeChannel <- nil
 
-	log.Debugf("User WebSocket closed.")
+	log.WithFields(log.Fields{
+		"remoteAddr": r.RemoteAddr,
+	}).Info("Client websocket closed")
 }
 
 type MakerMessage struct {
