@@ -15,7 +15,7 @@ exchange servers.
 
 ## Download
 
-https://gitlab.com/crankykernel/maker/-/jobs/artifacts/master/browse?job=build
+https://maker.crankykernel.com/files/master/
 
 ## Running
 
@@ -85,6 +85,7 @@ AGPL v3.
   changes. https://gitlab.com/crankykernel/maker/issues/28
 - Make the price offset in terms of ticks, no an actual
   value. https://gitlab.com/crankykernel/maker/issues/27
+- Display 24 hour volume and price change for symbol being traded.
 
 ### 0.3.0 - 2019-01-03
 - Update the web based user interface to Angular 7.
