@@ -1,5 +1,7 @@
 build:
   image: centos:7
+  variables:
+    OSXCROSS_SDK_VERSION: "10.11"
   script: |
     # Install build dependencies.
     yum -y install epel-release
@@ -23,7 +25,6 @@ build:
 
     # Install osxcross.
     export OSXCROSS=${CI_PROJECT_DIR}/osxcross
-    export OSXCROSS_SDK_VERSION=10.11
     if [[ -e "${OSXCROSS}/.cached" ]]; then
         echo "Using cached osxcross."
     else
