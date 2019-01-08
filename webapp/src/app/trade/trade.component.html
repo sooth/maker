@@ -20,8 +20,8 @@
                             (change)="changeSymbol()">
                       <option [value]=""></option>
                       <option
-                        *ngFor="let symbol of binance.symbols | withquoteasset:orderFormSettings.quoteAsset"
-                        [value]="symbol">
+                          *ngFor="let symbol of binance.symbols | withquoteasset:orderFormSettings.quoteAsset"
+                          [value]="symbol">
                         {{symbol}}
                       </option>
                     </select>
@@ -86,26 +86,27 @@
                           </select>
                         </div>
                         <input
-                          *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
-                          type="number" class="form-control" disabled step="0.00000001"
-                          title="Last price will be determined when order is placed."
-                          [value]="lastPriceMap[orderFormSettings.symbol] && lastPriceMap[orderFormSettings.symbol].toFixed(8) || null">
+                            *ngIf="orderFormSettings.priceSource == 'LAST_PRICE'"
+                            type="number" class="form-control" disabled step="0.00000001"
+                            title="Last price will be determined when order is placed."
+                            [value]="ticker.last && ticker.last.toFixed(8) || null"
+                        >
                         <input
-                          *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
-                          type="number" class="form-control" disabled step="0.00000001"
-                          title="Best bid price will be determined when order is placed."
-                          [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].bid.toFixed(8) || null">
+                            *ngIf="orderFormSettings.priceSource == 'BEST_BID'"
+                            type="number" class="form-control" disabled step="0.00000001"
+                            title="Best bid price will be determined when order is placed."
+                            [value]="ticker.bid.toFixed(8) || null">
                         <input
-                          *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
-                          type="number" class="form-control" disabled step="0.00000001"
-                          title="Best ask price will be determined when order is placed."
-                          [value]="bidAskMap[orderFormSettings.symbol] && bidAskMap[orderFormSettings.symbol].ask.toFixed(8) || null">
+                            *ngIf="orderFormSettings.priceSource == 'BEST_ASK'"
+                            type="number" class="form-control" disabled step="0.00000001"
+                            title="Best ask price will be determined when order is placed."
+                            [value]="ticker.ask.toFixed(8) || null">
                         <input
-                          *ngIf="orderFormSettings.priceSource == 'MANUAL'"
-                          type="number" class="form-control"
-                          [(ngModel)]="orderForm.manualPrice"
-                          (change)="onManualPriceInput()"
-                          [step]="priceStepSize">
+                            *ngIf="orderFormSettings.priceSource == 'MANUAL'"
+                            type="number" class="form-control"
+                            [(ngModel)]="orderForm.manualPrice"
+                            (change)="onManualPriceInput()"
+                            [step]="priceStepSize">
                         <div *ngIf="orderFormSettings.priceSource == 'MANUAL'"
                              class="input-group-append">
                           <button type="button"
@@ -337,33 +338,26 @@
                   </tr>
                   <tr>
                     <th>BNB Balance</th>
-                    <td *ngIf="balances['BNB']">{{balances['BNB'].free |
-                      number:".8-8"}}
+                    <td *ngIf="balances['BNB']">
+                      {{balances['BNB'].free | number:".8-8"}}
                     </td>
                   </tr>
 
                   <tr>
                     <th>Last</th>
                     <td>
-                      {{(lastPriceMap[orderFormSettings.symbol] |
-                      number:".8-8")
-                      ||
-                      '--'}}
-                      </td>
-                      </tr>
+                      {{(ticker.last | number:".8-8") || '--'}}
+                    </td>
+                  </tr>
 
-                      <tr>
-                      <th>Bid</th>
-                      <td>{{(bidAskMap[orderFormSettings.symbol] &&
-                      bidAskMap[orderFormSettings.symbol].bid
-                      | number:".8-8") || '--' }}
+                  <tr>
+                    <th>Bid</th>
+                    <td>{{(ticker.bid | number:".8-8") || '--' }}
                     </td>
                   </tr>
                   <tr>
                     <th>Ask</th>
-                    <td>{{(bidAskMap[orderFormSettings.symbol] &&
-                      bidAskMap[orderFormSettings.symbol].ask
-                      | number:".8-8") || '--' }}
+                    <td>{{(ticker.ask | number:".8-8") || '--' }}
                     </td>
                   </tr>
 
@@ -398,6 +392,17 @@
                     <ng-template #other>
                       <td>--</td>
                     </ng-template>
+                  </tr>
+
+                  <tr>
+                    <th>24h Volume</th>
+                    <td>{{ticker.vol24 && (ticker.vol24 | number:".4-4") || '--'}}</td>
+                  </tr>
+
+                  <tr>
+                    <th>24h Change</th>
+                    <td *ngIf="ticker.percentChange24 === undefined">--</td>
+                    <td *ngIf="ticker.percentChange24 !== undefined">{{ticker.percentChange24}}%</td>
                   </tr>
 
                 </table>

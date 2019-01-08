@@ -120,31 +120,6 @@ export class BinanceApiService {
         }));
     }
 
-    getPriceTicker(symbol: string): Observable<PriceTicker> {
-        const endpoint = "/api/v3/ticker/price";
-        const params = new HttpParams().set("symbol", symbol);
-        return this.get(endpoint, params).pipe(
-                map((r: RestTickerPriceResponse) => {
-                    return buildTickerFromRest(r);
-                }));
-    }
-
-    getBookTicker(symbol: string): Observable<BookTicker> {
-        const endpoint = "/api/v3/ticker/bookTicker";
-        const params = new HttpParams().set("symbol", symbol);
-        return this.get(endpoint, params).pipe(
-                map((r: RestBookTicker): BookTicker => {
-                    return {
-                        symbol: r.symbol,
-                        bidPrice: +r.bidPrice,
-                        bidQty: +r.bidQty,
-                        askPrice: +r.askPrice,
-                        askQty: +r.askQty,
-                    };
-                })
-        );
-    }
-
     postBuyOrder(body: OpenTradeOptions = null): Observable<BuyOrderResponse> {
         const endpoint = "/api/binance/buy";
         return <Observable<BuyOrderResponse>>this.post(endpoint, null, body);
@@ -387,17 +362,6 @@ export interface AggTrade {
     quantity: number;
 }
 
-interface StreamTicker {
-    e: string; // Event type.
-    s: string; // Symbol.
-    c: string; // Current day close price (last price).
-}
-
-export interface PriceTicker {
-    symbol: string;
-    price: number;
-}
-
 export interface RestBookTicker {
     symbol: string;
     bidPrice: string;
@@ -456,10 +420,33 @@ export function buildAggTradeFromStream(raw: StreamAggTrade): AggTrade {
     };
 }
 
+interface StreamTicker {
+    e: string; // Event type.
+    s: string; // Symbol.
+    c: string; // Current day close price (last price).
+    b: string; // Best bid price.
+    a: string; // Best ask price.
+    q: string; // 24h volume in quote currency.
+    P: string; // 24h price change percent.
+}
+
+export interface PriceTicker {
+    symbol: string;
+    price: number;
+    bestBid?: number;
+    bestAsk?: number;
+    volume?: number;
+    percentChange24?: number;
+}
+
 export function buildTickerFromStream(raw: StreamTicker): PriceTicker {
     return {
         symbol: raw.s.toUpperCase(),
         price: +raw.c,
+        bestBid: +raw.b,
+        bestAsk: +raw.a,
+        volume: +raw.q,
+        percentChange24: +raw.P,
     };
 }
 
