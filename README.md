@@ -76,7 +76,7 @@ _make_ as well.
 
 ## License
 
-AGPL v3.
+AGPL v3, with contributor agreement.
 
 ## ChangeLog
 
