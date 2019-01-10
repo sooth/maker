@@ -80,7 +80,7 @@ AGPL v3, with contributor agreement.
 
 ## ChangeLog
 
-### unreleased
+### 0.3.1 - 2019-01-10
 - Reload UI if backend version
   changes. https://gitlab.com/crankykernel/maker/issues/28
 - Make the price offset in terms of ticks, no an actual
