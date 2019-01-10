@@ -80,6 +80,10 @@ AGPL v3, with contributor agreement.
 
 ## ChangeLog
 
+### unreleased
+- By default hide API key/secret input, but add a checkbox to enable
+  it to be shown.
+
 ### 0.3.1 - 2019-01-10
 - Reload UI if backend version
   changes. https://gitlab.com/crankykernel/maker/issues/28

@@ -36,12 +36,17 @@ export class ConfigComponent implements OnInit {
 
     testOk = false;
 
+    apiKeyInputType = "password";
+
+    showApiInput: boolean = false;
+
     constructor(private http: HttpClient,
                 private makerApi: MakerApiService,
                 private toastr: ToastrService,
                 private router: Router,
                 private configService: ConfigService,
                 private fb: FormBuilder) {
+        this.toggleApiInputVisibility();
     }
 
     ngOnInit() {
@@ -75,6 +80,14 @@ export class ConfigComponent implements OnInit {
 
     resetBinanceForm() {
         this.buildBinanceForm();
+    }
+
+    toggleApiInputVisibility() {
+        if (this.showApiInput) {
+            this.apiKeyInputType = "text";
+        } else {
+            this.apiKeyInputType = "password";
+        }
     }
 
     binanceTest() {
