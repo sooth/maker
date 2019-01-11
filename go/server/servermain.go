@@ -72,11 +72,11 @@ func ServerMain() {
 	}
 
 	applicationContext := &context.ApplicationContext{}
-	applicationContext.BinanceStreamManager = binanceex.NewBinanceStreamManager()
+	applicationContext.BinanceTradeStreamManager = binanceex.NewXTradeStreamManager()
 
 	db.DbOpen()
 
-	tradeService := tradeservice.NewTradeService(applicationContext.BinanceStreamManager)
+	tradeService := tradeservice.NewTradeService(applicationContext.BinanceTradeStreamManager)
 	applicationContext.TradeService = tradeService
 
 	restoreTrades(tradeService)

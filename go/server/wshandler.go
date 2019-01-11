@@ -100,8 +100,8 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	tradeChannel := h.appContext.TradeService.Subscribe()
 	defer h.appContext.TradeService.Unsubscribe(tradeChannel)
 
-	binanceTradeStreamChannel := h.appContext.BinanceStreamManager.SubscribeTrades()
-	defer h.appContext.BinanceStreamManager.UnsubscribeTrades(binanceTradeStreamChannel)
+	binanceTradeStreamChannel := h.appContext.BinanceTradeStreamManager.Subscribe()
+	defer h.appContext.BinanceTradeStreamManager.Unsubscribe(binanceTradeStreamChannel)
 
 	binanceUserStreamChannel := h.appContext.BinanceUserDataStream.Subscribe()
 	defer h.appContext.BinanceUserDataStream.Unsubscribe(binanceUserStreamChannel)

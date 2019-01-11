@@ -118,7 +118,7 @@ Start:
 			goto Fail
 		}
 
-		userStream, err := binance.OpenSingleStream(listenKey)
+		userStream, err := binance.OpenStream(listenKey)
 		if err != nil {
 			log.Printf("Failed to open user data stream: %v", err)
 			goto Fail

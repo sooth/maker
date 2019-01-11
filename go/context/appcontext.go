@@ -6,8 +6,9 @@ import (
 )
 
 type ApplicationContext struct {
-	TradeService          *tradeservice.TradeService
-	BinanceStreamManager  *binanceex.BinanceStreamManager
-	BinanceUserDataStream *binanceex.BinanceUserDataStream
-	OpenBrowser           bool
+	TradeService              *tradeservice.TradeService
+	//BinanceTradeStreamManager *binanceex.TradeStreamManager
+	BinanceTradeStreamManager *binanceex.TradeStreamManager
+	BinanceUserDataStream     *binanceex.BinanceUserDataStream
+	OpenBrowser               bool
 }

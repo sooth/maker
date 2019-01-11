@@ -56,19 +56,19 @@ type TradeService struct {
 	subscribers map[chan TradeEvent]bool
 	lock        sync.RWMutex
 
-	binanceStreamManager *binanceex.BinanceStreamManager
-	tradeStreamChannel   chan *binance.StreamAggTrade
+	tradeStreamManager *binanceex.TradeStreamManager
+	tradeStreamChannel binanceex.TradeStreamChannel
 
 	binanceExchangeInfo *binance.ExchangeInfoService
 }
 
-func NewTradeService(binanceStreamManager *binanceex.BinanceStreamManager) *TradeService {
+func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeService {
 	tradeService := &TradeService{
 		TradesByLocalID:      make(map[string]*types.Trade),
 		TradesByClientID:     make(map[string]*types.Trade),
 		idGenerator:          idgenerator.NewIdGenerator(),
 		subscribers:          make(map[chan TradeEvent]bool),
-		binanceStreamManager: binanceStreamManager,
+		tradeStreamManager: binanceStreamManager,
 		binanceExchangeInfo:  binance.NewExchangeInfoService(),
 	}
 
@@ -76,7 +76,8 @@ func NewTradeService(binanceStreamManager *binanceex.BinanceStreamManager) *Trad
 		log.Printf("error: failed to update exchange info: %v", err)
 	}
 
-	tradeService.tradeStreamChannel = tradeService.binanceStreamManager.SubscribeTrades()
+	tradeService.tradeStreamChannel = tradeService.tradeStreamManager.Subscribe()
+
 	go tradeService.tradeStreamListener()
 
 	return tradeService
@@ -84,8 +85,11 @@ func NewTradeService(binanceStreamManager *binanceex.BinanceStreamManager) *Trad
 
 func (s *TradeService) tradeStreamListener() {
 	for {
-		lastTrade := <-s.tradeStreamChannel
-		s.onLastTrade(lastTrade)
+		select {
+		case xlastTrade := <-s.tradeStreamChannel:
+			fmt.Println("NEW TRADE: ", xlastTrade)
+			s.onLastTrade(xlastTrade)
+		}
 	}
 }
 
@@ -303,7 +307,7 @@ func (s *TradeService) RestoreTrade(trade *types.Trade) {
 		s.TradesByClientID[clientOrderId] = trade
 	}
 	s.UpdateSellableQuantity(trade)
-	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
+	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
 }
 
 func (s *TradeService) AddNewTrade(trade *types.Trade) (string) {
@@ -331,7 +335,7 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) (string) {
 		log.Printf("error: failed to save trade to database: %v", err)
 	}
 
-	s.binanceStreamManager.SubscribeTradeStream(trade.State.Symbol)
+	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
 	s.BroadcastTradeUpdate(trade)
 
 	lastPrice, err := binance.NewAnonymousClient().GetPriceTicker(trade.State.Symbol)
@@ -507,7 +511,7 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 		fallthrough
 	case types.TradeStatusFailed:
 		trade.State.CloseTime = &event.EventTime
-		s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
+		s.tradeStreamManager.RemoveSymbol(trade.State.Symbol)
 	}
 
 	db.DbUpdateTrade(trade)
@@ -550,7 +554,7 @@ func (s *TradeService) CloseTrade(trade *types.Trade, status types.TradeStatus, 
 	}
 	trade.State.Status = status
 	trade.State.CloseTime = &closeTime
-	s.binanceStreamManager.UnsubscribeTradeStream(trade.State.Symbol)
+	s.tradeStreamManager.RemoveSymbol(trade.State.Symbol)
 	db.DbUpdateTrade(trade)
 }
 
