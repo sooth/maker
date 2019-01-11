@@ -83,6 +83,19 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		ws.Close()
 	}()
 
+	if err := ws.WriteJSON(map[string]interface{}{
+		"messageType":  MakerMessageTypeVersion,
+		"version":      version.Version,
+		"git_revision": version.GitRevision,
+	}); err != nil {
+		log.WithError(err).Errorf("Failed to send version message to client websocket")
+		return
+	}
+
+	log.WithFields(log.Fields{
+		"remoteAddr": r.RemoteAddr,
+	}).Info("Client websocket connected")
+
 	doneChannel := make(chan bool)
 	tradeChannel := h.appContext.TradeService.Subscribe()
 	defer h.appContext.TradeService.Unsubscribe(tradeChannel)
@@ -97,12 +110,6 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	go h.readLoop(ws, doneChannel)
 	go h.writeLoop(ws, writeChannel)
-
-	ws.WriteJSON(map[string]interface{}{
-		"messageType":  MakerMessageTypeVersion,
-		"version":      version.Version,
-		"git_revision": version.GitRevision,
-	})
 
 	trades := h.appContext.TradeService.GetAllTrades()
 	for _, trade := range trades {
