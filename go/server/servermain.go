@@ -26,6 +26,7 @@ import (
 	"gitlab.com/crankykernel/maker/log"
 	"gitlab.com/crankykernel/maker/tradeservice"
 	"gitlab.com/crankykernel/maker/version"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -88,6 +89,8 @@ func ServerMain() {
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
 	go applicationContext.BinanceUserDataStream.Run()
 
+	clientNoticeService := NewClientNoticeService()
+
 	go func() {
 		for {
 			client := binanceex.GetBinanceRestClient()
@@ -101,12 +104,14 @@ func ServerMain() {
 			}
 			roundTripTime := time.Now().Sub(requestStart)
 			now := time.Now().UnixNano() / int64(time.Millisecond)
-			diff := now - response.ServerTime
+			diff := math.Abs(float64(now - response.ServerTime))
 			if diff > 999 {
 				log.WithFields(log.Fields{
 					"roundTripTime":          roundTripTime,
 					"binanceTimeDifferentMs": diff,
 				}).Warnf("Time difference from Binance servers may be too large; order may fail")
+				clientNoticeService.Broadcast(NewClientNotice(ClientNoticeLevelWarning,
+					"Time difference between Binance and Maker server too large, orders may fail."))
 			} else {
 				log.WithFields(log.Fields{
 					"roundTripTime":           roundTripTime,
@@ -179,7 +184,7 @@ func ServerMain() {
 		binance.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)
 
-	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext))
+	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext, clientNoticeService))
 
 	router.PathPrefix("/").HandlerFunc(staticAssetHandler())
 

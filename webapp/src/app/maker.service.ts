@@ -84,12 +84,24 @@ export class MakerService {
                 case MakerMessageType.VERSION:
                     this.checkVersion(<VersionMessage>message);
                     break;
+                case MakerMessageType.NOTICE:
+                    this.handleNotification(message.notice);
+                    break;
                 default:
                     this.logger.log(`Unhandled message type: ${message.messageType}`);
                     this.logger.log(message);
                     break;
             }
         };
+    }
+
+    private handleNotification(notice:any) {
+        this.toastr.warning(notice.message, "Warning", {
+            closeButton: true,
+            preventDuplicates: true,
+            timeOut: 10000,
+            progressBar: true,
+        });
     }
 
     private checkVersion(versionMesage: VersionMessage) {
@@ -266,10 +278,12 @@ export interface MakerMessage {
     binanceAggTrade?: StreamAggTrade;
     tradeId?: string;
     binanceOutboundAccountInfo: RawStreamAccountInfo;
+    notice?: any;
 }
 
 export enum MakerMessageType {
     VERSION = "version",
+    NOTICE = "notice",
     TRADE = "trade",
     BINANCE_AGG_TRADE = "binanceAggTrade",
     TRADE_ARCHIVED = "tradeArchived",

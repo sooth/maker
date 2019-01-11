@@ -87,7 +87,6 @@ func (s *TradeService) tradeStreamListener() {
 	for {
 		select {
 		case xlastTrade := <-s.tradeStreamChannel:
-			fmt.Println("NEW TRADE: ", xlastTrade)
 			s.onLastTrade(xlastTrade)
 		}
 	}

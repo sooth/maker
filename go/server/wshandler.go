@@ -31,12 +31,16 @@ import (
 // This handler implements the read-only websocket that all clients connect
 // to for state updates.
 type UserWebSocketHandler struct {
-	appContext *context.ApplicationContext
+	appContext          *context.ApplicationContext
+	clientNoticeService *ClientNoticeService
 }
 
-func NewUserWebSocketHandler(appContext *context.ApplicationContext) *UserWebSocketHandler {
+func NewUserWebSocketHandler(
+	appContext *context.ApplicationContext,
+	clientNoticeService *ClientNoticeService) *UserWebSocketHandler {
 	return &UserWebSocketHandler{
-		appContext: appContext,
+		appContext:          appContext,
+		clientNoticeService: clientNoticeService,
 	}
 }
 
@@ -125,6 +129,9 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	clientNoticeChannel := h.clientNoticeService.Subscribe()
+	defer h.clientNoticeService.Unsubscribe(clientNoticeChannel)
+
 Loop:
 	for {
 		select {
@@ -171,6 +178,11 @@ Loop:
 			if message != nil {
 				writeChannel <- message
 			}
+		case notice := <-clientNoticeChannel:
+			writeChannel <- &MakerMessage{
+				Type:   MakerMessageTypeNotice,
+				Notice: notice,
+			}
 		}
 	}
 
@@ -187,6 +199,7 @@ type MakerMessage struct {
 	TradeID                    string                             `json:"tradeId,omitempty"`
 	BinanceAggTrade            *binance.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
 	BinanceOutboundAccountInfo *binance.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
+	Notice                     ClientNotice                       `json:"notice,omitempty"`
 }
 
 type MakerMessageType string
@@ -196,3 +209,4 @@ const MakerMessageTypeTradeArchived MakerMessageType = "tradeArchived"
 const MakerMessageTypeTrade MakerMessageType = "trade"
 const MakerMessageTypeBinanceAggTrade MakerMessageType = "binanceAggTrade"
 const MakerMessageTypeBinanceAccountInfo MakerMessageType = "binanceOutboundAccountInfo"
+const MakerMessageTypeNotice MakerMessageType = "notice"
