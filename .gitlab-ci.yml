@@ -1,56 +1,23 @@
 build:
-  image: centos:7
+  image: docker:stable
   variables:
-    OSXCROSS_SDK_VERSION: "10.11"
+    CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH:latest
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:dind
   script: |
-    # Install build dependencies.
-    yum -y install epel-release
-    yum -y install \
-        git \
-        make \
-        gcc \
-        mingw64-gcc \
-        mingw32-gcc \
-        zip \
-        gcc-c++ \
-        clang \
-        which \
-        patch
+    docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    docker pull ${CONTAINER_IMAGE} || true
 
-    export NODE_VERSION=10.15.0
-    export GO_VERSION=1.11.4
+    export CACHE_FROM="--cache-from ${CONTAINER_IMAGE}"
 
-    (cd /usr/local && curl -L -o - https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz | tar zxf - --strip-components=1)
-    (cd /usr/local && curl -L -o - https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | tar zxf -)
+    ./build.sh
 
-    # Install osxcross.
-    export OSXCROSS=${CI_PROJECT_DIR}/osxcross
-    if [[ -e "${OSXCROSS}/.cached" ]]; then
-        echo "Using cached osxcross."
-    else
-        git clone https://github.com/tpoechtrager/osxcross.git ${OSXCROSS}
-        cd ${OSXCROSS}
-        curl -L -o ./tarballs/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz https://s3.amazonaws.com/andrew-osx-sdks/MacOSX${OSXCROSS_SDK_VERSION}.sdk.tar.xz
-        sed -i -e 's|-march=native||g' ./build_clang.sh ./wrapper/build.sh
-        printf "\n" | PORTABLE=true ./build.sh
-        touch .cached
-    fi
+    mv dist/*.zip .
 
-    cd ${CI_PROJECT_DIR}
-    export GOPATH=/go
-    export PATH=${OSXCROSS}/target/bin:$GOPATH/bin:/usr/local/go/bin:$PATH
-    make install-deps
-    GOOS=linux GOARCH=amd64 make dist
-    SKIP_WEBAPP=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 make dist
-    #SKIP_WEBAPP=1 CC=i686-w64-mingw32-gcc GOOS=windows GOARCH=386 make dist
-    SKIP_WEBAPP=1 CC=o64-clang GOOS=darwin GOARCH=amd64 make dist
-    cp dist/*.zip ${CI_PROJECT_DIR}
-
-  cache:
-    key: ${OSXCROSS_SDK_VERSION}
-    paths:
-      - ./osxcross
-
+    docker tag crankykernel/maker:builder ${CONTAINER_IMAGE}
+    docker push ${CONTAINER_IMAGE}
   artifacts:
     paths:
       - "*.zip"
