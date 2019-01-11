@@ -90,6 +90,35 @@ func ServerMain() {
 
 	go func() {
 		for {
+			client := binanceex.GetBinanceRestClient()
+			var response binance.TimeResponse
+			requestStart := time.Now()
+			err := client.GetAndDecode("/api/v1/time", nil, &response)
+			if err != nil {
+				log.WithError(err).Errorf("Failed to get from Binance API")
+				time.Sleep(1 * time.Minute)
+				continue
+			}
+			roundTripTime := time.Now().Sub(requestStart)
+			now := time.Now().UnixNano() / int64(time.Millisecond)
+			diff := now - response.ServerTime
+			if diff > 999 {
+				log.WithFields(log.Fields{
+					"roundTripTime":          roundTripTime,
+					"binanceTimeDifferentMs": diff,
+				}).Warnf("Time difference from Binance servers may be too large; order may fail")
+			} else {
+				log.WithFields(log.Fields{
+					"roundTripTime":           roundTripTime,
+					"binanceTimeDifferenceMs": diff,
+				}).Infof("Binance time check")
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}()
+
+	go func() {
+		for {
 			select {
 			case event := <-userStreamChannel:
 				switch event.EventType {

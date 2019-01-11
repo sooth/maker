@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
 	github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 // indirect
-	gitlab.com/crankykernel/cryptotrader v0.0.0-20190104072305-bbfd323b1cfb
+	gitlab.com/crankykernel/cryptotrader v0.0.0-20190111223208-013feb887daf
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
 	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598 // indirect
