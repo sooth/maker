@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
-import {AccountInfo, AggTrade, Balance, BinanceApiService, PriceTicker} from "../binance-api.service";
+import {AccountInfo, AggTrade, Balance, BinanceApiService} from "../binance-api.service";
 import {Observable} from "rxjs";
 import {BinanceService, LimitSellType, OpenTradeOptions, PriceSource} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
@@ -422,9 +422,26 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.binance.postBuyOrder(options).subscribe(() => {
         }, (error) => {
-            console.log("failed to place order:");
-            console.log(JSON.stringify(error));
-            this.toastr.error(error.error.message, "Fail to make order");
+            console.log("Failed to post order:");
+            console.log(error);
+            const title = "Failed to Post Order";
+            const options = {
+                closeButton: true,
+            };
+            if (error.error) {
+                console.log(`Failed to post order: ${JSON.stringify(error.error)}`);
+                const inner = error.error;
+                if (inner.code && inner.msg) {
+                    this.toastr.error(`[${inner.code}]: ${inner.msg}`, title, options)
+                } else {
+                    this.toastr.error(JSON.stringify(inner), title, options);
+                }
+                return;
+            } else if (error.message) {
+                this.toastr.error(`${error.message}`, title, options);
+            } else {
+                this.toastr.error("Unknown error. Check server log and browser console.", title, options);
+            }
         });
     }
 
