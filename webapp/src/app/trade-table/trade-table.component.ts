@@ -192,6 +192,7 @@ export function canCancelSell(trade: AppTradeState): boolean {
         case TradeStatus.ABANDONED:
         case TradeStatus.DONE:
         case TradeStatus.FAILED:
+        case TradeStatus.CANCELED:
             return false;
         case TradeStatus.PENDING_SELL:
             return true;
