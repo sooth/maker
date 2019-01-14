@@ -283,7 +283,7 @@ func DeleteSellHandler(tradeService *tradeservice.TradeService) http.HandlerFunc
 
 		if err := tradeService.CancelSell(trade); err != nil {
 			WriteJsonError(w, http.StatusBadRequest,
-				fmt.Sprintf("Failed to cancel sell order: %s", string(err.Error())))
+				fmt.Sprintf("%s", string(err.Error())))
 		} else {
 			WriteJsonResponse(w, http.StatusOK, nil)
 		}
