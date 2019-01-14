@@ -83,6 +83,11 @@ AGPL v3, with contributor agreement.
 ### unreleased
 - By default hide API key/secret input, but add a checkbox to enable
   it to be shown.
+- Periodically check the time difference between Binance and the Maker
+  server and warn the user if it is too large and orders are likely to
+  fail. https://gitlab.com/crankykernel/maker/issues/33.
+- Disable cancel sell button when not
+  applicable. https://gitlab.com/crankykernel/maker/issues/30
 
 ### 0.3.1 - 2019-01-10
 - Reload UI if backend version
