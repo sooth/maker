@@ -17,6 +17,7 @@ require (
 	github.com/spf13/afero v1.2.1 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
+	github.com/stretchr/testify v1.3.0
 	github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43 // indirect
 	gitlab.com/crankykernel/cryptotrader v0.0.0-20190118193049-f5c4978e61cb
 	golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613

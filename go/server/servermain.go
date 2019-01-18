@@ -23,6 +23,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/context"
 	"gitlab.com/crankykernel/maker/go/db"
+	"gitlab.com/crankykernel/maker/go/gencert"
 	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/tradeservice"
 	"gitlab.com/crankykernel/maker/go/version"
@@ -44,6 +45,9 @@ var ServerFlags struct {
 	NoLog          bool
 	OpenBrowser    bool
 	DataDirectory  string
+	TLS            bool
+	ItsAllMyFault  bool
+	EnableAuth     bool
 }
 
 func initBinanceExchangeInfoService() *binanceex.ExchangeInfoService {
@@ -81,7 +85,26 @@ func ServerMain() {
 	ServerFlags.ConfigFilename = path.Join(ServerFlags.DataDirectory, "maker.yaml")
 
 	if ServerFlags.Host != "127.0.0.1" {
-		log.Fatal("Hosts other than 127.0.0.1 not allowed yet.")
+		if !ServerFlags.EnableAuth {
+			log.Fatalf("Authentication must be enabled to listen on anything other than 127.0.0.1")
+		}
+		if !ServerFlags.TLS {
+			log.Fatalf("TLS must be enabled to list on anything other than 127.0.0.1")
+		}
+		if !ServerFlags.ItsAllMyFault {
+			log.Fatalf("Secret command line argument for non 127.0.0.1 listen not set. See documentation.")
+		}
+	}
+
+	if ServerFlags.TLS {
+		pemFilename := fmt.Sprintf("%s/maker.pem", ServerFlags.DataDirectory)
+		if _, err := os.Stat(pemFilename); err != nil {
+			gencert.GenCertMain(gencert.Flags{
+				Host:     &gencert.DEFAULT_HOST,
+				Org:      &gencert.DEFAULT_ORG,
+				Filename: &pemFilename,
+			}, []string{})
+		}
 	}
 
 	applicationContext := &context.ApplicationContext{}
@@ -151,6 +174,11 @@ func ServerMain() {
 
 	router := mux.NewRouter()
 
+	if ServerFlags.EnableAuth {
+		authenticator := NewAuthenticator(ServerFlags.ConfigFilename)
+		router.Use(authenticator.Middleware)
+	}
+
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
 	router.HandleFunc("/api/version", VersionHandler).Methods("GET")
 	router.HandleFunc("/api/time", TimeHandler).Methods("GET")
@@ -205,7 +233,16 @@ func ServerMain() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		err := http.ListenAndServe(listenHostPort, router)
+
+		var err error = nil
+
+		if ServerFlags.TLS {
+			pemFilename := fmt.Sprintf("%s/maker.pem", ServerFlags.DataDirectory)
+			err = http.ListenAndServeTLS(listenHostPort, pemFilename, pemFilename, router)
+		} else {
+			err = http.ListenAndServe(listenHostPort, router)
+		}
+
 		if err != nil {
 			log.Fatal("Failed to start server: ", err)
 		}

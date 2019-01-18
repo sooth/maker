@@ -317,7 +317,8 @@ class MakerWebSocket {
     }
 
     private connect() {
-        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        let proto = window.location.protocol == "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${proto}://${window.location.host}/ws`);
 
         ws.onopen = (event) => {
             console.log("maker websocket opened");

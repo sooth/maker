@@ -4,6 +4,7 @@
 /maker.yaml
 /maker.log
 /maker
+/maker.pem
 *-packr.go
 *~
 /dist

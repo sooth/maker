@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gitlab.com/crankykernel/maker/go/server"
 )
 
@@ -34,5 +35,13 @@ func init() {
 	flags.StringVar(&server.ServerFlags.Host, "host", "127.0.0.1", "Host to bind to")
 	flags.BoolVar(&server.ServerFlags.NoLog, "nolog", false, "Disable logging to file")
 	flags.BoolVar(&server.ServerFlags.OpenBrowser, "open", false, "Open browser")
+	flags.BoolVar(&server.ServerFlags.TLS, "tls", false, "Enable TLS")
+	flags.BoolVar(&server.ServerFlags.ItsAllMyFault, "its-all-my-fault", false, "Its all my fault")
+	flags.BoolVar(&server.ServerFlags.EnableAuth, "auth", false, "Enable authentication")
+
+	flags.MarkHidden("its-all-my-fault")
+
+	viper.SetEnvPrefix("MAKER")
+
 	rootCmd.AddCommand(ServerCmd)
 }
