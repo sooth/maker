@@ -556,8 +556,6 @@ func PostBuyHandler(tradeService *tradeservice.TradeService,
 			TimeInForce: binance.TimeInForceGTC,
 		}
 
-		log.Printf("params: %v", log.ToJson(params))
-
 		var requestBody BuyOrderRequest
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&requestBody); err != nil {

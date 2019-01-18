@@ -77,7 +77,7 @@
                         <div class="input-group-prepend">
                           <select class="form-control"
                                   [(ngModel)]="orderFormSettings.priceSource"
-                                  (change)="saveState()"
+                                  (change)="onPriceSourceChange(); saveState()"
                                   [value]="orderFormSettings.priceSource">
                             <option value="LAST_PRICE">Last Price</option>
                             <option value="BEST_BID">Best Bid</option>
@@ -104,8 +104,8 @@
                         <input
                             *ngIf="orderFormSettings.priceSource == 'MANUAL'"
                             type="number" class="form-control"
-                            [(ngModel)]="orderForm.manualPrice"
-                            (change)="onManualPriceInput()"
+                            [(ngModel)]="orderForm.manualPrice" min="0"
+                            (input)="onManualPriceInput()"
                             [step]="priceStepSize">
                         <div *ngIf="orderFormSettings.priceSource == 'MANUAL'"
                              class="input-group-append">

@@ -330,9 +330,9 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             this.ticker.bid = +response.bidPrice;
             this.ticker.ask = +response.askPrice;
 
-            this.updateOrderFormAssetAmount();
             this.orderForm.manualPrice = this.ticker.last.toFixed(8);
             this.orderForm.limitSellPrice = this.ticker.last.toFixed(8);
+            this.updateOrderFormAssetAmount();
         });
 
         this.priceStepSize = this.binance.symbolMap[symbol].tickSize;
@@ -363,6 +363,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     syncManualPrice() {
         this.orderForm.manualPrice = this.ticker.last.toFixed(8);
+        this.updateOrderFormAssetAmount();
     }
 
     private onAggTrade(trade: AggTrade) {
@@ -376,10 +377,18 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             return;
         }
         const symbol = this.orderFormSettings.symbol;
-        const available = this.balances[this.orderFormSettings.quoteAsset].free;
-        const portion = round8(available * this.orderFormSettings.balancePercent / 100);
         const symbolInfo = this.binance.symbolMap[symbol];
         const stepSize = symbolInfo.stepSize;
+        const available = this.balances[this.orderFormSettings.quoteAsset].free * 0.999;
+        const portion = round8(available * this.orderFormSettings.balancePercent / 100);
+        switch (this.orderFormSettings.priceSource) {
+            case PriceSource.MANUAL:
+                const amount = roundx(portion / +this.orderForm.manualPrice, 1 / stepSize);
+                this.orderForm.amount = amount;
+                return;
+            default:
+                break;
+        }
         const lastTradePrice = this.ticker.last;
         const amount = roundx(portion / lastTradePrice, 1 / stepSize);
         this.orderForm.quoteAmount = portion;
@@ -464,6 +473,11 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     onManualPriceInput() {
         this.orderForm.manualPrice = this.toFixed(this.orderForm.manualPrice, 8);
+        this.updateOrderFormAssetAmount();
+    }
+
+    onPriceSourceChange() {
+        this.updateOrderFormAssetAmount();
     }
 
     toFixed(value: number | string, fractionDigits: number): string {
