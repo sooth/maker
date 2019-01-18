@@ -88,6 +88,11 @@ AGPL v3, with contributor agreement.
   fail. https://gitlab.com/crankykernel/maker/issues/33.
 - Disable cancel sell button when not
   applicable. https://gitlab.com/crankykernel/maker/issues/30
+- Fix the amount of units to buy when using a manual price. The amount
+  of units to buy was based on the last traded price, not the price
+  entered. This is still an issue for bid/ask, but the error here will
+  be much less and not really noticeable if only offseting the price
+  by a few ticks. https://gitlab.com/crankykernel/maker/issues/34
 
 ### 0.3.1 - 2019-01-10
 - Reload UI if backend version
