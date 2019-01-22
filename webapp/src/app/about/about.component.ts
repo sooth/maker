@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Component, OnInit} from '@angular/core';
-import {VERSION} from "../../environments/version";
+import {GIT_BRANCH, GIT_REVISION, VERSION} from "../../environments/version";
 
 @Component({
     selector: 'app-about',
@@ -25,7 +25,16 @@ export class AboutComponent implements OnInit {
 
     VERSION = VERSION;
 
+    releaseChannel: string = null;
+
     ngOnInit() {
+        if (GIT_BRANCH === "release") {
+            this.releaseChannel = "release";
+        } else if (GIT_BRANCH === "master") {
+            this.releaseChannel = "development";
+        } else {
+            console.log(`Unknown release channel: ${GIT_BRANCH}`);
+        }
     }
 
 }
