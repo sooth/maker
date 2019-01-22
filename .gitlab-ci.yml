@@ -12,6 +12,9 @@ build:
 
     export CACHE_FROM="--cache-from ${CONTAINER_IMAGE}"
 
+    apk add git
+    git checkout ${CI_COMMIT_REF_NAME}
+
     ./build.sh
 
     mv dist/*.zip .
