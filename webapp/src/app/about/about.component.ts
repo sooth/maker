@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Cranky Kernel
+// Copyright (C) 2019 Cranky Kernel
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -14,29 +14,18 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Component, OnInit} from '@angular/core';
-import {BinanceService} from './binance.service';
-import {Logger, LoggerService} from './logger.service';
-import {MakerService} from './maker.service';
-import {VERSION} from "../environments/version";
+import {VERSION} from "../../environments/version";
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss']
+    selector: 'app-about',
+    templateUrl: './about.component.html',
+    styleUrls: ['./about.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AboutComponent implements OnInit {
 
-    ticker: { [key: string]: number } = {};
-
-    constructor(public binance: BinanceService) {
-    }
+    VERSION = VERSION;
 
     ngOnInit() {
-        this.binance.isReady$.subscribe(() => {
-            this.binance.subscribeToTicker("BTCUSDT").subscribe((ticker) => {
-                this.ticker[ticker.symbol] = ticker.price;
-            });
-        });
     }
 
 }
