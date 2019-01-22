@@ -1,5 +1,6 @@
 VERSION :=	$(shell cat ../VERSION)
 GIT_REV	:=	$(shell git rev-parse --short HEAD)
+BRANCH :=	$(shell git symbolic-ref --short HEAD)
 
 GOPATH ?=	$(HOME)/go
 CGO_ENABLED :=	1
@@ -7,7 +8,8 @@ GO_TAGS :=	json1
 
 PACKAGE :=	gitlab.com/crankykernel/maker
 LDFLAGS :=	-X \"$(PACKAGE)/version.GitRevision=$(GIT_REV)\" \
-		-X \"$(PACKAGE)/version.Version=$(VERSION)\"
+		-X \"$(PACKAGE)/version.Version=$(VERSION)\" \
+		-X \"$(PACKAGE)/version.GitBranch=$(BRANCH)\"
 
 APP :=		maker
 

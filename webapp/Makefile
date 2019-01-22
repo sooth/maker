@@ -1,5 +1,6 @@
 VERSION :=	$(shell cat ../VERSION)
 GIT_REV	:=	$(shell git rev-parse --short HEAD)
+BRANCH :=	$(shell git symbolic-ref --short HEAD)
 NG :=		./node_modules/.bin/ng
 
 all: update-version
@@ -11,6 +12,7 @@ install-deps:
 update-version:
 	sed -e "s#@VERSION@#$(VERSION)#g" \
 	    -e "s#@GIT_REVISION@#$(GIT_REV)#g" \
+	    -e "s#@GIT_BRANCH@#$(BRANCH)#g" \
 		./src/environments/version.ts.in > \
 		./src/environments/version.ts
 

@@ -1,5 +1,8 @@
 VERSION :=	$(shell cat VERSION)
 
+GIT_REV	:=	$(shell git rev-parse --short HEAD)
+GIT_BRANCH :=	$(shell git symbolic-ref --short HEAD)
+
 .PHONY:		dist
 
 all:
@@ -46,5 +49,8 @@ ifndef SKIP_WEBAPP
 endif
 	GOARCH=$(GOARCH) DIR=../dist/$(DIR) $(MAKE) -C go
 	cp README.md LICENSE.txt ./dist/$(DIR)
+ifeq ($(GIT_BRANCH), master)
+	echo $(GIT_REV) > ./dist/$(DIR)/.commit_id
+endif
 	(cd dist && zip -r $(DISTNAME).zip $(DISTNAME))
 

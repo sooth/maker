@@ -39,6 +39,7 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{
 		"version":      version.Version,
 		"git_revision": version.GitRevision,
+		"git_branch":   version.GitBranch,
 	}
 	WriteJsonResponse(w, http.StatusOK, response)
 }

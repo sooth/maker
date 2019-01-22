@@ -17,3 +17,4 @@ package version
 
 var Version string
 var GitRevision string
+var GitBranch string
