@@ -1,3 +1,3 @@
-export const VERSION = "@VERSION@";
-export const GIT_REVISION = "@GIT_REVISION@";
-export const GIT_BRANCH = "@GIT_BRANCH@";
+export const VERSION: string = "@VERSION@";
+export const GIT_REVISION: string = "@GIT_REVISION@";
+export const GIT_BRANCH: string = "@GIT_BRANCH@";
