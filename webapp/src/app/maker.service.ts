@@ -31,7 +31,6 @@ import {Observable} from "rxjs";
 import {ToastrService} from './toastr.service';
 import {LimitSellType} from './binance.service';
 import {GIT_REVISION, VERSION} from "../environments/version";
-import {version} from "punycode";
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -47,7 +46,7 @@ export class MakerService {
     public tradeMap: TradeMap = {};
 
     public tradeMap$: BehaviorSubject<TradeMap> =
-            new BehaviorSubject(this.tradeMap);
+        new BehaviorSubject(this.tradeMap);
 
     public trade$: Subject<TradeState> = new Subject();
 
@@ -73,12 +72,12 @@ export class MakerService {
                     this.binanceAggTrades$.next(aggTrade);
                     break;
                 case MakerMessageType.TRADE_ARCHIVED:
-                    delete(this.tradeMap[message.tradeId]);
+                    delete (this.tradeMap[message.tradeId]);
                     this.tradeMap$.next(this.tradeMap);
                     break;
                 case MakerMessageType.BINANCE_OUTBOUND_ACCOUNT_INFO:
                     const accountInfo = AccountInfo.fromStream(
-                            message.binanceOutboundAccountInfo);
+                        message.binanceOutboundAccountInfo);
                     this.binanceAccountInfo$.next(accountInfo);
                     break;
                 case MakerMessageType.VERSION:
@@ -95,7 +94,7 @@ export class MakerService {
         };
     }
 
-    private handleNotification(notice:any) {
+    private handleNotification(notice: any) {
         this.toastr.warning(notice.message, "Warning", {
             closeButton: true,
             preventDuplicates: true,
@@ -127,8 +126,8 @@ export class MakerService {
 
     public updateStopLoss(trade: TradeState, enable: boolean, percent: number) {
         const params = new HttpParams()
-                .set("enable", String(enable))
-                .set("percent", percent.toFixed(8));
+            .set("enable", String(enable))
+            .set("percent", percent.toFixed(8));
         this.http.post(`/api/binance/trade/${trade.TradeID}/stopLoss`, null, {
             params: params,
         }).subscribe((response) => {
@@ -139,9 +138,9 @@ export class MakerService {
     public updateTrailingProfit(trade: TradeState, enable: boolean,
                                 percent: number, deviation: number) {
         const params = new HttpParams()
-                .set("enable", String(enable))
-                .set("percent", percent.toFixed(8))
-                .set("deviation", deviation.toFixed(8));
+            .set("enable", String(enable))
+            .set("percent", percent.toFixed(8))
+            .set("deviation", deviation.toFixed(8));
         this.http.post(`/api/binance/trade/${trade.TradeID}/trailingProfit`, null, {
             params: params,
         }).subscribe((response) => {
@@ -196,19 +195,30 @@ export class MakerService {
 
     archiveTrade(trade: TradeState) {
         this.http.post(`/api/binance/trade/${trade.TradeID}/archive`, null, {})
-                .subscribe(() => {
-                }, (error) => {
-                    this.logger.log("Failed to archive trade: " + JSON.stringify(error));
-                });
+            .subscribe(() => {
+            }, (error) => {
+                this.logger.log("Failed to archive trade: " + JSON.stringify(error));
+            });
     }
 
     abandonTrade(trade: TradeState) {
         this.http.post(`/api/binance/trade/${trade.TradeID}/abandon`, null, {})
-                .subscribe(() => {
-                }, (error) => {
-                    this.logger.log("Failed to abandon trade: " + JSON.stringify(error));
-                });
+            .subscribe(() => {
+            }, (error) => {
+                this.logger.log("Failed to abandon trade: " + JSON.stringify(error));
+            });
     }
+
+    getVersion(): Observable<{
+        opsys: string,
+        arch: string,
+        version: string,
+        git_branch: string,
+        git_revision: string,
+    }> {
+        return this.http.get<any>("/api/version");
+    }
+
 }
 
 export enum TradeStatus {

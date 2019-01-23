@@ -43,6 +43,23 @@
             role="button">Support the Project</a>
       </div>
       <div class="modal-footer">
+        <button *ngIf="updateAvailable === null" type="button" class="btn btn-primary btn-block"
+                (click)="checkVersion()">
+          Check for Update
+        </button>
+        <button *ngIf="updateAvailable === false" type="button" class="btn btn-primary btn-block"
+                (click)="checkVersion()">
+          No update available. Check again?
+        </button>
+        <a *ngIf="updateAvailable"
+           href="https://maker.crankykernel.com/files/{{releaseBranch}}"
+           target="_blank"
+           role="button"
+           class="btn btn-success btn-block">
+          Update Available! Click to Download.
+        </a>
+      </div>
+      <div class="modal-footer">
         <button type="button" class="btn btn-secondary btn-block"
                 data-dismiss="modal">
           Close

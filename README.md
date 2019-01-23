@@ -93,6 +93,9 @@ AGPL v3, with contributor agreement.
   entered. This is still an issue for bid/ask, but the error here will
   be much less and not really noticeable if only offseting the price
   by a few ticks. https://gitlab.com/crankykernel/maker/issues/34
+- Add a "Check for Update" button to the "About" page. Note that this
+  will "phone home" to a specific URL that returns details about the
+  latest versions. https://gitlab.com/crankykernel/maker/issues/25
 
 ### 0.3.1 - 2019-01-10
 - Reload UI if backend version

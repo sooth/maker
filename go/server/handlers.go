@@ -31,15 +31,30 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"strconv"
 	"time"
 )
 
 func VersionHandler(w http.ResponseWriter, r *http.Request) {
+	arch := runtime.GOARCH
+	switch arch {
+	case "amd64":
+		arch = "x86_64"
+	}
+
+	opsys := runtime.GOOS
+	switch opsys {
+	case "darwin":
+		opsys = "macos"
+	}
+
 	response := map[string]string{
 		"version":      version.Version,
 		"git_revision": version.GitRevision,
 		"git_branch":   version.GitBranch,
+		"opsys":        opsys,
+		"arch":         arch,
 	}
 	WriteJsonResponse(w, http.StatusOK, response)
 }
