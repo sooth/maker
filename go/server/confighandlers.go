@@ -18,8 +18,8 @@ package server
 import (
 	"encoding/json"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/config"
-	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/go/config"
+	"gitlab.com/crankykernel/maker/go/log"
 	"net/http"
 )
 

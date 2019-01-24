@@ -16,12 +16,12 @@
 package server
 
 import (
-	"gitlab.com/crankykernel/maker/binanceex"
-	"gitlab.com/crankykernel/maker/db"
+	"gitlab.com/crankykernel/maker/go/binanceex"
+	"gitlab.com/crankykernel/maker/go/db"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/maker/tradeservice"
-	"gitlab.com/crankykernel/maker/types"
+	"gitlab.com/crankykernel/maker/go/log"
+	"gitlab.com/crankykernel/maker/go/tradeservice"
+	"gitlab.com/crankykernel/maker/go/types"
 	"time"
 )
 

@@ -16,8 +16,8 @@
 package context
 
 import (
-	"gitlab.com/crankykernel/maker/binanceex"
-	"gitlab.com/crankykernel/maker/tradeservice"
+	"gitlab.com/crankykernel/maker/go/binanceex"
+	"gitlab.com/crankykernel/maker/go/tradeservice"
 )
 
 type ApplicationContext struct {

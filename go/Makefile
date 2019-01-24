@@ -6,7 +6,7 @@ GOPATH ?=	$(HOME)/go
 CGO_ENABLED :=	1
 GO_TAGS :=	json1
 
-PACKAGE :=	gitlab.com/crankykernel/maker
+PACKAGE :=	gitlab.com/crankykernel/maker/go
 LDFLAGS :=	-X \"$(PACKAGE)/version.GitRevision=$(GIT_REV)\" \
 		-X \"$(PACKAGE)/version.Version=$(VERSION)\" \
 		-X \"$(PACKAGE)/version.GitBranch=$(BRANCH)\"

@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
 	"sync"
 	"time"

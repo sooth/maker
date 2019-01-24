@@ -18,9 +18,9 @@ package binanceex
 import (
 	"fmt"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/maker/types"
-	"gitlab.com/crankykernel/maker/util"
+	"gitlab.com/crankykernel/maker/go/log"
+	"gitlab.com/crankykernel/maker/go/types"
+	"gitlab.com/crankykernel/maker/go/util"
 )
 
 type BinancePriceService struct {

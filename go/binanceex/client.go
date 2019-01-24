@@ -17,7 +17,7 @@ package binanceex
 
 import (
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/config"
+	"gitlab.com/crankykernel/maker/go/config"
 )
 
 func GetBinanceRestClient() *binance.RestClient {

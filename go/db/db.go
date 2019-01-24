@@ -18,10 +18,10 @@ package db
 import (
 	"fmt"
 	"database/sql"
-	"gitlab.com/crankykernel/maker/types"
+	"gitlab.com/crankykernel/maker/go/types"
 	"time"
 	"encoding/json"
-	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
 )
 

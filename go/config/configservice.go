@@ -17,7 +17,7 @@ package config
 
 import (
 	"github.com/spf13/viper"
-	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/go/log"
 	"sync"
 )
 

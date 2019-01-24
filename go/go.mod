@@ -1,4 +1,4 @@
-module gitlab.com/crankykernel/maker
+module gitlab.com/crankykernel/maker/go
 
 require (
 	github.com/gobuffalo/buffalo-plugins v1.9.3 // indirect

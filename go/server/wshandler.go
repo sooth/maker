@@ -19,12 +19,12 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"gitlab.com/crankykernel/cryptotrader/binance"
-	"gitlab.com/crankykernel/maker/binanceex"
-	"gitlab.com/crankykernel/maker/context"
-	"gitlab.com/crankykernel/maker/log"
-	"gitlab.com/crankykernel/maker/tradeservice"
-	"gitlab.com/crankykernel/maker/types"
-	"gitlab.com/crankykernel/maker/version"
+	"gitlab.com/crankykernel/maker/go/binanceex"
+	"gitlab.com/crankykernel/maker/go/context"
+	"gitlab.com/crankykernel/maker/go/log"
+	"gitlab.com/crankykernel/maker/go/tradeservice"
+	"gitlab.com/crankykernel/maker/go/types"
+	"gitlab.com/crankykernel/maker/go/version"
 	"net/http"
 )
 

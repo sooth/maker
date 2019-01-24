@@ -16,7 +16,7 @@
 package main
 
 import (
-	"gitlab.com/crankykernel/maker/cmd"
+	"gitlab.com/crankykernel/maker/go/cmd"
 	"os"
 	"github.com/spf13/cobra"
 	"github.com/inconshreveable/mousetrap"

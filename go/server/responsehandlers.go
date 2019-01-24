@@ -18,7 +18,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"gitlab.com/crankykernel/maker/log"
+	"gitlab.com/crankykernel/maker/go/log"
 	"net/http"
 )
 
