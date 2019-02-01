@@ -7,3 +7,4 @@ maker.db
 maker.yaml
 maker.log
 data
+.docker_cache
