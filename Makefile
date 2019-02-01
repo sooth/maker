@@ -18,6 +18,7 @@ clean:
 	cd webapp && $(MAKE) $@
 	cd go && $(MAKE) $@
 	rm -rf dist
+	find . -name \*~ -delete
 
 distclean: clean
 	cd webapp && $(MAKE) $@
