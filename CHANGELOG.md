@@ -1,6 +1,6 @@
 ## ChangeLog
 
-### unreleased
+### 0.3.2 - 2019-02-01
 - By default hide API key/secret input, but add a checkbox to enable
   it to be shown.
 - Periodically check the time difference between Binance and the Maker
@@ -20,12 +20,16 @@
   start in server mode and attempt to launch the
   browser. https://gitlab.com/crankykernel/maker/issues/37
 
+[Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.1...0.3.2)
+
 ### 0.3.1 - 2019-01-10
 - Reload UI if backend version
   changes. https://gitlab.com/crankykernel/maker/issues/28
 - Make the price offset in terms of ticks, no an actual
   value. https://gitlab.com/crankykernel/maker/issues/27
 - Display 24 hour volume and price change for symbol being traded.
+
+[Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.0...0.3.1)
 
 ### 0.3.0 - 2019-01-03
 - Update the web based user interface to Angular 7.
