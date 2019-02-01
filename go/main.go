@@ -16,10 +16,11 @@
 package main
 
 import (
+	"github.com/inconshreveable/mousetrap"
+	"github.com/spf13/cobra"
 	"gitlab.com/crankykernel/maker/go/cmd"
 	"os"
-	"github.com/spf13/cobra"
-	"github.com/inconshreveable/mousetrap"
+	"runtime"
 )
 
 func main() {
@@ -27,6 +28,15 @@ func main() {
 		cobra.MousetrapHelpText = ""
 		os.Args = append(os.Args, "server")
 		os.Args = append(os.Args, "--open")
+	} else if runtime.GOOS == "darwin" {
+		// If no arguments were passed on the command line on the Mac,
+		// assume the executable was double clicked on and launch it in
+		// server mode.
+		if len(os.Args) == 1 {
+			os.Args = append(os.Args, "server")
+			os.Args = append(os.Args, "--open")
+		}
 	}
+
 	cmd.Execute()
 }

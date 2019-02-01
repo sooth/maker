@@ -96,6 +96,9 @@ AGPL v3, with contributor agreement.
 - Add a "Check for Update" button to the "About" page. Note that this
   will "phone home" to a specific URL that returns details about the
   latest versions. https://gitlab.com/crankykernel/maker/issues/25
+- On MacOS, if no arguments passed assume it was double clicked on and
+  start in server mode and attempt to launch the
+  browser. https://gitlab.com/crankykernel/maker/issues/37
 
 ### 0.3.1 - 2019-01-10
 - Reload UI if backend version
