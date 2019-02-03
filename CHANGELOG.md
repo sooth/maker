@@ -1,5 +1,11 @@
 ## ChangeLog
 
+### unreleased
+- New command line option to set the data directory where the
+  maker.yaml, maker.db and log files are stored.  This replaces the
+  options to set the config filename and log
+  filename. https://gitlab.com/crankykernel/maker/issues/38
+
 ### 0.3.2 - 2019-02-01
 - By default hide API key/secret input, but add a checkbox to enable
   it to be shown.

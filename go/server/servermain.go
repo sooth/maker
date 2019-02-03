@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -40,9 +41,9 @@ var ServerFlags struct {
 	Host           string
 	Port           int16
 	ConfigFilename string
-	LogFilename    string
 	NoLog          bool
 	OpenBrowser    bool
+	DataDirectory  string
 }
 
 func initBinanceExchangeInfoService() *binance.ExchangeInfoService {
@@ -65,7 +66,7 @@ func ServerMain() {
 	log.SetLevel(log.LogLevelDebug)
 
 	if !ServerFlags.NoLog {
-		log.AddHook(log.NewFileOutputHook(ServerFlags.LogFilename))
+		log.AddHook(log.NewFileOutputHook(path.Join(ServerFlags.DataDirectory, "maker.log")))
 	}
 
 	if ServerFlags.Host != "127.0.0.1" {
@@ -75,7 +76,7 @@ func ServerMain() {
 	applicationContext := &context.ApplicationContext{}
 	applicationContext.BinanceTradeStreamManager = binanceex.NewXTradeStreamManager()
 
-	db.DbOpen()
+	db.DbOpen(ServerFlags.DataDirectory)
 
 	tradeService := tradeservice.NewTradeService(applicationContext.BinanceTradeStreamManager)
 	applicationContext.TradeService = tradeService

@@ -24,7 +24,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/log"
 )
 
-var cfgFile string
+var dataDirectory string = "."
 
 var rootCmd = &cobra.Command{
 	Use: "maker",
@@ -39,20 +39,18 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ./maker.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&dataDirectory, "data", "D", ".", "Data directory")
 }
 
 func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath(".")
-		viper.SetConfigName("maker")
-	}
+	viper.AddConfigPath(dataDirectory)
+	viper.SetConfigName("maker")
 
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
 		log.Println("Using config file:", viper.ConfigFileUsed())
+	} else {
+		log.Printf("Failed to read config: %+v", err)
 	}
 }
