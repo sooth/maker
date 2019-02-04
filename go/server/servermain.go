@@ -65,9 +65,17 @@ func ServerMain() {
 
 	log.SetLevel(log.LogLevelDebug)
 
+	if _, err := os.Stat(ServerFlags.DataDirectory); err != nil {
+		if err := os.Mkdir(ServerFlags.DataDirectory, 0700); err != nil {
+			log.Fatalf("Failed to create data directory %s: %v", ServerFlags.DataDirectory, err)
+		}
+	}
+
 	if !ServerFlags.NoLog {
 		log.AddHook(log.NewFileOutputHook(path.Join(ServerFlags.DataDirectory, "maker.log")))
 	}
+	ServerFlags.ConfigFilename = path.Join(ServerFlags.DataDirectory, "maker.yaml")
+
 
 	if ServerFlags.Host != "127.0.0.1" {
 		log.Fatal("Hosts other than 127.0.0.1 not allowed yet.")
@@ -180,7 +188,7 @@ func ServerMain() {
 	router.HandleFunc("/api/binance/config",
 		SaveBinanceConfigHandler).Methods("POST")
 	router.HandleFunc("/api/config/preferences",
-		SavePreferencesHandler).Methods("POST");
+		SavePreferencesHandler).Methods("POST")
 	binanceApiProxyHandler := http.StripPrefix("/proxy/binance",
 		binance.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)

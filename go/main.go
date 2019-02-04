@@ -19,7 +19,10 @@ import (
 	"github.com/inconshreveable/mousetrap"
 	"github.com/spf13/cobra"
 	"gitlab.com/crankykernel/maker/go/cmd"
+	"gitlab.com/crankykernel/maker/go/log"
 	"os"
+	"os/user"
+	"path"
 	"runtime"
 )
 
@@ -38,5 +41,25 @@ func main() {
 		}
 	}
 
+	if runtime.GOOS == "windows" {
+		appData := os.Getenv("APPDATA")
+		cmd.DefaultDataDirectory = path.Join(appData, "MakerTradingTool")
+		log.Printf("The data directory will be %s\n", cmd.DefaultDataDirectory)
+	} else {
+		// Assume a POSIX style environment.
+		if _, err := os.Stat("./maker.yaml"); err == nil {
+			log.Infof("Setting default data directory to .")
+			cmd.DefaultDataDirectory = "."
+		} else {
+			usr, err := user.Current()
+			if err != nil {
+				log.Fatalf("Failed to get current user: %v", err)
+			}
+			cmd.DefaultDataDirectory = path.Join(usr.HomeDir, ".makertradingtool")
+			log.Infof("Setting default data directory to %s", cmd.DefaultDataDirectory)
+		}
+	}
+
+	cmd.InitCobra()
 	cmd.Execute()
 }

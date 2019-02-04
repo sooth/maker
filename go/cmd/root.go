@@ -24,7 +24,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/log"
 )
 
-var dataDirectory string = "."
+var DefaultDataDirectory string = "."
 
 var rootCmd = &cobra.Command{
 	Use: "maker",
@@ -37,13 +37,13 @@ func Execute() {
 	}
 }
 
-func init() {
+func InitCobra() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&dataDirectory, "data", "D", ".", "Data directory")
+	rootCmd.PersistentFlags().StringVarP(&DefaultDataDirectory, "data", "D", DefaultDataDirectory, "Data directory")
 }
 
 func initConfig() {
-	viper.AddConfigPath(dataDirectory)
+	viper.AddConfigPath(DefaultDataDirectory)
 	viper.SetConfigName("maker")
 
 	viper.AutomaticEnv()

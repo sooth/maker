@@ -40,7 +40,7 @@ func SavePreferencesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	config.Set("preferences.balance.percents", request.BalancePercents)
-	config.WriteConfig()
+	config.WriteConfig(ServerFlags.ConfigFilename)
 }
 
 func SaveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,7 @@ func SaveBinanceConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	config.Set("binance.api.key", request.ApiKey)
 	config.Set("binance.api.secret", request.ApiSecret)
-	config.WriteConfig()
+	config.WriteConfig(ServerFlags.ConfigFilename)
 }
 
 func BinanceTestHandler(w http.ResponseWriter, r *http.Request) {

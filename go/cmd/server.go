@@ -23,7 +23,7 @@ import (
 var ServerCmd = &cobra.Command{
 	Use: "server",
 	Run: func(cmd *cobra.Command, args []string) {
-		server.ServerFlags.DataDirectory = dataDirectory
+		server.ServerFlags.DataDirectory = DefaultDataDirectory
 		server.ServerMain()
 	},
 }

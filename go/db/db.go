@@ -16,14 +16,14 @@
 package db
 
 import (
-	"fmt"
 	"database/sql"
+	"encoding/json"
+	"fmt"
+	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/types"
 	"path"
-	"time"
-	"encoding/json"
-	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
+	"time"
 )
 
 var db *sql.DB
@@ -130,7 +130,7 @@ func DbOpen(dataDirectory string) {
 	var err error
 	filename := path.Join(dataDirectory, "maker.db")
 	log.Infof("Opening database %s", filename)
-	db, err = sql.Open("sqlite3", "maker.db")
+	db, err = sql.Open("sqlite3", filename)
 	if err != nil {
 		log.Fatal(err)
 	}

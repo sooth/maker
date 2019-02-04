@@ -43,8 +43,8 @@ func Unsubscribe(channel chan bool) {
 	delete(subscribers, channel)
 }
 
-func WriteConfig() {
-	viper.SetConfigFile("maker.yaml")
+func WriteConfig(filename string) {
+	viper.SetConfigFile(filename)
 	log.Infof("Writing configuration file %s.", viper.ConfigFileUsed())
 	viper.WriteConfig()
 	lock.RLock()
