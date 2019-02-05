@@ -5,6 +5,14 @@
   maker.yaml, maker.db and log files are stored.  This replaces the
   options to set the config filename and log
   filename. https://gitlab.com/crankykernel/maker/issues/38
+- Store the configuration and database in a fixed location to avoid
+  having to move the files over upgrades. On Linux this directory is
+  ~/.makertradingtool and on Windows it is
+  %appdata%\MakerTradingTool. It can be modified using the command
+  line option above to change the data
+  directory. https://gitlab.com/crankykernel/maker/issues/31
+
+[Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.2...master)
 
 ### 0.3.2 - 2019-02-01
 - By default hide API key/secret input, but add a checkbox to enable
