@@ -28,13 +28,13 @@ type ClientNotice struct {
 
 func NewClientNotice(level ClientNoticeLevel, msg string) ClientNotice {
 	return ClientNotice{
-		Level: level,
+		Level:   level,
 		Message: msg,
 	}
 }
 
 type ClientNoticeService struct {
-	lock sync.RWMutex
+	lock        sync.RWMutex
 	subscribers map[chan ClientNotice]bool
 }
 

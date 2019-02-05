@@ -76,7 +76,6 @@ func ServerMain() {
 	}
 	ServerFlags.ConfigFilename = path.Join(ServerFlags.DataDirectory, "maker.yaml")
 
-
 	if ServerFlags.Host != "127.0.0.1" {
 		log.Fatal("Hosts other than 127.0.0.1 not allowed yet.")
 	}

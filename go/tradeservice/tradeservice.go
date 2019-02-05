@@ -64,12 +64,12 @@ type TradeService struct {
 
 func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeService {
 	tradeService := &TradeService{
-		TradesByLocalID:      make(map[string]*types.Trade),
-		TradesByClientID:     make(map[string]*types.Trade),
-		idGenerator:          idgenerator.NewIdGenerator(),
-		subscribers:          make(map[chan TradeEvent]bool),
-		tradeStreamManager: binanceStreamManager,
-		binanceExchangeInfo:  binance.NewExchangeInfoService(),
+		TradesByLocalID:     make(map[string]*types.Trade),
+		TradesByClientID:    make(map[string]*types.Trade),
+		idGenerator:         idgenerator.NewIdGenerator(),
+		subscribers:         make(map[chan TradeEvent]bool),
+		tradeStreamManager:  binanceStreamManager,
+		binanceExchangeInfo: binance.NewExchangeInfoService(),
 	}
 
 	if err := tradeService.binanceExchangeInfo.Update(); err != nil {
@@ -219,7 +219,7 @@ func (s *TradeService) Subscribe() chan TradeEvent {
 func (s *TradeService) Unsubscribe(channel chan TradeEvent) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.subscribers[channel] = false;
+	s.subscribers[channel] = false
 	delete(s.subscribers, channel)
 }
 
@@ -309,7 +309,7 @@ func (s *TradeService) RestoreTrade(trade *types.Trade) {
 	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
 }
 
-func (s *TradeService) AddNewTrade(trade *types.Trade) (string) {
+func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 	if trade.State.TradeID == "" {
 		localId, err := s.idGenerator.GetID(nil)
 		if err != nil {
@@ -707,8 +707,7 @@ func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error
 	}
 	_, err = binanceex.GetBinanceRestClient().PostOrder(order)
 	if err != nil {
-		log.WithFields(log.Fields{
-		}).WithError(err).Error("Failed to send sell order.")
+		log.WithFields(log.Fields{}).WithError(err).Error("Failed to send sell order.")
 		return err
 	}
 	log.WithFields(log.Fields{

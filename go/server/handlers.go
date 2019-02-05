@@ -670,7 +670,7 @@ func PostBuyHandler(tradeService *tradeservice.TradeService,
 		}
 
 		tradeId := tradeService.AddNewTrade(trade)
-		commonLogFields["tradeId"] = tradeId;
+		commonLogFields["tradeId"] = tradeId
 		if requestBody.LimitSellEnabled {
 			if requestBody.LimitSellType == types.LimitSellTypePercent {
 				log.WithFields(commonLogFields).Infof("Setting limit sell at %f percent.",

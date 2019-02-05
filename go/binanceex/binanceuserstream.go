@@ -16,14 +16,14 @@
 package binanceex
 
 import (
-	"sync"
-	"time"
-	"gitlab.com/crankykernel/cryptotrader/binance"
-	"github.com/gorilla/websocket"
-	"strings"
 	"encoding/json"
+	"github.com/gorilla/websocket"
+	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/go/config"
 	"gitlab.com/crankykernel/maker/go/log"
+	"strings"
+	"sync"
+	"time"
 )
 
 type StreamEventType string
@@ -52,7 +52,7 @@ func NewBinanceUserDataStream() *BinanceUserDataStream {
 	}
 }
 
-func (b *BinanceUserDataStream) Subscribe() (chan *UserStreamEvent) {
+func (b *BinanceUserDataStream) Subscribe() chan *UserStreamEvent {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	channel := make(chan *UserStreamEvent)
@@ -124,7 +124,7 @@ Start:
 			goto Fail
 		}
 
-		log.Infof("Connected to Binance user stream websocket.");
+		log.Infof("Connected to Binance user stream websocket.")
 		userStream.Conn.SetPongHandler(func(appData string) error {
 			lastPong = time.Now()
 			return nil

@@ -16,9 +16,9 @@
 package idgenerator
 
 import (
+	"github.com/oklog/ulid"
 	"math/rand"
 	"time"
-	"github.com/oklog/ulid"
 )
 
 type IdGenerator struct {

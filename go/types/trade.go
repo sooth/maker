@@ -16,9 +16,9 @@
 package types
 
 import (
-	"time"
-	"math"
 	"gitlab.com/crankykernel/cryptotrader/binance"
+	"math"
+	"time"
 )
 
 const TRADE_STATE_VERSION = 1
@@ -55,7 +55,7 @@ func NewTradeWithState(state TradeState) *Trade {
 }
 
 func (t *Trade) IsDone() bool {
-	switch (t.State.Status) {
+	switch t.State.Status {
 	case TradeStatusDone:
 	case TradeStatusCanceled:
 	case TradeStatusFailed:
@@ -73,8 +73,8 @@ func (s *Trade) AddHistory(history HistoryEntry) {
 func (s *Trade) AddHistoryEntry(historyType HistoryType, fields interface{}) {
 	entry := HistoryEntry{
 		Timestamp: time.Now(),
-		Type: historyType,
-		Fields: fields,
+		Type:      historyType,
+		Fields:    fields,
 	}
 	s.State.History = append(s.State.History, entry)
 }
