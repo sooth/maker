@@ -303,7 +303,7 @@
                                      title="Price"
                                      placeholder="Price..."
                                      [step]="priceStepSize"
-                                     (change)="orderForm.limitSellPrice = toFixed(orderForm.limitSellPrice, 8); onLimitPriceChange()"
+                                     (change)="orderForm.limitSellPrice = toFixed(orderForm.limitSellPrice, 8);"
                                      [value]="orderForm.limitSellPrice"
                                      [disabled]="!orderFormSettings.limitSellPriceEnabled"
                                      [(ngModel)]="orderForm.limitSellPrice">
