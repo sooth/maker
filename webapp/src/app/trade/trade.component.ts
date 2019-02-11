@@ -385,7 +385,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             case PriceSource.MANUAL:
                 const amount = roundx(portion / +this.orderForm.manualPrice, 1 / stepSize);
                 this.orderForm.amount = amount;
-                return;
+                break;
             default:
                 break;
         }
