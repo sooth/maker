@@ -17,28 +17,28 @@ package binanceex
 
 import (
 	"fmt"
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/types"
 	"gitlab.com/crankykernel/maker/go/util"
 )
 
 type BinancePriceService struct {
-	anonymousClient     *binance.RestClient
-	exchangeInfoService *binance.ExchangeInfoService
+	exchangeInfoService *ExchangeInfoService
+	client              *binanceapi.RestClient
 }
 
-func NewBinancePriceService(exchangeInfoService *binance.ExchangeInfoService) *BinancePriceService {
+func NewBinancePriceService() *BinancePriceService {
 	return &BinancePriceService{
-		anonymousClient:     binance.NewAnonymousClient(),
-		exchangeInfoService: exchangeInfoService,
+		exchangeInfoService: NewExchangeInfoService(),
+		client:              binanceapi.NewRestClient(),
 	}
 }
 
 // GetLastPrice gets the most current close price from Binance using the REST
 // API.
 func (s *BinancePriceService) GetLastPrice(symbol string) (float64, error) {
-	ticker, err := s.anonymousClient.GetPriceTicker(symbol)
+	ticker, err := s.client.GetPriceTicker(symbol)
 	if err != nil {
 		return 0, err
 	}
@@ -48,7 +48,7 @@ func (s *BinancePriceService) GetLastPrice(symbol string) (float64, error) {
 // GetBestBidPrice gets the most current best bid price from Binance using
 // the REST API.
 func (s *BinancePriceService) GetBestBidPrice(symbol string) (float64, error) {
-	ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
+	ticker, err := s.client.GetBookTicker(symbol)
 	if err != nil {
 		return 0, err
 	}
@@ -58,7 +58,7 @@ func (s *BinancePriceService) GetBestBidPrice(symbol string) (float64, error) {
 // GetBestBidPrice gets the most current best bid price from Binance using
 // the REST API.
 func (s *BinancePriceService) GetBestAskPrice(symbol string) (float64, error) {
-	ticker, err := s.anonymousClient.GetOrderBookTicker(symbol)
+	ticker, err := s.client.GetBookTicker(symbol)
 	if err != nil {
 		return 0, err
 	}

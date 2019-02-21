@@ -2,6 +2,7 @@ module gitlab.com/crankykernel/maker/go
 
 require (
 	github.com/coreos/etcd v3.3.11+incompatible // indirect
+	github.com/crankykernel/binanceapi-go v0.0.0-20190224053504-f3a270d2d894
 	github.com/gobuffalo/buffalo-plugins v1.13.0 // indirect
 	github.com/gobuffalo/packr v1.22.0
 	github.com/gorilla/context v1.1.1 // indirect
@@ -28,3 +29,4 @@ require (
 )
 
 //replace gitlab.com/crankykernel/cryptotrader => ../../cryptotrader
+//replace github.com/crankykernel/binanceapi-go => ../../binanceapi-go

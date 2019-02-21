@@ -17,6 +17,7 @@ package binanceex
 
 import (
 	"encoding/json"
+	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/websocket"
 	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/go/config"
@@ -106,19 +107,16 @@ Start:
 		goto Start
 	}
 
-	restClient := binance.NewAuthenticatedClient(
-		config.GetString("binance.api.key"), "")
-
 	for {
-
 		// First we have to get the user stream listen key.
-		listenKey, err := restClient.GetUserDataStream()
+		client := binanceapi.NewRestClient().WithAuth(config.GetString("binance.api.key"), "")
+		listenKey, err := client.GetUserDataStream()
 		if err != nil {
 			log.WithError(err).Error("Failed to get Binance user stream key. Retyring.")
 			goto Fail
 		}
 
-		userStream, err := binance.OpenStream(listenKey)
+		userStream, err := binanceapi.OpenSingleStream(listenKey)
 		if err != nil {
 			log.Printf("Failed to open user data stream: %v", err)
 			goto Fail
@@ -144,8 +142,7 @@ Start:
 					return
 				}
 
-				err := restClient.PutUserStreamKeepAlive(listenKey)
-				if err != nil {
+				if err := client.PutUserStreamKeepAlive(listenKey); err != nil {
 					log.WithError(err).Error("Failed to send user stream keep alive.")
 					userStream.Close()
 					return
@@ -167,7 +164,7 @@ Start:
 		}()
 
 		for {
-			_, message, err := userStream.Next()
+			message, err := userStream.Next()
 			if err != nil {
 				log.WithError(err).Error("Failed to read next user stream message.")
 				goto Fail

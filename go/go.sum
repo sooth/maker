@@ -11,6 +11,10 @@ github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc
 github.com/coreos/etcd v3.3.11+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-etcd v2.0.0+incompatible/go.mod h1:Jez6KQU2B/sWsbdaef3ED8NzMklzPG4d5KIOhIy30Tk=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
+github.com/crankykernel/binanceapi-go v0.0.0-20190215060755-6fd15f619dca h1:ZzlUAbVY8LnsZtdp70b3WFM5KyCqP6YoP4P3P5rk5MA=
+github.com/crankykernel/binanceapi-go v0.0.0-20190215060755-6fd15f619dca/go.mod h1:e0m6PJyfSQ5JvEXDIfw4xoRBwtk1ZUVr7uFlUH75mXU=
+github.com/crankykernel/binanceapi-go v0.0.0-20190224053504-f3a270d2d894 h1:mE3WpgVpE2ZhCmeQjnGTj1WzpSh93YzYbrUfnmaWvI4=
+github.com/crankykernel/binanceapi-go v0.0.0-20190224053504-f3a270d2d894/go.mod h1:e0m6PJyfSQ5JvEXDIfw4xoRBwtk1ZUVr7uFlUH75mXU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=

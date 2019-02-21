@@ -90,8 +90,7 @@ func ServerMain() {
 
 	restoreTrades(tradeService)
 
-	binanceExchangeInfoService := initBinanceExchangeInfoService()
-	binancePriceService := binanceex.NewBinancePriceService(binanceExchangeInfoService)
+	binancePriceService := binanceex.NewBinancePriceService()
 
 	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream()
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
