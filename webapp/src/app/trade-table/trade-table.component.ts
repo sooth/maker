@@ -13,24 +13,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import {Component, Input, OnInit} from "@angular/core";
-import {
-    MakerService,
-    TradeMap,
-    TradeState,
-    TradeStatus
-} from "../maker.service";
+import {Component, Input, OnChanges, OnInit} from "@angular/core";
+import {MakerService, TradeMap, TradeState, TradeStatus} from "../maker.service";
 import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
 import {AggTrade} from '../binance-api.service';
 import {Trade} from '../trade';
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
     selector: "app-trade-table",
     templateUrl: "./trade-table.component.html",
     styleUrls: ["./trade-table.component.scss"]
 })
-export class TradeTableComponent implements OnInit {
+export class TradeTableComponent implements OnInit, OnChanges {
 
     TradeStatus = TradeStatus;
 
@@ -42,13 +38,23 @@ export class TradeTableComponent implements OnInit {
 
     @Input() showTradeButtons: boolean = false;
 
+    @Input() viewTrades: string = "all";
+
+    private tradeMap: TradeMap = null;
+
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
+                private router: Router,
+                private route: ActivatedRoute,
                 logger: LoggerService) {
         this.logger = logger.getLogger("TradeTableComponent");
     }
 
     ngOnInit() {
+    }
+
+    ngOnChanges() {
+        this.renderTrades();
     }
 
     /**
@@ -57,17 +63,35 @@ export class TradeTableComponent implements OnInit {
      * This variation takes a map of trades keyed by ID.
      */
     onTradeMapUpdate(tradeMap: TradeMap) {
-        const trades: AppTradeState[] = [];
-        for (const tradeId of Object.keys(tradeMap)) {
-            trades.push(toAppTradeState(tradeMap[tradeId]));
+        this.tradeMap = tradeMap;
+        this.renderTrades();
+    }
+
+    private renderTrades() {
+        if (this.tradeMap == null) {
+            return;
         }
-        this.trades = this.sortTrades(trades);
+        console.log(this.viewTrades)
+        const trades: AppTradeState[] = [];
+        for (const tradeId of Object.keys(this.tradeMap)) {
+            trades.push(toAppTradeState(this.tradeMap[tradeId]));
+        }
+        this.trades = this.sortTrades(trades).filter((trade) => {
+            switch (this.viewTrades) {
+                case "open":
+                    return trade.__isOpen;
+                case "closed":
+                    return !trade.__isOpen;
+                default:
+                    return true;
+            }
+        });
     }
 
     private sortTrades(trades: AppTradeState[]): AppTradeState[] {
         return trades.sort((a, b) => {
             return new Date(b.OpenTime).getTime() -
-                    new Date(a.OpenTime).getTime();
+                new Date(a.OpenTime).getTime();
         });
     }
 
@@ -87,6 +111,18 @@ export class TradeTableComponent implements OnInit {
                 }
             }
         }
+    }
+
+    switchTradeView(what) {
+        let params = Object.assign({}, this.route.snapshot.params);
+        if (what === null) {
+            delete (params["viewTrades"]);
+        } else {
+            params.viewTrades = what;
+        }
+        this.router.navigate([".", params], {
+            queryParamsHandling: "merge",
+        });
     }
 
     archive(trade: TradeState) {

@@ -2,7 +2,25 @@
   <div class="card-header d-flex align-items-baseline"
        style="padding-top: 4px; padding-bottom: 4px;">
 
-    <b class="card-title d-flex mb-0 mr-auto">Trades</b>
+    <b class="card-title d-flex mb-0 mr-2">Trades</b>
+
+    <ul class="nav nav-pills mr-auto" style="border-bottom: 0;">
+      <li class="nav-item">
+        <a class="nav-link"
+           [ngClass]="{'active': viewTrades == 'all'}"
+           style="cursor: pointer;" (click)="switchTradeView(null)">All</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link"
+           [ngClass]="{'active': viewTrades == 'open'}"
+           style="cursor: pointer;" (click)="switchTradeView('open')">Open</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link"
+           [ngClass]="{'active': viewTrades == 'closed'}"
+           style="cursor: pointer;" (click)="switchTradeView('closed')">Closed</a>
+      </li>
+    </ul>
 
     <div *ngIf="showArchiveButtons">
       <button type="button"

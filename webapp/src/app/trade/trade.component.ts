@@ -129,6 +129,8 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     priceStepSize: number = 0.00000001;
 
+    viewTrades = "all";
+
     @ViewChild(TradeTableComponent) private tradeTable: TradeTableComponent;
 
     constructor(private api: BinanceApiService,
@@ -217,6 +219,18 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 const newSymbol = params.symbol;
                 if (newSymbol && newSymbol != this.orderFormSettings.symbol) {
                     this.changeSymbol(newSymbol);
+                }
+
+                switch (params.viewTrades) {
+                    case "open":
+                        this.viewTrades = "open";
+                        break;
+                    case "closed":
+                        this.viewTrades = "closed";
+                        break;
+                    default:
+                        this.viewTrades = "all";
+                        break;
                 }
             })
         });

@@ -1,22 +1,29 @@
 table {
-  font-size: 0.875rem;
+    font-size: 0.875rem;
 
-  // Nested tables.
-  table {
-    th, td {
-      border: 0;
-      padding: 0;
-      margin: 0;
+    // Nested tables.
+    table {
+        th, td {
+            border: 0;
+            padding: 0;
+            margin: 0;
+        }
+
+        th {
+            padding-right: 2px;
+        }
+
+        hr {
+            margin: 4px;
+        }
     }
-    th {
-      padding-right: 2px;
-    }
-    hr {
-      margin: 4px;
-    }
-  }
 }
 
 .nowrap {
-  white-space: nowrap;
+    white-space: nowrap;
+}
+
+.nav-pills > .nav-item > .nav-link {
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
