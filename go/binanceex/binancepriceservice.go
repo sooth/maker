@@ -28,9 +28,9 @@ type BinancePriceService struct {
 	client              *binanceapi.RestClient
 }
 
-func NewBinancePriceService() *BinancePriceService {
+func NewBinancePriceService(exchangeInfoService *ExchangeInfoService) *BinancePriceService {
 	return &BinancePriceService{
-		exchangeInfoService: NewExchangeInfoService(),
+		exchangeInfoService: exchangeInfoService,
 		client:              binanceapi.NewRestClient(),
 	}
 }

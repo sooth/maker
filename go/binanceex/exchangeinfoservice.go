@@ -27,6 +27,7 @@ package binanceex
 import (
 	"fmt"
 	"github.com/crankykernel/binanceapi-go"
+	"gitlab.com/crankykernel/maker/go/log"
 	"sync"
 )
 
@@ -68,6 +69,9 @@ func (s *ExchangeInfoService) Update() error {
 		}
 		s.Symbols[symbol.Symbol] = symbolInfo
 	}
+	log.WithFields(log.Fields{
+		"symbols": len(s.Symbols),
+	}).Infof("Binance exchange info service updated")
 	return nil
 }
 

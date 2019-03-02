@@ -46,13 +46,17 @@ var ServerFlags struct {
 	DataDirectory  string
 }
 
-func initBinanceExchangeInfoService() *binance.ExchangeInfoService {
-	exchangeInfoService := binance.NewExchangeInfoService()
-	exchangeInfoService.Update()
+func initBinanceExchangeInfoService() *binanceex.ExchangeInfoService {
+	exchangeInfoService := binanceex.NewExchangeInfoService()
+	if err := exchangeInfoService.Update(); err != nil {
+		log.WithError(err).Errorf("Binance exchange info server failed to update")
+	}
 	go func() {
 		for {
 			time.Sleep(1 * time.Minute)
-			exchangeInfoService.Update()
+			if err := exchangeInfoService.Update(); err != nil {
+				log.WithError(err).Errorf("Binance exchange info server failed to update")
+			}
 		}
 	}()
 	return exchangeInfoService
@@ -90,7 +94,8 @@ func ServerMain() {
 
 	restoreTrades(tradeService)
 
-	binancePriceService := binanceex.NewBinancePriceService()
+	binanceExchangeInfoService := initBinanceExchangeInfoService()
+	binancePriceService := binanceex.NewBinancePriceService(binanceExchangeInfoService)
 
 	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream()
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
