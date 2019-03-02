@@ -11,6 +11,8 @@
   %appdata%\MakerTradingTool. It can be modified using the command
   line option above to change the data
   directory. https://gitlab.com/crankykernel/maker/issues/31
+- Filter display of active trades to all, open closed.
+  https://gitlab.com/crankykernel/maker/issues/32
 
 [Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.2...master)
 
