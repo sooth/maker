@@ -73,7 +73,8 @@ func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeS
 	}
 
 	if err := tradeService.binanceExchangeInfo.Update(); err != nil {
-		log.Printf("error: failed to update exchange info: %v", err)
+		log.WithError(err).
+			Errorf("Failed to update Binance exchange info")
 	}
 
 	tradeService.tradeStreamChannel = tradeService.tradeStreamManager.Subscribe()
@@ -177,20 +178,30 @@ func (s *TradeService) checkTrailingProfit(trade *types.Trade, price float64) {
 		} else {
 			deviation := (price - trade.State.TrailingProfit.Price) /
 				trade.State.TrailingProfit.Price * 100
-			log.Printf("%s: TrailingProfit Deviation: deviation=%.8f; allowed=%.8f",
-				trade.State.Symbol, deviation, trade.State.TrailingProfit.Deviation)
+
+			log.WithFields(log.Fields{
+				"symbol":    trade.State.Symbol,
+				"deviation": deviation,
+				"allowed":   trade.State.TrailingProfit.Deviation,
+			}).Infof("Trailing profit update")
+
 			if math.Abs(deviation) > trade.State.TrailingProfit.Deviation {
-				log.Printf("%s: TrailingProfit: Triggering sell: profit=%.8f",
-					trade.State.Symbol, trade.State.ProfitPercent)
+				log.WithFields(log.Fields{
+					"symbol":  trade.State.Symbol,
+					"percent": trade.State.ProfitPercent,
+				}).Infof("Executing trailing profit sell")
 				trade.State.TrailingProfit.Triggered = true
 				s.MarketSell(trade, true)
 			}
 		}
 	} else {
 		if trade.State.ProfitPercent > trade.State.TrailingProfit.Percent {
-			log.Printf("%s: Activating trailing stop: profit=%.8f; percent: %.8f",
-				trade.State.Symbol, trade.State.ProfitPercent,
-				trade.State.TrailingProfit.Percent)
+			log.WithFields(log.Fields{
+				"symbol":                  trade.State.Symbol,
+				"currentProfit":           trade.State.ProfitPercent,
+				"trailingProfitPercent":   trade.State.TrailingProfit.Percent,
+				"trailingProfitDeviation": trade.State.TrailingProfit.Deviation,
+			}).Infof("Activating trailing profit")
 			trade.State.TrailingProfit.Activated = true
 			s.BroadcastTradeUpdate(trade)
 		}
@@ -273,7 +284,10 @@ func (s *TradeService) ArchiveTrade(trade *types.Trade) error {
 }
 
 func (s *TradeService) AddClientOrderId(trade *types.Trade, orderId string, locked bool) {
-	log.Printf("Adding clientOrderID %s to trade %s", orderId, trade.State.TradeID)
+	log.WithFields(log.Fields{
+		"symbol":  trade.State.Symbol,
+		"orderId": trade.State.TradeID,
+	}).Debugf("Adding client order ID to trade")
 	trade.AddClientOrderID(orderId)
 	if !locked {
 		s.lock.Lock()
@@ -331,7 +345,7 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 	s.lock.Unlock()
 
 	if err := db.DbSaveTrade(trade); err != nil {
-		log.Printf("error: failed to save trade to database: %v", err)
+		log.WithError(err).Errorf("Failed to save trade to database")
 	}
 
 	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
@@ -497,8 +511,11 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 			trade.State.Status = types.TradeStatusWatching
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		default:
-			log.Printf("ERROR: Unhandled order status state %s for sell side.",
-				report.CurrentOrderStatus)
+			log.WithFields(log.Fields{
+				"symbol":             trade.State.Symbol,
+				"currentOrderStatus": report.CurrentOrderStatus,
+				"side":               "sell",
+			}).Errorf("Unknown current order status in execution report")
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		}
 	}
@@ -623,7 +640,7 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
-		log.Printf("ERROR: Failed to generate clientOrderId: %v", err)
+		log.WithError(err).Errorf("Failed to generate clientOrderId")
 		return err
 	}
 	s.AddClientOrderId(trade, clientOrderId, false)
@@ -684,7 +701,7 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error {
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
-		log.Printf("ERROR: Failed to generate clientOrderId: %v", err)
+		log.WithError(err).Errorf("Failed to generate clientOrderId")
 		return err
 	}
 	s.AddClientOrderId(trade, clientOrderId, false)
@@ -769,8 +786,6 @@ func (s *TradeService) CancelSell(trade *types.Trade) error {
 		"tradeId": trade.State.TradeID,
 		"orderId": trade.State.SellOrderId,
 	}).Info("Cancelling sell order.")
-	log.Printf("Cancelling sell order: symbol=%s; orderId=%d",
-		trade.State.Symbol, trade.State.SellOrderId)
 	_, err := binanceex.GetBinanceRestClient().CancelOrder(
 		trade.State.Symbol, trade.State.SellOrderId)
 	if err == nil {
