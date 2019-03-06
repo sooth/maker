@@ -14,8 +14,9 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Injectable} from '@angular/core';
-import {HttpClient, HttpParams} from "@angular/common/http";
+import {HttpParams} from "@angular/common/http";
 import {Observable} from "rxjs";
+import {MakerApiService} from "./maker-api.service";
 
 const REST_API_ROOT = "/proxy/binance";
 
@@ -24,12 +25,12 @@ const REST_API_ROOT = "/proxy/binance";
 })
 export class BinanceRestApiService {
 
-    constructor(private http: HttpClient) {
+    constructor(private makerApi: MakerApiService) {
     }
 
     private get(path: string, params: HttpParams = new HttpParams()): Observable<Object> {
         const url = `${REST_API_ROOT}${path}`;
-        return this.http.get<Object>(url, {
+        return this.makerApi.get(url, {
             params: params,
         });
     }

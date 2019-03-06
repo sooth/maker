@@ -15,9 +15,8 @@
 
 import {Component, OnInit} from '@angular/core';
 import {BinanceService} from './binance.service';
-import {Logger, LoggerService} from './logger.service';
-import {MakerService} from './maker.service';
-import {VERSION} from "../environments/version";
+import {LoginService} from "./login.service";
+import {MakerApiService} from "./maker-api.service";
 
 @Component({
     selector: 'app-root',
@@ -28,7 +27,9 @@ export class AppComponent implements OnInit {
 
     ticker: { [key: string]: number } = {};
 
-    constructor(public binance: BinanceService) {
+    constructor(public binance: BinanceService,
+                public makerApi: MakerApiService,
+                public loginService: LoginService) {
     }
 
     ngOnInit() {
@@ -39,4 +40,7 @@ export class AppComponent implements OnInit {
         });
     }
 
+    logout() {
+        this.loginService.logout();
+    }
 }

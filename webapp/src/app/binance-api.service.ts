@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Injectable} from "@angular/core";
-import {HttpClient, HttpHeaders, HttpParams} from "@angular/common/http";
+import {HttpHeaders, HttpParams} from "@angular/common/http";
 import * as hmacSHA256 from "crypto-js/hmac-sha256";
 import * as hex from "crypto-js/enc-hex";
 import {catchError, map} from "rxjs/operators";
@@ -22,6 +22,7 @@ import {Observable} from "rxjs";
 import {throwError} from "rxjs/internal/observable/throwError";
 import {OpenTradeOptions} from "./binance.service";
 import {Observer} from "rxjs/Observer";
+import {MakerApiService} from "./maker-api.service";
 
 const API_ROOT = "/proxy/binance";
 const STREAM_ROOT = "wss://stream.binance.com:9443";
@@ -33,7 +34,7 @@ export class BinanceApiService {
 
     private _apiSecret: string = null;
 
-    constructor(private http: HttpClient) {
+    constructor(private makerApi: MakerApiService) {
     }
 
     set apiKey(key: string) {
@@ -51,7 +52,7 @@ export class BinanceApiService {
             params = new HttpParams();
         }
 
-        return this.http.get<Object>(url, {
+        return this.makerApi.get(url, {
             params: params,
         });
     }
@@ -73,7 +74,7 @@ export class BinanceApiService {
 
         headers = headers.append("X-MBX-APIKEY", this._apiKey);
 
-        return this.http.get<Object>(url, {
+        return this.makerApi.get(url, {
             headers: headers,
             params: params,
         });
@@ -85,7 +86,7 @@ export class BinanceApiService {
     }, body: any = null) {
         const headers = options && options.headers || new HttpHeaders();
         const params = options && options.params || new HttpParams();
-        return this.http.post(path, body, {
+        return this.makerApi.post(path, body, {
             params: params,
             headers: headers,
         }).pipe(catchError((error) => {
@@ -100,7 +101,7 @@ export class BinanceApiService {
     }
 
     private delete(path: string, params: HttpParams = null): Observable<any> {
-        return this.http.delete(path, {
+        return this.makerApi.delete(path, {
             params: params,
         });
     }
@@ -108,9 +109,9 @@ export class BinanceApiService {
     getAccountInfo(): Observable<AccountInfo> {
         const endpoint = "/api/v3/account";
         return this.authenticateGet(endpoint, null)
-                .pipe(map((raw: RawRestAccountInfo) => {
-                    return AccountInfo.fromRest(raw);
-                }));
+            .pipe(map((raw: RawRestAccountInfo) => {
+                return AccountInfo.fromRest(raw);
+            }));
     }
 
     getExchangeInfo(): Observable<ExchangeInfo> {
@@ -134,7 +135,7 @@ export class BinanceApiService {
     cancelBuy(tradeId: string): Observable<CancelOrderResponse> {
         const endpoint = "/api/binance/buy";
         const params = new HttpParams()
-                .set("trade_id", tradeId);
+            .set("trade_id", tradeId);
         return this.delete(endpoint, params);
     }
 

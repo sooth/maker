@@ -16,7 +16,7 @@
 import {AfterViewInit, Component, OnInit} from '@angular/core';
 import {TradeState} from '../maker.service';
 import {AppTradeState, toAppTradeState} from '../trade-table/trade-table.component';
-import {HttpClient} from "@angular/common/http";
+import {MakerApiService} from "../maker-api.service";
 
 @Component({
     selector: 'app-history',
@@ -27,14 +27,14 @@ export class HistoryComponent implements OnInit, AfterViewInit {
 
     trades: TradeState[] = [];
 
-    constructor(private http: HttpClient) {
+    constructor(private makerApi: MakerApiService) {
     }
 
     ngOnInit() {
     }
 
     ngAfterViewInit() {
-        this.http.get("/api/trade/query")
+        this.makerApi.get("/api/trade/query")
             .subscribe((trades: TradeState[]) => {
                 this.trades = trades.map((trade) => {
                     return toAppTradeState(trade);

@@ -16,24 +16,32 @@
 package server
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"gitlab.com/crankykernel/maker/go/auth"
 	"gitlab.com/crankykernel/maker/go/config"
 	"gitlab.com/crankykernel/maker/go/log"
-	"math/rand"
+	mathrand "math/rand"
 	"net/http"
+	"strings"
 	"time"
 )
+
+func init() {
+	mathrand.Seed(time.Now().UnixNano())
+}
 
 type Authenticator struct {
 	username string
 	password string
+	sessions map[string]bool
 }
 
 func NewAuthenticator(configFilename string) *Authenticator {
-	rand.Seed(time.Now().UnixNano())
-
-	m := Authenticator{}
+	m := Authenticator{
+		sessions: map[string]bool{},
+	}
 
 	m.username = config.GetString("username")
 	if m.username == "" {
@@ -64,6 +72,14 @@ Password: %s
 	return &m
 }
 
+func (m *Authenticator) hasSession(sessionId string) bool {
+	val, ok := m.sessions[sessionId]
+	if val && ok {
+		return true
+	}
+	return false
+}
+
 func (m *Authenticator) generatePassword(configFilename string) (string, string) {
 	password := m.getRandom(32)
 	encoded, err := auth.EncodePassword(password)
@@ -79,30 +95,81 @@ func (m *Authenticator) getRandom(size int) string {
 	alphanumerics := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 	b := make([]rune, size)
 	for i := range b {
-		b[i] = alphanumerics[rand.Intn(len(alphanumerics))]
+		b[i] = alphanumerics[mathrand.Intn(len(alphanumerics))]
 	}
 	return string(b)
+}
+
+func (m *Authenticator) requiresAuth(path string) bool {
+	if strings.HasPrefix(path, "/api/login") {
+		return false
+	}
+	if strings.HasPrefix(path, "/api") {
+		return true
+	}
+	if strings.HasPrefix(path, "/ws") {
+		return true
+	}
+	if strings.HasPrefix(path, "/proxy") {
+		return true
+	}
+	return false
+}
+
+func (m *Authenticator) generateSessionId() (string, error) {
+	bytes := make([]byte, 128)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+func (m *Authenticator) Login(username string, password string) (string, error) {
+	if username != m.username {
+		return "", fmt.Errorf("bad username")
+	}
+	ok, err := auth.CheckPassword(password, m.password)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", fmt.Errorf("bad password")
+	}
+	sessionId, err := m.generateSessionId()
+	if err != nil {
+		return "", err
+	}
+	m.sessions[sessionId] = true
+	return sessionId, nil
 }
 
 // Middleware function, which will be called for each request
 func (m *Authenticator) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
-		if ok {
-			if username == m.username {
-				passwordOk, err := auth.CheckPassword(password, m.password)
-				if err != nil {
-					log.WithError(err).WithFields(log.Fields{
-						"username": username,
-					}).Errorf("An error occurred while checking password for user")
-				} else if passwordOk {
-					next.ServeHTTP(w, r)
-					return
-				}
-			}
-			log.WithField("username", username).Errorf("Login failed")
+		if !m.requiresAuth(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
 		}
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+
+		sessionId := r.FormValue("sessionId")
+		if sessionId != "" {
+			log.Infof("Validation sessionId: %s", sessionId)
+			if m.hasSession(sessionId) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			log.Infof("Session ID is not valid.")
+		}
+
+		sessionId = r.Header.Get("X-Session-ID")
+		if sessionId != "" {
+			if m.hasSession(sessionId) {
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+
 		w.WriteHeader(http.StatusUnauthorized)
 	})
 }

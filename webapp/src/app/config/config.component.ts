@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Component, OnInit} from "@angular/core";
-import {HttpClient, HttpParams} from "@angular/common/http";
+import {HttpParams} from "@angular/common/http";
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {MakerApiService} from "../maker-api.service";
 import {ToastrService} from "../toastr.service";
@@ -40,8 +40,7 @@ export class ConfigComponent implements OnInit {
 
     showApiInput: boolean = false;
 
-    constructor(private http: HttpClient,
-                private makerApi: MakerApiService,
+    constructor(private makerApi: MakerApiService,
                 private toastr: ToastrService,
                 private router: Router,
                 private configService: ConfigService,
@@ -94,9 +93,9 @@ export class ConfigComponent implements OnInit {
         const formModel = this.form.value;
 
         const params = new HttpParams()
-                .set("binance.api.key", formModel.binanceApiKey)
-                .set("binance.api.secret", formModel.binanceApiSecret);
-        this.http.get<any>("/api/binance/account/test", {
+            .set("binance.api.key", formModel.binanceApiKey)
+            .set("binance.api.secret", formModel.binanceApiSecret);
+        this.makerApi.get("/api/binance/account/test", {
             params: params,
         }).subscribe((response) => {
             if (!response.ok) {

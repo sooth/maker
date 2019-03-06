@@ -17,35 +17,60 @@ import {NgModule} from "@angular/core";
 import {RouterModule, Routes} from "@angular/router";
 import {TradeComponent} from "./trade/trade.component";
 import {ConfigComponent} from "./config/config.component";
-import {BinanceConfigGuard} from "../binance-config.guard";
 import {HistoryComponent} from './history/history.component';
 import {TradeDetailComponent} from './trade-detail/trade-detail.component';
+import {LoginComponent} from "./login/login.component";
+import {CompositeGuard} from "./composite.guard";
 
 const routes: Routes = [
     {
         path: "trade",
         component: TradeComponent,
         canActivate: [
-            BinanceConfigGuard,
-        ]
+            CompositeGuard,
+        ],
+        data: {
+            authRequired: true,
+            configRequired: true,
+        }
     },
     {
         path: "trade/:tradeId",
         component: TradeDetailComponent,
         canActivate: [
-            BinanceConfigGuard,
-        ]
+            CompositeGuard,
+        ],
+        data: {
+            authRequired: true,
+            configRequired: true,
+        }
     },
     {
         path: "config",
         component: ConfigComponent,
+        canActivate: [
+            CompositeGuard,
+        ],
+        data: {
+            authRequired: true,
+            configRequired: false,
+        }
     },
     {
         path: "history",
         component: HistoryComponent,
         canActivate: [
-            BinanceConfigGuard,
-        ]
+            CompositeGuard,
+        ],
+        data: {
+            authRequired: true,
+            configRequired: true,
+        }
+    },
+    {
+        path: "login",
+        pathMatch: "full",
+        component: LoginComponent,
     },
     {
         path: "",

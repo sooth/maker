@@ -39,7 +39,8 @@ import {HistoryComponent} from './history/history.component';
 import {TradeDetailComponent} from './trade-detail/trade-detail.component';
 import {TradeTableRowComponent} from './trade-table-row/trade-table-row.component';
 import {TrailingProfitFormComponent} from './trailingprofitform/trailing-profit-form.component';
-import { AboutComponent } from './about/about.component';
+import {AboutComponent} from './about/about.component';
+import {LoginComponent} from './login/login.component';
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
@@ -58,6 +59,7 @@ fontawesome.library.add(faSyncAlt);
         HistoryComponent,
         TradeDetailComponent,
         AboutComponent,
+        LoginComponent,
     ],
     imports: [
         // Angular modules.

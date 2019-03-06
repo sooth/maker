@@ -14,16 +14,13 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
 import {ActivatedRoute} from '@angular/router';
 import {Subscription} from 'rxjs/Subscription';
 import {MakerService, TradeState} from '../maker.service';
-import {
-    AppTradeState,
-    toAppTradeState
-} from '../trade-table/trade-table.component';
+import {AppTradeState, toAppTradeState} from '../trade-table/trade-table.component';
 import {BinanceService} from '../binance.service';
 import {Trade} from '../trade';
+import {MakerApiService} from "../maker-api.service";
 
 @Component({
     selector: 'app-trade-detail',
@@ -36,15 +33,15 @@ export class TradeDetailComponent implements OnInit, OnDestroy {
 
     trade: AppTradeState = null;
 
-    constructor(private http: HttpClient,
-                private route: ActivatedRoute,
+    constructor(private route: ActivatedRoute,
                 private binance: BinanceService,
+                private makerApi: MakerApiService,
                 private maker: MakerService) {
     }
 
     ngOnInit() {
         let s = this.route.params.subscribe((params) => {
-            this.http.get(`/api/trade/${params.tradeId}`).subscribe((trade: TradeState) => {
+            this.makerApi.get(`/api/trade/${params.tradeId}`).subscribe((trade: TradeState) => {
                 this.trade = toAppTradeState(trade);
             })
         });
@@ -59,7 +56,7 @@ export class TradeDetailComponent implements OnInit, OnDestroy {
 
         s = this.maker.binanceAggTrades$.subscribe((trade) => {
             if (this.trade && Trade.isOpen(this.trade) &&
-                    this.trade.Symbol == trade.symbol) {
+                this.trade.Symbol == trade.symbol) {
                 Trade.onLastPrice(this.trade, trade.price);
             }
         });

@@ -14,10 +14,11 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Injectable} from "@angular/core";
-import {HttpClient} from "@angular/common/http";
+import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {map} from "rxjs/operators";
-import {LimitSellType} from './binance.service';
+
+const SESSION_HEADER = "X-Session-ID";
 
 /**
  * The MakerApiService contains methods that wrap around calls to the Maker
@@ -28,23 +29,82 @@ import {LimitSellType} from './binance.service';
 })
 export class MakerApiService {
 
+    private sessionId: string = null;
+
     constructor(private http: HttpClient) {
     }
 
+    post(url: string, body: any, options: any = null): Observable<any> {
+        if (!options) {
+            options = {};
+        }
+        let headers = options.headers || new HttpHeaders();
+        if (this.sessionId) {
+            headers = headers.set(SESSION_HEADER, this.sessionId);
+        }
+        options.headers = headers;
+        return this.http.post(url, body, options);
+    }
+
+    get(url: string, options: any = null): Observable<any> {
+        if (!options) {
+            options = {};
+        }
+        let headers = options.headers || new HttpHeaders();
+        if (this.sessionId) {
+            headers = headers.set(SESSION_HEADER, this.sessionId);
+        }
+        options.headers = headers;
+        return this.http.get(url, options);
+    }
+
+    delete(url: string, options: any = null): Observable<any> {
+        if (!options) {
+            options = {};
+        }
+        let headers = options.headers || new HttpHeaders();
+        if (this.sessionId) {
+            headers = headers.set(SESSION_HEADER, this.sessionId);
+        }
+        options.headers = headers;
+        return this.http.delete(url, options);
+    }
+
+    setSessionId(sessionId: string) {
+        console.log(`Session ID set to ${sessionId}`);
+        this.sessionId = sessionId;
+    }
+
     getConfig(): Observable<any> {
-        return this.http.get("/api/config")
-                .pipe(map((response) => {
-                    return flattenJson(response);
-                }));
+        return this.get("/api/config")
+            .pipe(map((response) => {
+                return flattenJson(response);
+            }));
     }
 
     savePreferences(prefs: any): Observable<boolean> {
-        return this.http.post("/api/config/preferences", prefs)
-                .pipe(map(() => {
-                    return true;
-                }));
+        return this.post("/api/config/preferences", prefs)
+            .pipe(map(() => {
+                return true;
+            }));
     }
 
+    login(username: string, password: string): Observable<any> {
+        return this.http.post("/api/login", {
+            username: username,
+            password: password,
+        });
+    }
+
+    openWebsocket(): WebSocket {
+        let proto = window.location.protocol == "https:" ? "wss" : "ws";
+        let url = `${proto}://${window.location.host}/ws?`;
+        if (this.sessionId) {
+            url = `${url}&sessionId=${this.sessionId}`;
+        }
+        console.log(`Opening websocket: ${url}`);
+        return new WebSocket(url);
+    }
 }
 
 function flattenJson(input) {

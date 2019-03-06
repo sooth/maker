@@ -29,10 +29,10 @@ import {map, multicast, refCount, take, tap} from "rxjs/operators";
 import {Observable, Subject} from "rxjs";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Logger, LoggerService} from "./logger.service";
-import {HttpClient} from "@angular/common/http";
 import {MakerService} from "./maker.service";
 import {MakerApiService} from "./maker-api.service";
 import {ToastrService} from "./toastr.service";
+import {LoginService} from "./login.service";
 
 /**
  * Enum of types that can be used as a price source.
@@ -84,14 +84,19 @@ export class BinanceService {
                 private maker: MakerService,
                 private makerApi: MakerApiService,
                 private toastr: ToastrService,
-                http: HttpClient,
+                private loginService: LoginService,
                 logger: LoggerService) {
-
         this.logger = logger.getLogger("binance.service");
-
         this.isReadySubject = new ReplaySubject<boolean>(1);
         this.isReady$ = this.isReadySubject.pipe(take(1));
+        this.loginService.$onLogin.asObservable().pipe(take(1))
+            .subscribe((result) => {
+                this.init();
+            });
+    }
 
+    private init() {
+        console.log("BinanceServer.init()");
         // Get config then do initialization that depends on config.
         this.makerApi.getConfig().subscribe((config) => {
             this.api.apiKey = config["binance.api.key"];
@@ -111,13 +116,13 @@ export class BinanceService {
         if (!this.streams$[stream]) {
             const path = `/ws/${stream}`;
             this.streams$[stream] = this.api.openStream(path)
-                    .pipe(
-                            multicast(new Subject<any>()),
-                            refCount(),
-                            map((message) => {
-                                return buildAggTradeFromStream(message);
-                            })
-                    );
+                .pipe(
+                    multicast(new Subject<any>()),
+                    refCount(),
+                    map((message) => {
+                        return buildAggTradeFromStream(message);
+                    })
+                );
         }
         return this.streams$[stream];
     }
@@ -127,13 +132,13 @@ export class BinanceService {
         if (!this.streams$[stream]) {
             const path = `/ws/${stream}`;
             this.streams$[stream] = this.api.openStream(path)
-                    .pipe(
-                            multicast(new Subject<any>()),
-                            refCount(),
-                            map((ticker) => {
-                                return buildTickerFromStream(ticker);
-                            })
-                    );
+                .pipe(
+                    multicast(new Subject<any>()),
+                    refCount(),
+                    map((ticker) => {
+                        return buildTickerFromStream(ticker);
+                    })
+                );
         }
         return this.streams$[stream];
     }
@@ -143,13 +148,13 @@ export class BinanceService {
         if (!this.streams$[stream]) {
             const path = `/ws/${stream}`;
             this.streams$[stream] = this.api.openStream(path)
-                    .pipe(
-                            multicast(new Subject<any>()),
-                            refCount(),
-                            map((depth) => {
-                                return makeDepthFromStream(symbol, depth);
-                            })
-                    );
+                .pipe(
+                    multicast(new Subject<any>()),
+                    refCount(),
+                    map((depth) => {
+                        return makeDepthFromStream(symbol, depth);
+                    })
+                );
         }
         return this.streams$[stream];
     }

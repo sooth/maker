@@ -25,12 +25,15 @@ import {
     RawStreamAccountInfo,
     StreamAggTrade
 } from "./binance-api.service";
-import {HttpClient, HttpParams} from "@angular/common/http";
+import {HttpParams} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
 import {Observable} from "rxjs";
 import {ToastrService} from './toastr.service';
 import {LimitSellType} from './binance.service';
 import {GIT_REVISION, VERSION} from "../environments/version";
+import {take} from "rxjs/operators";
+import {LoginService} from "./login.service";
+import {MakerApiService} from "./maker-api.service";
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -56,12 +59,20 @@ export class MakerService {
 
     private logger: Logger = null;
 
-    constructor(private http: HttpClient,
-                logger: LoggerService,
+    constructor(logger: LoggerService,
                 private toastr: ToastrService,
+                private loginService: LoginService,
+                private makerApi: MakerApiService,
                 private binanceApi: BinanceApiService) {
         this.logger = logger.getLogger("maker-service");
-        this.webSocket = new MakerWebSocket();
+        this.loginService.$onLogin.asObservable().pipe(take(1))
+            .subscribe((result) => {
+                this.init();
+            });
+    }
+
+    private init() {
+        this.webSocket = new MakerWebSocket(this.makerApi);
         this.webSocket.onMessage = (message: MakerMessage) => {
             switch (message.messageType) {
                 case MakerMessageType.TRADE:
@@ -128,7 +139,7 @@ export class MakerService {
         const params = new HttpParams()
             .set("enable", String(enable))
             .set("percent", percent.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.TradeID}/stopLoss`, null, {
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/stopLoss`, null, {
             params: params,
         }).subscribe((response) => {
             console.log(response);
@@ -141,7 +152,7 @@ export class MakerService {
             .set("enable", String(enable))
             .set("percent", percent.toFixed(8))
             .set("deviation", deviation.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.TradeID}/trailingProfit`, null, {
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/trailingProfit`, null, {
             params: params,
         }).subscribe((response) => {
         });
@@ -161,7 +172,7 @@ export class MakerService {
     limitSellByPercent(trade: TradeState, percent: number) {
         this.logger.log(`Posting limit sell order at ${percent.toFixed(8)}%.`);
         const params = new HttpParams().set("percent", percent.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.TradeID}/limitSellByPercent`, null, {
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/limitSellByPercent`, null, {
             params: params,
         }).subscribe((response) => {
             if (response) {
@@ -175,7 +186,7 @@ export class MakerService {
 
     limitSellByPrice(trade: TradeState, price: number) {
         const params = new HttpParams().set("price", price.toFixed(8));
-        this.http.post(`/api/binance/trade/${trade.TradeID}/limitSellByPrice`, null, {
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/limitSellByPrice`, null, {
             params: params,
         }).subscribe((response) => {
             if (response) {
@@ -188,13 +199,13 @@ export class MakerService {
     }
 
     marketSell(trade: TradeState) {
-        this.http.post(`/api/binance/trade/${trade.TradeID}/marketSell`, null, {}).subscribe((response) => {
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/marketSell`, null, {}).subscribe((response) => {
             console.log(response);
         });
     }
 
     archiveTrade(trade: TradeState) {
-        this.http.post(`/api/binance/trade/${trade.TradeID}/archive`, null, {})
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/archive`, null, {})
             .subscribe(() => {
             }, (error) => {
                 this.logger.log("Failed to archive trade: " + JSON.stringify(error));
@@ -202,7 +213,7 @@ export class MakerService {
     }
 
     abandonTrade(trade: TradeState) {
-        this.http.post(`/api/binance/trade/${trade.TradeID}/abandon`, null, {})
+        this.makerApi.post(`/api/binance/trade/${trade.TradeID}/abandon`, null, {})
             .subscribe(() => {
             }, (error) => {
                 this.logger.log("Failed to abandon trade: " + JSON.stringify(error));
@@ -216,7 +227,7 @@ export class MakerService {
         git_branch: string,
         git_revision: string,
     }> {
-        return this.http.get<any>("/api/version");
+        return this.makerApi.get("/api/version");
     }
 
 }
@@ -312,15 +323,14 @@ class MakerWebSocket {
 
     public onMessage: { (any) } = null;
 
-    constructor() {
+    constructor(private api: MakerApiService) {
         this.connect();
     }
 
     private connect() {
-        let proto = window.location.protocol == "https:" ? "wss" : "ws";
-        const ws = new WebSocket(`${proto}://${window.location.host}/ws`);
+        const ws = this.api.openWebsocket();
 
-        ws.onopen = (event) => {
+        ws.onopen = (_) => {
             console.log("maker websocket opened");
             this.reconnects = 0;
         };

@@ -17,7 +17,6 @@ import {Injectable} from "@angular/core";
 import {MakerApiService} from "./maker-api.service";
 import {Observable, of} from "rxjs";
 import {map, tap} from "rxjs/operators";
-import {HttpClient} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
 
 export const DEFAULT_BALANCE_PERCENTS = "5,10,25,50,75,100";
@@ -32,7 +31,6 @@ export class ConfigService {
     private logger: Logger = null;
 
     constructor(private makerApi: MakerApiService,
-                private http: HttpClient,
                 logger: LoggerService,
     ) {
         this.logger = logger.getLogger("config-server");
@@ -66,7 +64,7 @@ export class ConfigService {
     }
 
     saveBinanceConfig(): Observable<boolean> {
-        return this.http.post("/api/binance/config", {
+        return this.makerApi.post("/api/binance/config", {
             key: this.config[ConfigKey.BINANCE_API_KEY],
             secret: this.config[ConfigKey.BINANCE_API_SECRET],
         }).pipe(map(() => {

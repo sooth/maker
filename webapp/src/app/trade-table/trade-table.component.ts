@@ -71,7 +71,6 @@ export class TradeTableComponent implements OnInit, OnChanges {
         if (this.tradeMap == null) {
             return;
         }
-        console.log(this.viewTrades)
         const trades: AppTradeState[] = [];
         for (const tradeId of Object.keys(this.tradeMap)) {
             trades.push(toAppTradeState(this.tradeMap[tradeId]));

@@ -16,6 +16,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -174,14 +175,43 @@ func ServerMain() {
 
 	router := mux.NewRouter()
 
+	var authenticator *Authenticator = nil
 	if ServerFlags.EnableAuth {
-		authenticator := NewAuthenticator(ServerFlags.ConfigFilename)
+		authenticator = NewAuthenticator(ServerFlags.ConfigFilename)
 		router.Use(authenticator.Middleware)
 	}
 
 	router.HandleFunc("/api/config", configHandler).Methods("GET")
 	router.HandleFunc("/api/version", VersionHandler).Methods("GET")
 	router.HandleFunc("/api/time", TimeHandler).Methods("GET")
+	router.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
+		type LoginForm struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+		var loginForm LoginForm
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&loginForm); err != nil {
+			log.WithError(err).Errorf("Failed to decode login form")
+			WriteJsonError(w, http.StatusInternalServerError, "error decoding login form")
+			return
+		}
+		if authenticator == nil {
+			WriteJsonResponse(w, http.StatusOK, map[string]interface{}{})
+			return
+		}
+		sessionId, err := authenticator.Login(loginForm.Username, loginForm.Password)
+		if err != nil {
+			log.WithError(err).WithField("username", loginForm.Username).
+				Errorf("Login failed")
+			WriteJsonError(w, http.StatusUnauthorized, "authentication failed")
+			return
+		}
+		log.Infof("SessionID: %s; Error: %v", sessionId, err)
+		WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
+			"sessionId": sessionId,
+		})
+	})
 
 	router.HandleFunc("/api/binance/buy", PostBuyHandler(tradeService, binancePriceService)).Methods("POST")
 	router.HandleFunc("/api/binance/buy", deleteBuyHandler(tradeService)).Methods("DELETE")
