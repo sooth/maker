@@ -16,13 +16,14 @@
 package binanceex
 
 import (
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/config"
 )
 
-func GetBinanceRestClient() *binance.RestClient {
-	restClient := binance.NewAuthenticatedClient(
+func GetBinanceRestClient() *binanceapi.RestClient {
+	client := binanceapi.NewRestClient().WithAuth(
 		config.GetString("binance.api.key"),
 		config.GetString("binance.api.secret"))
-	return restClient
+
+	return client
 }

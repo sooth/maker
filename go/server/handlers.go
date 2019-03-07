@@ -18,10 +18,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/crankykernel/binanceapi-go"
 	"github.com/gobuffalo/packr"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/db"
 	"gitlab.com/crankykernel/maker/go/log"
@@ -566,10 +566,10 @@ func PostBuyHandler(tradeService *tradeservice.TradeService,
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := binance.OrderParameters{
-			Side:        binance.OrderSideBuy,
-			Type:        binance.OrderTypeLimit,
-			TimeInForce: binance.TimeInForceGTC,
+		params := binanceapi.OrderParameters{
+			Side:        binanceapi.OrderSideBuy,
+			Type:        binanceapi.OrderTypeLimit,
+			TimeInForce: binanceapi.TimeInForceGTC,
 		}
 
 		var requestBody BuyOrderRequest
@@ -706,7 +706,7 @@ func PostBuyHandler(tradeService *tradeservice.TradeService,
 			log.WithError(err).
 				Errorf("Failed to post buy order.")
 			switch err := err.(type) {
-			case *binance.RestApiError:
+			case *binanceapi.RestApiError:
 				log.Debugf("Forwarding Binance error repsonse.")
 				w.WriteHeader(response.StatusCode)
 				w.Write(err.Body)
@@ -721,7 +721,7 @@ func PostBuyHandler(tradeService *tradeservice.TradeService,
 		}
 
 		data, err := ioutil.ReadAll(response.Body)
-		var buyResponse binance.PostOrderResponse
+		var buyResponse binanceapi.PostOrderResponse
 		if err := json.Unmarshal(data, &buyResponse); err != nil {
 			log.Printf("error: failed to decode buy order response: %v", err)
 		}

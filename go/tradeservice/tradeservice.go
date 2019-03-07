@@ -17,7 +17,7 @@ package tradeservice
 
 import (
 	"fmt"
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/db"
 	"gitlab.com/crankykernel/maker/go/idgenerator"
@@ -59,7 +59,7 @@ type TradeService struct {
 	tradeStreamManager *binanceex.TradeStreamManager
 	tradeStreamChannel binanceex.TradeStreamChannel
 
-	binanceExchangeInfo *binance.ExchangeInfoService
+	binanceExchangeInfo *binanceex.ExchangeInfoService
 }
 
 func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeService {
@@ -69,7 +69,7 @@ func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeS
 		idGenerator:         idgenerator.NewIdGenerator(),
 		subscribers:         make(map[chan TradeEvent]bool),
 		tradeStreamManager:  binanceStreamManager,
-		binanceExchangeInfo: binance.NewExchangeInfoService(),
+		binanceExchangeInfo: binanceex.NewExchangeInfoService(),
 	}
 
 	if err := tradeService.binanceExchangeInfo.Update(); err != nil {
@@ -102,7 +102,7 @@ func (s *TradeService) CalculateProfit(trade *types.Trade, price float64) float6
 	return profit
 }
 
-func (s *TradeService) onLastTrade(lastTrade *binance.StreamAggTrade) {
+func (s *TradeService) onLastTrade(lastTrade *binanceapi.StreamAggTrade) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	for _, trade := range s.TradesByLocalID {
@@ -351,7 +351,7 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
 	s.BroadcastTradeUpdate(trade)
 
-	lastPrice, err := binance.NewAnonymousClient().GetPriceTicker(trade.State.Symbol)
+	lastPrice, err := binanceapi.NewRestClient().GetPriceTicker(trade.State.Symbol)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"symbol": trade.State.Symbol,
@@ -384,7 +384,7 @@ func (s *TradeService) FailTrade(trade *types.Trade) {
 	s.BroadcastTradeUpdate(trade)
 }
 
-func (s *TradeService) FindTradeForReport(report binance.StreamExecutionReport) *types.Trade {
+func (s *TradeService) FindTradeForReport(report binanceapi.StreamExecutionReport) *types.Trade {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -434,9 +434,9 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 	}
 
 	switch report.Side {
-	case binance.OrderSideBuy:
+	case binanceapi.OrderSideBuy:
 		switch report.CurrentOrderStatus {
-		case binance.OrderStatusNew:
+		case binanceapi.OrderStatusNew:
 			trade.State.OpenTime = event.EventTime
 			trade.State.BuyOrder.Quantity = report.Quantity
 			trade.State.BuyOrder.Price = report.Price
@@ -447,20 +447,20 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 			if trade.State.LastBuyStatus == "" {
 				trade.State.LastBuyStatus = report.CurrentOrderStatus
 			}
-		case binance.OrderStatusCanceled:
+		case binanceapi.OrderStatusCanceled:
 			if trade.State.BuyFillQuantity == 0 {
 				trade.State.Status = types.TradeStatusCanceled
 			} else {
 				trade.State.Status = types.TradeStatusWatching
 			}
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
-		case binance.OrderStatusPartiallyFilled:
-			if trade.State.LastBuyStatus != binance.OrderStatusFilled {
+		case binanceapi.OrderStatusPartiallyFilled:
+			if trade.State.LastBuyStatus != binanceapi.OrderStatusFilled {
 				trade.State.LastBuyStatus = report.CurrentOrderStatus
 			}
 			trade.AddBuyFill(report)
 			s.UpdateSellableQuantity(trade)
-		case binance.OrderStatusFilled:
+		case binanceapi.OrderStatusFilled:
 			trade.AddBuyFill(report)
 			s.UpdateSellableQuantity(trade)
 			trade.State.Status = types.TradeStatusWatching
@@ -468,9 +468,9 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 			s.TriggerLimitSell(trade)
 		}
 
-	case binance.OrderSideSell:
+	case binanceapi.OrderSideSell:
 		switch report.CurrentOrderStatus {
-		case binance.OrderStatusNew:
+		case binanceapi.OrderStatusNew:
 			if trade.State.Status == types.TradeStatusDone {
 				// Sometimes we get the fill before the new.
 				break
@@ -478,15 +478,15 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 			trade.State.SellOrderId = report.OrderID
 			trade.State.Status = types.TradeStatusPendingSell
 			switch trade.State.SellOrder.Status {
-			case binance.OrderStatusPartiallyFilled:
-			case binance.OrderStatusFilled:
+			case binanceapi.OrderStatusPartiallyFilled:
+			case binanceapi.OrderStatusFilled:
 			default:
 				trade.State.SellOrder.Status = report.CurrentOrderStatus
 			}
 			trade.State.SellOrder.Type = report.OrderType
 			trade.State.SellOrder.Quantity = report.Quantity
 			trade.State.SellOrder.Price = report.Price
-		case binance.OrderStatusPartiallyFilled:
+		case binanceapi.OrderStatusPartiallyFilled:
 			fill := types.OrderFill{
 				Price:            report.LastExecutedPrice,
 				Quantity:         report.LastExecutedQuantity,
@@ -494,10 +494,10 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 				CommissionAmount: report.CommissionAmount,
 			}
 			trade.DoAddSellFill(fill)
-			if trade.State.SellOrder.Status != binance.OrderStatusFilled {
+			if trade.State.SellOrder.Status != binanceapi.OrderStatusFilled {
 				trade.State.SellOrder.Status = report.CurrentOrderStatus
 			}
-		case binance.OrderStatusFilled:
+		case binanceapi.OrderStatusFilled:
 			fill := types.OrderFill{
 				Price:            report.LastExecutedPrice,
 				Quantity:         report.LastExecutedQuantity,
@@ -507,7 +507,7 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 			trade.DoAddSellFill(fill)
 			trade.State.Status = types.TradeStatusDone
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
-		case binance.OrderStatusCanceled:
+		case binanceapi.OrderStatusCanceled:
 			trade.State.Status = types.TradeStatusWatching
 			trade.State.SellOrder.Status = report.CurrentOrderStatus
 		default:
@@ -600,10 +600,10 @@ func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
 		"tradeId":  trade.State.TradeID,
 	}).Info("Posting market sell order.")
 
-	order := binance.OrderParameters{
+	order := binanceapi.OrderParameters{
 		Symbol:           trade.State.Symbol,
-		Side:             binance.OrderSideSell,
-		Type:             binance.OrderTypeMarket,
+		Side:             binanceapi.OrderSideSell,
+		Type:             binanceapi.OrderTypeMarket,
 		Quantity:         quantity,
 		NewClientOrderId: clientOrderId,
 	}
@@ -654,11 +654,11 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 		"quantity": quantity,
 	}).Debugf("Posting limit sell order at percent.")
 
-	order := binance.OrderParameters{
+	order := binanceapi.OrderParameters{
 		Symbol:           trade.State.Symbol,
-		Side:             binance.OrderSideSell,
-		Type:             binance.OrderTypeLimit,
-		TimeInForce:      binance.TimeInForceGTC,
+		Side:             binanceapi.OrderSideSell,
+		Type:             binanceapi.OrderTypeLimit,
+		TimeInForce:      binanceapi.TimeInForceGTC,
 		Quantity:         quantity,
 		Price:            price,
 		NewClientOrderId: clientOrderId,
@@ -713,11 +713,11 @@ func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error
 		"quantity": trade.State.SellableQuantity,
 	}).Debugf("Posting limit sell order at price.")
 
-	order := binance.OrderParameters{
+	order := binanceapi.OrderParameters{
 		Symbol:           trade.State.Symbol,
-		Side:             binance.OrderSideSell,
-		Type:             binance.OrderTypeLimit,
-		TimeInForce:      binance.TimeInForceGTC,
+		Side:             binanceapi.OrderSideSell,
+		Type:             binanceapi.OrderTypeLimit,
+		TimeInForce:      binanceapi.TimeInForceGTC,
 		Quantity:         trade.State.SellableQuantity,
 		Price:            price,
 		NewClientOrderId: clientOrderId,
@@ -786,7 +786,7 @@ func (s *TradeService) CancelSell(trade *types.Trade) error {
 		"tradeId": trade.State.TradeID,
 		"orderId": trade.State.SellOrderId,
 	}).Info("Cancelling sell order.")
-	_, err := binanceex.GetBinanceRestClient().CancelOrder(
+	_, err := binanceex.GetBinanceRestClient().CancelOrderById(
 		trade.State.Symbol, trade.State.SellOrderId)
 	if err == nil {
 		trade.AddHistoryEntry(types.HistoryTypeSellCanceled, map[string]interface{}{
@@ -812,7 +812,7 @@ func (s *TradeService) CancelSell(trade *types.Trade) error {
 }
 
 func (s *TradeService) CancelBuy(trade *types.Trade) error {
-	_, err := binanceex.GetBinanceRestClient().CancelOrder(
+	_, err := binanceex.GetBinanceRestClient().CancelOrderById(
 		trade.State.Symbol, trade.State.BuyOrderId)
 	if err != nil {
 		trade.AddHistoryEntry(types.HistoryTypeBuyCanceled, map[string]interface{}{

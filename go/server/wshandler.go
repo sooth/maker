@@ -17,8 +17,8 @@ package server
 
 import (
 	"encoding/json"
+	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/websocket"
-	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/context"
 	"gitlab.com/crankykernel/maker/go/log"
@@ -194,12 +194,12 @@ Loop:
 }
 
 type MakerMessage struct {
-	Type                       MakerMessageType                   `json:"messageType"`
-	Trade                      *types.TradeState                  `json:"trade,omitempty"`
-	TradeID                    string                             `json:"tradeId,omitempty"`
-	BinanceAggTrade            *binance.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
-	BinanceOutboundAccountInfo *binance.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
-	Notice                     ClientNotice                       `json:"notice,omitempty"`
+	Type                       MakerMessageType                      `json:"messageType"`
+	Trade                      *types.TradeState                     `json:"trade,omitempty"`
+	TradeID                    string                                `json:"tradeId,omitempty"`
+	BinanceAggTrade            *binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
+	BinanceOutboundAccountInfo *binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
+	Notice                     ClientNotice                          `json:"notice,omitempty"`
 }
 
 type MakerMessageType string

@@ -18,26 +18,26 @@ package binanceex
 import (
 	"encoding/json"
 	"fmt"
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
 	"sync"
 	"time"
 )
 
-type TradeStreamChannel chan *binance.StreamAggTrade
+type TradeStreamChannel chan *binanceapi.StreamAggTrade
 
 type TradeStreamManager struct {
 	mutex         sync.RWMutex
 	subscriptions map[TradeStreamChannel]bool
-	streams       map[string]*binance.StreamClient
+	streams       map[string]*binanceapi.Stream
 	streamCount   map[string]int
 }
 
 func NewXTradeStreamManager() *TradeStreamManager {
 	return &TradeStreamManager{
 		subscriptions: make(map[TradeStreamChannel]bool),
-		streams:       make(map[string]*binance.StreamClient),
+		streams:       make(map[string]*binanceapi.Stream),
 		streamCount:   make(map[string]int),
 	}
 }
@@ -104,7 +104,7 @@ Retry:
 		return
 	}
 	streamName := fmt.Sprintf("%s@aggTrade", strings.ToLower(name))
-	stream, err := binance.OpenStream(streamName)
+	stream, err := binanceapi.OpenSingleStream(streamName)
 	if err != nil {
 		log.WithError(err).
 			WithField("stream", streamName).
@@ -113,7 +113,7 @@ Retry:
 		goto Retry
 	}
 	for {
-		_, payload, err := stream.Next()
+		payload, err := stream.Next()
 		if err != nil {
 			log.WithError(err).
 				WithField("stream", streamName).
@@ -133,7 +133,7 @@ Retry:
 			return
 		}
 
-		var trade binance.StreamAggTrade
+		var trade binanceapi.StreamAggTrade
 		if err := json.Unmarshal(payload, &trade); err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"name": name,

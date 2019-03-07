@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/websocket"
-	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/go/config"
 	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
@@ -37,8 +36,8 @@ const (
 type UserStreamEvent struct {
 	EventType           StreamEventType
 	EventTime           time.Time
-	OutboundAccountInfo binance.StreamOutboundAccountInfo
-	ExecutionReport     binance.StreamExecutionReport
+	OutboundAccountInfo binanceapi.StreamOutboundAccountInfo
+	ExecutionReport     binanceapi.StreamExecutionReport
 	Raw                 []byte
 }
 
@@ -175,7 +174,7 @@ Start:
 
 			switch {
 			case strings.HasPrefix(string(message), `{"e":"executionReport",`):
-				var orderUpdate binance.StreamExecutionReport
+				var orderUpdate binanceapi.StreamExecutionReport
 				if err := json.Unmarshal(message, &orderUpdate); err != nil {
 					log.WithError(err).Error("Failed to decode user stream executionReport message.")
 					continue

@@ -17,7 +17,7 @@ package server
 
 import (
 	"encoding/json"
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/config"
 	"gitlab.com/crankykernel/maker/go/log"
 	"net/http"
@@ -82,7 +82,7 @@ func BinanceTestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := binance.NewAuthenticatedClient(binanceApiKey, binanceApiSecret)
+	client := binanceapi.NewRestClient().WithAuth(binanceApiKey, binanceApiSecret)
 	_, err := client.GetAccount()
 	if err != nil {
 		log.WithError(err).Warn("Binance account authentication test failed.")

@@ -18,9 +18,9 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
-	"gitlab.com/crankykernel/cryptotrader/binance"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/context"
 	"gitlab.com/crankykernel/maker/go/db"
@@ -129,15 +129,15 @@ func ServerMain() {
 
 	go func() {
 		for {
-			client := binanceex.GetBinanceRestClient()
-			var response binance.TimeResponse
+			client := binanceapi.NewRestClient()
 			requestStart := time.Now()
-			err := client.GetAndDecode("/api/v1/time", nil, &response)
+			response, err := client.GetTime()
 			if err != nil {
 				log.WithError(err).Errorf("Failed to get from Binance API")
 				time.Sleep(1 * time.Minute)
 				continue
 			}
+
 			roundTripTime := time.Now().Sub(requestStart)
 			now := time.Now().UnixNano() / int64(time.Millisecond)
 			diff := math.Abs(float64(now - response.ServerTime))
@@ -250,8 +250,9 @@ func ServerMain() {
 		SaveBinanceConfigHandler).Methods("POST")
 	router.HandleFunc("/api/config/preferences",
 		SavePreferencesHandler).Methods("POST")
+
 	binanceApiProxyHandler := http.StripPrefix("/proxy/binance",
-		binance.NewBinanceApiProxyHandler())
+		binanceapi.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)
 
 	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext, clientNoticeService))

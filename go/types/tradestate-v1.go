@@ -16,7 +16,7 @@
 package types
 
 import (
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"time"
 )
 
@@ -119,10 +119,10 @@ type TradeState struct {
 	// The profit as a percentage (0-100).
 	ProfitPercent float64
 
-	LastBuyStatus binance.OrderStatus
+	LastBuyStatus binanceapi.OrderStatus
 
 	SellOrder struct {
-		Status   binance.OrderStatus
+		Status   binanceapi.OrderStatus
 		Type     string
 		Quantity float64
 		Price    float64

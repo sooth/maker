@@ -16,7 +16,7 @@
 package server
 
 import (
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/db"
 	"gitlab.com/crankykernel/maker/go/log"
@@ -32,7 +32,7 @@ func restoreTrades(tradeService *tradeservice.TradeService) {
 		log.Fatalf("error: failed to restore trade state: %v", err)
 	}
 
-	tradeHistoryCache := map[string][]binance.TradeResponse{}
+	tradeHistoryCache := map[string][]binanceapi.MyTradesResponseEntry{}
 
 	for _, state := range tradeStates {
 		position := types.NewTradeWithState(state)
@@ -50,9 +50,9 @@ func restoreTrades(tradeService *tradeservice.TradeService) {
 			}
 
 			switch order.Status {
-			case binance.OrderStatusNew:
+			case binanceapi.OrderStatusNew:
 				position.State.Status = types.TradeStatusPendingBuy
-			case binance.OrderStatusPartiallyFilled:
+			case binanceapi.OrderStatusPartiallyFilled:
 				position.State.Status = types.TradeStatusPendingBuy
 				trades := tradeHistoryCache[state.Symbol]
 				if trades == nil {
@@ -74,7 +74,7 @@ func restoreTrades(tradeService *tradeservice.TradeService) {
 						position.DoAddBuyFill(fill)
 					}
 				}
-			case binance.OrderStatusFilled:
+			case binanceapi.OrderStatusFilled:
 				position.State.Status = types.TradeStatusWatching
 				trades := tradeHistoryCache[state.Symbol]
 				if trades == nil {
@@ -108,7 +108,7 @@ func restoreTrades(tradeService *tradeservice.TradeService) {
 				log.WithError(err).Error("Failed to get order by ID.")
 			}
 			switch order.Status {
-			case binance.OrderStatusNew:
+			case binanceapi.OrderStatusNew:
 				// No change.
 			default:
 				log.WithFields(log.Fields{
@@ -128,15 +128,15 @@ func restoreTrades(tradeService *tradeservice.TradeService) {
 					"Failed to find existing order %d for %s.",
 					position.State.SellOrderId, position.State.Symbol)
 			} else {
-				if order.Status == binance.OrderStatusNew {
+				if order.Status == binanceapi.OrderStatusNew {
 					// Unchanged.
-				} else if order.Status == binance.OrderStatusCanceled {
+				} else if order.Status == binanceapi.OrderStatusCanceled {
 					log.WithFields(log.Fields{
 						"symbol":  state.Symbol,
 						"tradeId": state.TradeID,
 					}).Infof("Outstanding sell order has been canceled.")
 					position.State.Status = types.TradeStatusWatching
-				} else if order.Status == binance.OrderStatusFilled {
+				} else if order.Status == binanceapi.OrderStatusFilled {
 					trades := tradeHistoryCache[state.Symbol]
 					if trades == nil {
 						trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)

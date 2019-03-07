@@ -16,7 +16,7 @@
 package types
 
 import (
-	"gitlab.com/crankykernel/cryptotrader/binance"
+	"github.com/crankykernel/binanceapi-go"
 	"math"
 	"time"
 )
@@ -110,7 +110,7 @@ func (t *Trade) SetTrailingProfit(enable bool, percent float64, deviation float6
 	t.State.TrailingProfit.Deviation = deviation
 }
 
-func (t *Trade) AddBuyFill(report binance.StreamExecutionReport) {
+func (t *Trade) AddBuyFill(report binanceapi.StreamExecutionReport) {
 	fill := OrderFill{
 		Price:            report.LastExecutedPrice,
 		Quantity:         report.LastExecutedQuantity,
