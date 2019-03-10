@@ -13,6 +13,12 @@
   directory. https://gitlab.com/crankykernel/maker/issues/31
 - Filter display of active trades to all, open closed.
   https://gitlab.com/crankykernel/maker/issues/32
+- Add TLS support. TLS support can be enabled with the `--tls` command
+  line option, or by binding to non-localhost.
+  https://gitlab.com/crankykernel/maker/issues/3
+- Add authentication support. The `--auth` command line option is used
+  to enable authentication and will auto generate a strong password.
+  https://gitlab.com/crankykernel/maker/issues/1
 
 [Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.2...master)
 
