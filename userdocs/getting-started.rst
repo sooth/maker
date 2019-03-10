@@ -1,6 +1,18 @@
 Getting Started
 ===============
 
+Binance Setup
+-------------
+
+Before starting, head over to Binance and setup your API key and
+secret. The API key **must** have *trading* enabled, but it does not
+require *withdrawals*, and you should probably have *withdrawals*
+disabled.
+
+It is also **highly recommended** to use **BNB** as a fee currency to
+avoid `surprises
+<https://maker.crankykernel.com/faq/#use-bnb-to-pay-fees-why-is-my-loss-so-large-so-quickly>`_.
+
 Download the Maker Application
 ------------------------------
 
