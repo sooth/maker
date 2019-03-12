@@ -15,19 +15,12 @@
 
 import {Injectable} from "@angular/core";
 
-export let LOGGER: LoggerService = null;
-
 @Injectable({
     providedIn: "root",
 })
 export class LoggerService {
 
     constructor() {
-        if (LOGGER != null) {
-            console.log("error: global logger service not null.");
-        } else {
-            LOGGER = this;
-        }
     }
 
     log(msg) {
