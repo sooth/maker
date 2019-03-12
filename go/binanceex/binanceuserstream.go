@@ -20,6 +20,7 @@ import (
 	"github.com/crankykernel/binanceapi-go"
 	"gitlab.com/crankykernel/maker/go/clientnotificationservice"
 	"gitlab.com/crankykernel/maker/go/config"
+	"gitlab.com/crankykernel/maker/go/healthservice"
 	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
 	"sync"
@@ -67,13 +68,16 @@ type BinanceUserDataStream struct {
 	lock                sync.RWMutex
 	listenKey           *ListenKeyWrapper
 	notificationService *clientnotificationservice.Service
+	healthService       *healthservice.Service
 }
 
-func NewBinanceUserDataStream(notificationService *clientnotificationservice.Service) *BinanceUserDataStream {
+func NewBinanceUserDataStream(notificationService *clientnotificationservice.Service,
+	healthService *healthservice.Service) *BinanceUserDataStream {
 	return &BinanceUserDataStream{
 		Subscribers:         make(map[chan *UserStreamEvent]bool),
 		listenKey:           NewListenKeyWrapper(),
 		notificationService: notificationService,
+		healthService:       healthService,
 	}
 }
 
@@ -124,6 +128,9 @@ Fail:
 			WithData(map[string]interface{}{
 				"binanceUserSocketState": "failed",
 			}))
+	b.healthService.Update(func(state *healthservice.State) {
+		state.BinanceUserSocketState = "connection failed"
+	})
 	time.Sleep(time.Second)
 Start:
 	apiKey := config.GetString("binance.api.key")
@@ -168,6 +175,9 @@ Start:
 			"Connected to Binance user data stream.").WithData(map[string]interface{}{
 			"binanceUserSocketState": "ok",
 		}))
+	b.healthService.Update(func(state *healthservice.State) {
+		state.BinanceUserSocketState = "ok"
+	})
 
 	userStream.Conn.SetPingHandler(func(appData string) error {
 		log.WithFields(log.Fields{

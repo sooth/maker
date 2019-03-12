@@ -22,6 +22,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/clientnotificationservice"
 	"gitlab.com/crankykernel/maker/go/context"
+	"gitlab.com/crankykernel/maker/go/healthservice"
 	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/tradeservice"
 	"gitlab.com/crankykernel/maker/go/types"
@@ -34,14 +35,17 @@ import (
 type UserWebSocketHandler struct {
 	appContext          *context.ApplicationContext
 	clientNoticeService *clientnotificationservice.Service
+	healthService       *healthservice.Service
 }
 
 func NewUserWebSocketHandler(
 	appContext *context.ApplicationContext,
-	clientNoticeService *clientnotificationservice.Service) *UserWebSocketHandler {
+	clientNoticeService *clientnotificationservice.Service,
+	healthService *healthservice.Service) *UserWebSocketHandler {
 	return &UserWebSocketHandler{
 		appContext:          appContext,
 		clientNoticeService: clientNoticeService,
+		healthService:       healthService,
 	}
 }
 
@@ -133,6 +137,9 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	clientNoticeChannel := h.clientNoticeService.Subscribe()
 	defer h.clientNoticeService.Unsubscribe(clientNoticeChannel)
 
+	healthUpdateChannel := h.healthService.Subscribe()
+	defer h.healthService.Unsubscribe(healthUpdateChannel)
+
 Loop:
 	for {
 		select {
@@ -184,6 +191,11 @@ Loop:
 				Type:   MakerMessageTypeNotice,
 				Notice: notice,
 			}
+		case health := <-healthUpdateChannel:
+			writeChannel <- &MakerMessage{
+				Type:   MakerMessageTypeHealth,
+				Health: health,
+			}
 		}
 	}
 
@@ -201,6 +213,7 @@ type MakerMessage struct {
 	BinanceAggTrade            *binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
 	BinanceOutboundAccountInfo *binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
 	Notice                     *clientnotificationservice.Notice     `json:"notice,omitempty"`
+	Health                     *healthservice.State                  `json:"health,omitempty"`
 }
 
 type MakerMessageType string
@@ -211,3 +224,4 @@ const MakerMessageTypeTrade MakerMessageType = "trade"
 const MakerMessageTypeBinanceAggTrade MakerMessageType = "binanceAggTrade"
 const MakerMessageTypeBinanceAccountInfo MakerMessageType = "binanceOutboundAccountInfo"
 const MakerMessageTypeNotice MakerMessageType = "notice"
+const MakerMessageTypeHealth MakerMessageType = "health"

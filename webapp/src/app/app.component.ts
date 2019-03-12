@@ -17,7 +17,8 @@ import {Component, OnInit} from '@angular/core';
 import {BinanceService} from './binance.service';
 import {LoginService} from "./login.service";
 import {MakerApiService} from "./maker-api.service";
-import {MakerSocketService} from "./maker-socket.service";
+import {MakerSocketService, MakerSocketState} from "./maker-socket.service";
+import {MakerService} from "./maker.service";
 
 @Component({
     selector: 'app-root',
@@ -28,10 +29,21 @@ export class AppComponent implements OnInit {
 
     ticker: { [key: string]: number } = {};
 
-    constructor(public binance: BinanceService,
+    alertClass: string = "alert-dark";
+
+    status: any = {
+        makerSocketOk: false,
+        makerSocketState: "initializing",
+        binanceUserSocketOk: false,
+        binanceUserSocketState: "initializing",
+    };
+
+    constructor(private binance: BinanceService,
                 public makerApi: MakerApiService,
                 public loginService: LoginService,
-                public makerSocket: MakerSocketService) {
+                private makerService: MakerService,
+                private makerSocket: MakerSocketService) {
+        this.status.makerSocketState = makerSocket.state;
     }
 
     ngOnInit() {
@@ -40,6 +52,42 @@ export class AppComponent implements OnInit {
                 this.ticker[ticker.symbol] = ticker.price;
             });
         });
+
+        this.makerSocket.stateChange$.subscribe((state: string) => {
+            console.log("Make socket state changed: " + state);
+            if (state === MakerSocketState.CONNECTED) {
+                this.status.makerSocketOk = true;
+                this.status.makerSocketState = "OK";
+            } else {
+                this.status.makerSocketOk = false;
+                this.status.makerSocketState = state;
+
+                this.status.binanceUserSocketState = "unknown";
+                this.status.binanceUserSocketOk = false;
+            }
+            this.updateAlertColor();
+        });
+
+        this.makerService.statusUpdate$.subscribe((status) => {
+            console.log("Maker server status: " + JSON.stringify(status));
+            if (status.binanceUserSocketState === "ok") {
+                this.status.binanceUserSocketOk = true;
+                this.status.binanceUserSocketState = "OK"
+            } else {
+                this.status.binanceUserSocketOk = false;
+                this.status.binanceUserSocketState = status.binanceUserSocketState || "unknown";
+            }
+            this.updateAlertColor();
+        });
+
+    }
+
+    private updateAlertColor() {
+        if (this.status.makerSocketOk && this.status.binanceUserSocketOk) {
+            this.alertClass = "alert-success";
+        } else {
+            this.alertClass = "alert-danger";
+        }
     }
 
     logout() {

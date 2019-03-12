@@ -58,6 +58,8 @@ export class MakerService {
 
     private logger: Logger = null;
 
+    statusUpdate$: Subject<any> = new Subject();
+
     constructor(logger: LoggerService,
                 private toastr: ToastrService,
                 private loginService: LoginService,
@@ -102,6 +104,9 @@ export class MakerService {
             case MakerMessageType.NOTICE:
                 this.handleNotification(message.notice);
                 break;
+            case MakerMessageType.STATUS:
+                this.statusUpdate$.next(message.health);
+                break;
             default:
                 this.logger.log(`Unhandled message type: ${message.messageType}`);
                 this.logger.log(message);
@@ -110,7 +115,6 @@ export class MakerService {
     }
 
     private handleNotification(notice: any) {
-        console.log(notice);
         switch (notice.level) {
             case "error":
                 this.toastr.error(notice.message, "Error", {
@@ -329,6 +333,7 @@ export interface MakerMessage {
 export enum MakerMessageType {
     VERSION = "version",
     NOTICE = "notice",
+    STATUS = "health",
     TRADE = "trade",
     BINANCE_AGG_TRADE = "binanceAggTrade",
     TRADE_ARCHIVED = "tradeArchived",

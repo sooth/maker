@@ -26,6 +26,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/context"
 	"gitlab.com/crankykernel/maker/go/db"
 	"gitlab.com/crankykernel/maker/go/gencert"
+	"gitlab.com/crankykernel/maker/go/healthservice"
 	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/tradeservice"
 	"gitlab.com/crankykernel/maker/go/version"
@@ -123,9 +124,10 @@ func ServerMain() {
 	binancePriceService := binanceex.NewBinancePriceService(binanceExchangeInfoService)
 
 	clientNotificationService := clientnotificationservice.New()
+	healthService := healthservice.New()
 
 	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream(
-		clientNotificationService)
+		clientNotificationService, healthService)
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
 	go applicationContext.BinanceUserDataStream.Run()
 
@@ -257,7 +259,8 @@ func ServerMain() {
 		binanceapi.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)
 
-	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext, clientNotificationService))
+	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext,
+		clientNotificationService, healthService))
 
 	router.PathPrefix("/").HandlerFunc(staticAssetHandler())
 

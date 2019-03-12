@@ -15,13 +15,13 @@
 
 import {Injectable} from '@angular/core';
 import {MakerApiService} from "./maker-api.service";
-import {Subject} from "rxjs";
+import {ReplaySubject, Subject} from "rxjs";
 
-enum State {
+export enum MakerSocketState {
     INITIALIZING = "initializing",
     CONNECTING = "connecting",
     CONNECTED = "connected",
-    ERRORED = "errored",
+    ERROR = "error",
     DISCONNECTED = "disconnected"
 }
 
@@ -30,13 +30,16 @@ enum State {
 })
 export class MakerSocketService {
 
-    public state: State = State.INITIALIZING;
+    public state: MakerSocketState = MakerSocketState.INITIALIZING;
 
     private reconnects = 0;
 
     $messages = new Subject();
 
+    stateChange$: ReplaySubject<string> = new ReplaySubject();
+
     constructor(private makerApi: MakerApiService) {
+        this.stateChange$.next(this.state);
     }
 
     start() {
@@ -51,19 +54,24 @@ export class MakerSocketService {
         console.log("maker-socket: " + msg);
     }
 
+    private setState(state: MakerSocketState) {
+        this.state = state;
+        this.stateChange$.next(this.state);
+    }
+
     private connect() {
-        this.state = State.CONNECTING;
+        this.state = MakerSocketState.CONNECTING;
 
         const ws = this.makerApi.openWebsocket();
 
         ws.onopen = () => {
-            this.state = State.CONNECTED;
+            this.setState(MakerSocketState.CONNECTED);
             this.reconnects = 0;
             this.log("connected");
         };
 
         ws.onerror = () => {
-            this.state = State.ERRORED;
+            this.setState(MakerSocketState.ERROR);
             this.log("an error occurred, disconnecting");
             ws.close();
         };
@@ -79,8 +87,8 @@ export class MakerSocketService {
         };
 
         ws.onclose = () => {
-            if (this.state !== State.ERRORED) {
-                this.state = State.DISCONNECTED;
+            if (this.state !== MakerSocketState.ERROR) {
+                this.setState(MakerSocketState.DISCONNECTED);
             }
             this.log("closed");
             this.reconnect();
