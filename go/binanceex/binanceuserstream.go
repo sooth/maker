@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Cranky Kernel
+// Copyright (C) 2018-2019 Cranky Kernel
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,7 +18,6 @@ package binanceex
 import (
 	"encoding/json"
 	"github.com/crankykernel/binanceapi-go"
-	"github.com/gorilla/websocket"
 	"gitlab.com/crankykernel/maker/go/config"
 	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
@@ -33,6 +32,27 @@ const (
 	EventTypeOutboundAccountInfo StreamEventType = "outboundAccountInfo"
 )
 
+type ListenKeyWrapper struct {
+	lock      sync.Mutex
+	listenKey string
+}
+
+func NewListenKeyWrapper() *ListenKeyWrapper {
+	return &ListenKeyWrapper{}
+}
+
+func (k *ListenKeyWrapper) Set(listenKey string) {
+	k.lock.Lock()
+	defer k.lock.Unlock()
+	k.listenKey = listenKey
+}
+
+func (k *ListenKeyWrapper) Get() string {
+	k.lock.Lock()
+	defer k.lock.Unlock()
+	return k.listenKey
+}
+
 type UserStreamEvent struct {
 	EventType           StreamEventType
 	EventTime           time.Time
@@ -44,11 +64,13 @@ type UserStreamEvent struct {
 type BinanceUserDataStream struct {
 	Subscribers map[chan *UserStreamEvent]bool
 	lock        sync.RWMutex
+	listenKey   *ListenKeyWrapper
 }
 
 func NewBinanceUserDataStream() *BinanceUserDataStream {
 	return &BinanceUserDataStream{
 		Subscribers: make(map[chan *UserStreamEvent]bool),
+		listenKey:   NewListenKeyWrapper(),
 	}
 }
 
@@ -67,133 +89,108 @@ func (b *BinanceUserDataStream) Unsubscribe(channel chan *UserStreamEvent) {
 	delete(b.Subscribers, channel)
 }
 
-func (b *BinanceUserDataStream) Run() {
-	b.DoRun()
+func (b *BinanceUserDataStream) ListenKeyRefreshLoop() {
+	client := binanceapi.NewRestClient().WithAuth(config.GetString("binance.api.key"), "")
+	for {
+		time.Sleep(time.Minute)
+		listenKey := b.listenKey.Get()
+		if listenKey == "" {
+			log.Debugf("No Binance user stream key set, will not refresh")
+		} else {
+			log.Debugf("Refreshing Binance user stream listen key")
+			if err := client.PutUserStreamKeepAlive(listenKey); err != nil {
+				log.WithError(err).Errorf("Failed to send Binance user stream keep alive.")
+			}
+		}
+	}
 }
 
-func (b *BinanceUserDataStream) DoRun() {
-	intervalDuration := time.Minute
-	intervalChannel := make(chan bool)
+func (b *BinanceUserDataStream) Run() {
 	lastPong := time.Now()
 	configChannel := config.Subscribe()
 
-	go func() {
-		for {
-			time.Sleep(intervalDuration)
-			select {
-			case intervalChannel <- true:
-			default:
-				log.Errorf("Failed to send OK to interval channel.")
-			}
-		}
-	}()
+	go b.ListenKeyRefreshLoop()
 
 	goto Start
-
 Fail:
-	select {
-	case intervalChannel <- false:
-	default:
-	}
+	b.listenKey.Set("")
 	time.Sleep(time.Second)
-
 Start:
 	apiKey := config.GetString("binance.api.key")
 
+	// Wait for key to be set if needed.
 	if apiKey == "" {
 		log.Infof("Binance API key not set. Waiting for configuration update.")
 		<-configChannel
 		goto Start
 	}
 
+	// First we have to get the user stream listen key.
+	client := binanceapi.NewRestClient().WithAuth(config.GetString("binance.api.key"), "")
+	listenKey, err := client.GetUserDataStream()
+	if err != nil {
+		log.WithError(err).Error("Failed to get Binance user stream key. Retyring.")
+		goto Fail
+	} else {
+		log.WithFields(log.Fields{
+			"listenKey": listenKey,
+		}).Debugf("Acquired Binance user stream listen key")
+	}
+
+	userStream, err := binanceapi.OpenSingleStream(listenKey)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to open Binance user stream")
+		goto Fail
+	}
+	b.listenKey.Set(listenKey)
+
+	log.Infof("Connected to Binance user stream websocket.")
+	userStream.Conn.SetPongHandler(func(appData string) error {
+		log.WithFields(log.Fields{
+			"data": appData,
+		}).Debugf("Received Binance user stream pong")
+		lastPong = time.Now()
+		return nil
+	})
+
+	userStream.Conn.SetPingHandler(func(appData string) error {
+		log.WithFields(log.Fields{
+			"data": appData,
+		}).Debugf("Received Binance user stream ping")
+		return nil
+	})
+
 	for {
-		// First we have to get the user stream listen key.
-		client := binanceapi.NewRestClient().WithAuth(config.GetString("binance.api.key"), "")
-		listenKey, err := client.GetUserDataStream()
+		message, err := userStream.Next()
 		if err != nil {
-			log.WithError(err).Error("Failed to get Binance user stream key. Retyring.")
+			log.WithError(err).Errorf("Failed to read next Binance user stream message")
 			goto Fail
 		}
 
-		userStream, err := binanceapi.OpenSingleStream(listenKey)
-		if err != nil {
-			log.Printf("Failed to open user data stream: %v", err)
-			goto Fail
+		streamEvent := UserStreamEvent{}
+		streamEvent.Raw = message
+
+		switch {
+		case strings.HasPrefix(string(message), `{"e":"executionReport",`):
+			var orderUpdate binanceapi.StreamExecutionReport
+			if err := json.Unmarshal(message, &orderUpdate); err != nil {
+				log.WithError(err).Error("Failed to decode user stream executionReport message.")
+				continue
+			}
+			streamEvent.EventType = StreamEventType(orderUpdate.EventType)
+			streamEvent.EventTime = time.Unix(0, orderUpdate.EventTimeMillis*int64(time.Millisecond))
+			streamEvent.ExecutionReport = orderUpdate
+		case strings.HasPrefix(string(message), `{"e":"outboundAccountInfo",`):
+			if err := json.Unmarshal(message, &streamEvent.OutboundAccountInfo); err != nil {
+				log.WithError(err).Error("Failed to decode user stream outboundAccountInfo message.")
+				continue
+			}
+			streamEvent.EventType = StreamEventType(streamEvent.OutboundAccountInfo.EventType)
+			streamEvent.EventTime = time.Unix(0, streamEvent.OutboundAccountInfo.EventTimeMillis*int64(time.Millisecond))
 		}
 
-		log.Infof("Connected to Binance user stream websocket.")
-		userStream.Conn.SetPongHandler(func(appData string) error {
-			lastPong = time.Now()
-			return nil
-		})
-
-		go func() {
-			for {
-				if time.Now().Sub(lastPong) > intervalDuration*2 {
-					log.Errorf("Last user stream PONG received %v ago.", intervalDuration)
-					userStream.Close()
-					return
-				}
-
-				if err := userStream.Conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-					log.WithError(err).Error("Failed to send user stream PING message.")
-					userStream.Close()
-					return
-				}
-
-				if err := client.PutUserStreamKeepAlive(listenKey); err != nil {
-					log.WithError(err).Error("Failed to send user stream keep alive.")
-					userStream.Close()
-					return
-				}
-
-				select {
-				case ok := <-intervalChannel:
-					if !ok {
-						log.Infof("Binance user stream PING loop exiting.")
-						return
-					}
-				case <-configChannel:
-					log.Infof("Binance user stream: received configuration update.")
-					userStream.Close()
-					return
-				}
-
-			}
-		}()
-
-		for {
-			message, err := userStream.Next()
-			if err != nil {
-				log.WithError(err).Error("Failed to read next user stream message.")
-				goto Fail
-			}
-
-			streamEvent := UserStreamEvent{}
-			streamEvent.Raw = message
-
-			switch {
-			case strings.HasPrefix(string(message), `{"e":"executionReport",`):
-				var orderUpdate binanceapi.StreamExecutionReport
-				if err := json.Unmarshal(message, &orderUpdate); err != nil {
-					log.WithError(err).Error("Failed to decode user stream executionReport message.")
-					continue
-				}
-				streamEvent.EventType = StreamEventType(orderUpdate.EventType)
-				streamEvent.EventTime = time.Unix(0, orderUpdate.EventTimeMillis*int64(time.Millisecond))
-				streamEvent.ExecutionReport = orderUpdate
-			case strings.HasPrefix(string(message), `{"e":"outboundAccountInfo",`):
-				if err := json.Unmarshal(message, &streamEvent.OutboundAccountInfo); err != nil {
-					log.WithError(err).Error("Failed to decode user stream outboundAccountInfo message.")
-					continue
-				}
-				streamEvent.EventType = StreamEventType(streamEvent.OutboundAccountInfo.EventType)
-				streamEvent.EventTime = time.Unix(0, streamEvent.OutboundAccountInfo.EventTimeMillis*int64(time.Millisecond))
-			}
-
-			for channel := range b.Subscribers {
-				channel <- &streamEvent
-			}
+		for channel := range b.Subscribers {
+			channel <- &streamEvent
 		}
 	}
 }
