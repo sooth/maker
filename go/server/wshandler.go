@@ -20,6 +20,7 @@ import (
 	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/websocket"
 	"gitlab.com/crankykernel/maker/go/binanceex"
+	"gitlab.com/crankykernel/maker/go/clientnotificationservice"
 	"gitlab.com/crankykernel/maker/go/context"
 	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/tradeservice"
@@ -32,12 +33,12 @@ import (
 // to for state updates.
 type UserWebSocketHandler struct {
 	appContext          *context.ApplicationContext
-	clientNoticeService *ClientNoticeService
+	clientNoticeService *clientnotificationservice.Service
 }
 
 func NewUserWebSocketHandler(
 	appContext *context.ApplicationContext,
-	clientNoticeService *ClientNoticeService) *UserWebSocketHandler {
+	clientNoticeService *clientnotificationservice.Service) *UserWebSocketHandler {
 	return &UserWebSocketHandler{
 		appContext:          appContext,
 		clientNoticeService: clientNoticeService,
@@ -199,7 +200,7 @@ type MakerMessage struct {
 	TradeID                    string                                `json:"tradeId,omitempty"`
 	BinanceAggTrade            *binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
 	BinanceOutboundAccountInfo *binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
-	Notice                     ClientNotice                          `json:"notice,omitempty"`
+	Notice                     *clientnotificationservice.Notice     `json:"notice,omitempty"`
 }
 
 type MakerMessageType string

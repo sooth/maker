@@ -22,6 +22,7 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 	"gitlab.com/crankykernel/maker/go/binanceex"
+	"gitlab.com/crankykernel/maker/go/clientnotificationservice"
 	"gitlab.com/crankykernel/maker/go/context"
 	"gitlab.com/crankykernel/maker/go/db"
 	"gitlab.com/crankykernel/maker/go/gencert"
@@ -121,11 +122,12 @@ func ServerMain() {
 	binanceExchangeInfoService := initBinanceExchangeInfoService()
 	binancePriceService := binanceex.NewBinancePriceService(binanceExchangeInfoService)
 
-	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream()
+	clientNotificationService := clientnotificationservice.New()
+
+	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream(
+		clientNotificationService)
 	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
 	go applicationContext.BinanceUserDataStream.Run()
-
-	clientNoticeService := NewClientNoticeService()
 
 	go func() {
 		for {
@@ -146,7 +148,7 @@ func ServerMain() {
 					"roundTripTime":          roundTripTime,
 					"binanceTimeDifferentMs": diff,
 				}).Warnf("Time difference from Binance servers may be too large; order may fail")
-				clientNoticeService.Broadcast(NewClientNotice(ClientNoticeLevelWarning,
+				clientNotificationService.Broadcast(clientnotificationservice.NewNotice(clientnotificationservice.LevelWarning,
 					"Time difference between Binance and Maker server too large, orders may fail."))
 			} else {
 				log.WithFields(log.Fields{
@@ -255,7 +257,7 @@ func ServerMain() {
 		binanceapi.NewBinanceApiProxyHandler())
 	router.PathPrefix("/proxy/binance").Handler(binanceApiProxyHandler)
 
-	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext, clientNoticeService))
+	router.PathPrefix("/ws").Handler(NewUserWebSocketHandler(applicationContext, clientNotificationService))
 
 	router.PathPrefix("/").HandlerFunc(staticAssetHandler())
 

@@ -110,12 +110,32 @@ export class MakerService {
     }
 
     private handleNotification(notice: any) {
-        this.toastr.warning(notice.message, "Warning", {
-            closeButton: true,
-            preventDuplicates: true,
-            timeOut: 10000,
-            progressBar: true,
-        });
+        console.log(notice);
+        switch (notice.level) {
+            case "error":
+                this.toastr.error(notice.message, "Error", {
+                    closeButton: true,
+                    preventDuplicates: true,
+                    timeOut: 10000,
+                    progressBar: true,
+                });
+                break;
+            case "info":
+                this.toastr.info(notice.message, "", {
+                    closeButton: true,
+                    preventDuplicates: true,
+                    timeOut: 10000,
+                    progressBar: true,
+                });
+                break;
+            default:
+                this.toastr.warning(notice.message, "Warning", {
+                    closeButton: true,
+                    preventDuplicates: true,
+                    timeOut: 10000,
+                    progressBar: true,
+                });
+        }
     }
 
     private checkVersion(versionMesage: VersionMessage) {

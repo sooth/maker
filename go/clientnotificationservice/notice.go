@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Cranky Kernel
+// Copyright (C) 2018-2019 Cranky Kernel
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -13,46 +13,54 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package server
+package clientnotificationservice
 
 import "sync"
 
-type ClientNoticeLevel string
+type Level string
 
-const ClientNoticeLevelWarning = "warning"
+const LevelInfo = "info"
+const LevelWarning = "warning"
+const LevelError = "error"
 
-type ClientNotice struct {
-	Level   ClientNoticeLevel `json:"level"`
-	Message string            `json:"message"`
+type Notice struct {
+	Level   Level                  `json:"level"`
+	Message string                 `json:"message"`
+	Data    map[string]interface{} `json:"data"`
 }
 
-func NewClientNotice(level ClientNoticeLevel, msg string) ClientNotice {
-	return ClientNotice{
+func NewNotice(level Level, msg string) *Notice {
+	return &Notice{
 		Level:   level,
 		Message: msg,
 	}
 }
 
-type ClientNoticeService struct {
-	lock        sync.RWMutex
-	subscribers map[chan ClientNotice]bool
+func (n *Notice) WithData(data map[string]interface{}) *Notice {
+	n.Data = data
+	return n
 }
 
-func NewClientNoticeService() *ClientNoticeService {
-	return &ClientNoticeService{
-		subscribers: make(map[chan ClientNotice]bool),
+type Service struct {
+	lock        sync.RWMutex
+	subscribers map[chan *Notice]bool
+}
+
+func New() *Service {
+	return &Service{
+		subscribers: make(map[chan *Notice]bool),
 	}
 }
 
-func (s *ClientNoticeService) Subscribe() chan ClientNotice {
+func (s *Service) Subscribe() chan *Notice {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	channel := make(chan ClientNotice)
+	channel := make(chan *Notice)
 	s.subscribers[channel] = true
 	return channel
 }
 
-func (s *ClientNoticeService) Unsubscribe(channel chan ClientNotice) {
+func (s *Service) Unsubscribe(channel chan *Notice) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if _, exists := s.subscribers[channel]; !exists {
@@ -61,10 +69,10 @@ func (s *ClientNoticeService) Unsubscribe(channel chan ClientNotice) {
 	delete(s.subscribers, channel)
 }
 
-func (s *ClientNoticeService) Broadcast(notice ClientNotice) {
+func (s *Service) Broadcast(notice *Notice) {
 	s.lock.RLock()
+	defer s.lock.RUnlock()
 	for channel := range s.subscribers {
 		channel <- notice
 	}
-	s.lock.RUnlock()
 }

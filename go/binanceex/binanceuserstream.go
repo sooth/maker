@@ -18,6 +18,7 @@ package binanceex
 import (
 	"encoding/json"
 	"github.com/crankykernel/binanceapi-go"
+	"gitlab.com/crankykernel/maker/go/clientnotificationservice"
 	"gitlab.com/crankykernel/maker/go/config"
 	"gitlab.com/crankykernel/maker/go/log"
 	"strings"
@@ -62,15 +63,17 @@ type UserStreamEvent struct {
 }
 
 type BinanceUserDataStream struct {
-	Subscribers map[chan *UserStreamEvent]bool
-	lock        sync.RWMutex
-	listenKey   *ListenKeyWrapper
+	Subscribers         map[chan *UserStreamEvent]bool
+	lock                sync.RWMutex
+	listenKey           *ListenKeyWrapper
+	notificationService *clientnotificationservice.Service
 }
 
-func NewBinanceUserDataStream() *BinanceUserDataStream {
+func NewBinanceUserDataStream(notificationService *clientnotificationservice.Service) *BinanceUserDataStream {
 	return &BinanceUserDataStream{
-		Subscribers: make(map[chan *UserStreamEvent]bool),
-		listenKey:   NewListenKeyWrapper(),
+		Subscribers:         make(map[chan *UserStreamEvent]bool),
+		listenKey:           NewListenKeyWrapper(),
+		notificationService: notificationService,
 	}
 }
 
@@ -114,6 +117,13 @@ func (b *BinanceUserDataStream) Run() {
 	goto Start
 Fail:
 	b.listenKey.Set("")
+	b.notificationService.Broadcast(
+		clientnotificationservice.NewNotice(
+			clientnotificationservice.LevelError,
+			"Failed to connect to Binance user socket").
+			WithData(map[string]interface{}{
+				"binanceUserSocketState": "failed",
+			}))
 	time.Sleep(time.Second)
 Start:
 	apiKey := config.GetString("binance.api.key")
@@ -152,6 +162,12 @@ Start:
 		lastPong = time.Now()
 		return nil
 	})
+	b.notificationService.Broadcast(
+		clientnotificationservice.NewNotice(
+			clientnotificationservice.LevelInfo,
+			"Connected to Binance user data stream.").WithData(map[string]interface{}{
+			"binanceUserSocketState": "ok",
+		}))
 
 	userStream.Conn.SetPingHandler(func(appData string) error {
 		log.WithFields(log.Fields{
