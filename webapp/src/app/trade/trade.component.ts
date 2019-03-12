@@ -380,6 +380,11 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         this.updateOrderFormAssetAmount();
     }
 
+    fixManualPriceInput() {
+        this.orderForm.manualPrice = this.toFixed(+this.orderForm.manualPrice, 8);
+        this.updateOrderFormAssetAmount();
+    }
+
     private onAggTrade(trade: AggTrade) {
         if (trade.symbol === this.orderFormSettings.symbol) {
             this.updateOrderFormAssetAmount();
@@ -483,11 +488,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             this.orderForm.limitSellPrice = this.ticker.last.toFixed(8);
         }
 
-    }
-
-    onManualPriceInput() {
-        this.orderForm.manualPrice = this.toFixed(this.orderForm.manualPrice, 8);
-        this.updateOrderFormAssetAmount();
     }
 
     onPriceSourceChange() {
