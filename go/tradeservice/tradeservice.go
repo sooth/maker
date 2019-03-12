@@ -320,7 +320,9 @@ func (s *TradeService) RestoreTrade(trade *types.Trade) {
 		s.TradesByClientID[clientOrderId] = trade
 	}
 	s.UpdateSellableQuantity(trade)
-	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
+	if !trade.IsDone() {
+		s.tradeStreamManager.AddSymbol(trade.State.Symbol)
+	}
 }
 
 func (s *TradeService) AddNewTrade(trade *types.Trade) string {

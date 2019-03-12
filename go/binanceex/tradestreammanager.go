@@ -112,6 +112,9 @@ Retry:
 		time.Sleep(1 * time.Second)
 		goto Retry
 	}
+	log.WithFields(log.Fields{
+		"symbol": name,
+	}).Infof("Connected to trade Binance aggTrade stream")
 	for {
 		payload, err := stream.Next()
 		if err != nil {
