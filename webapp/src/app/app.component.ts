@@ -17,6 +17,7 @@ import {Component, OnInit} from '@angular/core';
 import {BinanceService} from './binance.service';
 import {LoginService} from "./login.service";
 import {MakerApiService} from "./maker-api.service";
+import {MakerSocketService} from "./maker-socket.service";
 
 @Component({
     selector: 'app-root',
@@ -29,7 +30,8 @@ export class AppComponent implements OnInit {
 
     constructor(public binance: BinanceService,
                 public makerApi: MakerApiService,
-                public loginService: LoginService) {
+                public loginService: LoginService,
+                public makerSocket: MakerSocketService) {
     }
 
     ngOnInit() {

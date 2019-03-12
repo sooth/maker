@@ -34,6 +34,7 @@ import {GIT_REVISION, VERSION} from "../environments/version";
 import {take} from "rxjs/operators";
 import {LoginService} from "./login.service";
 import {MakerApiService} from "./maker-api.service";
+import {MakerSocketService} from "./maker-socket.service";
 
 export interface TradeMap {
     [key: string]: TradeState;
@@ -43,8 +44,6 @@ export interface TradeMap {
     providedIn: "root"
 })
 export class MakerService {
-
-    private webSocket: MakerWebSocket = null;
 
     public tradeMap: TradeMap = {};
 
@@ -63,8 +62,12 @@ export class MakerService {
                 private toastr: ToastrService,
                 private loginService: LoginService,
                 private makerApi: MakerApiService,
-                private binanceApi: BinanceApiService) {
+                private binanceApi: BinanceApiService,
+                private makerSocket: MakerSocketService) {
         this.logger = logger.getLogger("maker-service");
+        this.makerSocket.$messages.subscribe((msg) => {
+            this.onSocketMesasge(msg);
+        });
         this.loginService.$onLogin.asObservable().pipe(take(1))
             .subscribe((result) => {
                 this.init();
@@ -72,37 +75,38 @@ export class MakerService {
     }
 
     private init() {
-        this.webSocket = new MakerWebSocket(this.makerApi);
-        this.webSocket.onMessage = (message: MakerMessage) => {
-            switch (message.messageType) {
-                case MakerMessageType.TRADE:
-                    this.onTrade(message.trade);
-                    break;
-                case MakerMessageType.BINANCE_AGG_TRADE:
-                    const aggTrade = buildAggTradeFromStream(message.binanceAggTrade);
-                    this.binanceAggTrades$.next(aggTrade);
-                    break;
-                case MakerMessageType.TRADE_ARCHIVED:
-                    delete (this.tradeMap[message.tradeId]);
-                    this.tradeMap$.next(this.tradeMap);
-                    break;
-                case MakerMessageType.BINANCE_OUTBOUND_ACCOUNT_INFO:
-                    const accountInfo = AccountInfo.fromStream(
-                        message.binanceOutboundAccountInfo);
-                    this.binanceAccountInfo$.next(accountInfo);
-                    break;
-                case MakerMessageType.VERSION:
-                    this.checkVersion(<VersionMessage>message);
-                    break;
-                case MakerMessageType.NOTICE:
-                    this.handleNotification(message.notice);
-                    break;
-                default:
-                    this.logger.log(`Unhandled message type: ${message.messageType}`);
-                    this.logger.log(message);
-                    break;
-            }
-        };
+        this.makerSocket.start();
+    }
+
+    private onSocketMesasge(message: any) {
+        switch (message.messageType) {
+            case MakerMessageType.TRADE:
+                this.onTrade(message.trade);
+                break;
+            case MakerMessageType.BINANCE_AGG_TRADE:
+                const aggTrade = buildAggTradeFromStream(message.binanceAggTrade);
+                this.binanceAggTrades$.next(aggTrade);
+                break;
+            case MakerMessageType.TRADE_ARCHIVED:
+                delete (this.tradeMap[message.tradeId]);
+                this.tradeMap$.next(this.tradeMap);
+                break;
+            case MakerMessageType.BINANCE_OUTBOUND_ACCOUNT_INFO:
+                const accountInfo = AccountInfo.fromStream(
+                    message.binanceOutboundAccountInfo);
+                this.binanceAccountInfo$.next(accountInfo);
+                break;
+            case MakerMessageType.VERSION:
+                this.checkVersion(<VersionMessage>message);
+                break;
+            case MakerMessageType.NOTICE:
+                this.handleNotification(message.notice);
+                break;
+            default:
+                this.logger.log(`Unhandled message type: ${message.messageType}`);
+                this.logger.log(message);
+                break;
+        }
     }
 
     private handleNotification(notice: any) {
@@ -315,58 +319,4 @@ export enum MakerMessageType {
 interface VersionMessage extends MakerMessage {
     version: string,
     git_revision: string,
-}
-
-class MakerWebSocket {
-
-    private reconnects = 0;
-
-    public onMessage: { (any) } = null;
-
-    constructor(private api: MakerApiService) {
-        this.connect();
-    }
-
-    private connect() {
-        const ws = this.api.openWebsocket();
-
-        ws.onopen = (_) => {
-            console.log("maker websocket opened");
-            this.reconnects = 0;
-        };
-
-        ws.onerror = (event) => {
-            console.log("maker websocket error:");
-            console.log(event);
-            ws.close();
-        };
-
-        ws.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data);
-                if (this.onMessage) {
-                    this.onMessage(message);
-                }
-            } catch (err) {
-                console.log("failed to parse maker socket event:");
-                console.log(event);
-            }
-        };
-
-        ws.onclose = () => {
-            console.log("maker: websocket closed");
-            this.reconnect();
-        };
-    }
-
-    private reconnect() {
-        if (this.reconnects > 1) {
-            setTimeout(() => {
-                this.connect();
-            }, 1000);
-        } else {
-            this.connect();
-        }
-        this.reconnects++;
-    }
 }
