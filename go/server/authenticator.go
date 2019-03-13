@@ -154,12 +154,10 @@ func (m *Authenticator) Middleware(next http.Handler) http.Handler {
 
 		sessionId := r.FormValue("sessionId")
 		if sessionId != "" {
-			log.Infof("Validation sessionId: %s", sessionId)
 			if m.hasSession(sessionId) {
 				next.ServeHTTP(w, r)
 				return
 			}
-			log.Infof("Session ID is not valid.")
 		}
 
 		sessionId = r.Header.Get("X-Session-ID")
