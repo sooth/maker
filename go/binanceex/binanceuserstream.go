@@ -177,13 +177,6 @@ Start:
 		state.BinanceUserSocketState = "ok"
 	})
 
-	userStream.Conn.SetPingHandler(func(appData string) error {
-		log.WithFields(log.Fields{
-			"data": appData,
-		}).Debugf("Received Binance user stream ping")
-		return nil
-	})
-
 	for {
 		message, err := userStream.Next()
 		if err != nil {
