@@ -31,7 +31,7 @@ func init() {
 func Subscribe() chan bool {
 	lock.Lock()
 	defer lock.Unlock()
-	channel := make(chan bool)
+	channel := make(chan bool, 1)
 	subscribers[channel] = true
 	return channel
 }
@@ -50,7 +50,9 @@ func WriteConfig(filename string) {
 	lock.RLock()
 	defer lock.RUnlock()
 	for channel := range subscribers {
-		channel <- true
+		select {
+		case channel <- true:
+		}
 	}
 }
 
