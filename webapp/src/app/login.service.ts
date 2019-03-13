@@ -74,6 +74,13 @@ export class LoginService {
         this.makerApi.setSessionId(null);
     }
 
+    gotoLogin() {
+        this.router.navigate(["/login"])
+            .then(() => {
+                location.reload(true);
+            });
+    }
+
     logout() {
         this.clearSessionId();
         window.location.reload(true);

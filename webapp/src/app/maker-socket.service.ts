@@ -16,6 +16,7 @@
 import {Injectable} from '@angular/core';
 import {MakerApiService} from "./maker-api.service";
 import {ReplaySubject, Subject} from "rxjs";
+import {LoginService} from "./login.service";
 
 export enum MakerSocketState {
     INITIALIZING = "initializing",
@@ -38,12 +39,13 @@ export class MakerSocketService {
 
     stateChange$: ReplaySubject<string> = new ReplaySubject();
 
-    constructor(private makerApi: MakerApiService) {
+    constructor(private makerApi: MakerApiService,
+                private loginService: LoginService) {
         this.stateChange$.next(this.state);
     }
 
     start() {
-        this.connect();
+        this.startConnect();
     }
 
     private onMessage(msg: any) {
@@ -57,6 +59,22 @@ export class MakerSocketService {
     private setState(state: MakerSocketState) {
         this.state = state;
         this.stateChange$.next(this.state);
+    }
+
+    private startConnect() {
+        this.makerApi.getVersion().subscribe((response) => {
+            console.log("Version check OK, procedding with websocket connection.");
+            this.connect();
+        }, (error) => {
+            if (error.status === 401) {
+                this.loginService.gotoLogin();
+                return;
+            } else {
+                setTimeout(() => {
+                    this.startConnect();
+                }, 1000);
+            }
+        });
     }
 
     private connect() {
@@ -91,19 +109,8 @@ export class MakerSocketService {
                 this.setState(MakerSocketState.DISCONNECTED);
             }
             this.log("closed");
-            this.reconnect();
+            this.startConnect();
         };
-    }
-
-    private reconnect() {
-        if (this.reconnects > 1) {
-            setTimeout(() => {
-                this.connect();
-            }, 1000);
-        } else {
-            this.connect();
-        }
-        this.reconnects++;
     }
 
 }

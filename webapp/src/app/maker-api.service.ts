@@ -96,6 +96,10 @@ export class MakerApiService {
         });
     }
 
+    getVersion(): Observable<any> {
+        return this.get("/api/version");
+    }
+
     openWebsocket(): WebSocket {
         let proto = window.location.protocol == "https:" ? "wss" : "ws";
         let url = `${proto}://${window.location.host}/ws?`;
