@@ -97,7 +97,6 @@ func (b *BinanceUserDataStream) Unsubscribe(channel chan *UserStreamEvent) {
 }
 
 func (b *BinanceUserDataStream) ListenKeyRefreshLoop() {
-	client := binanceapi.NewRestClient().WithAuth(config.GetString("binance.api.key"), "")
 	for {
 		time.Sleep(time.Minute)
 		listenKey := b.listenKey.Get()
@@ -105,6 +104,7 @@ func (b *BinanceUserDataStream) ListenKeyRefreshLoop() {
 			log.Debugf("No Binance user stream key set, will not refresh")
 		} else {
 			log.Debugf("Refreshing Binance user stream listen key")
+			client := GetBinanceRestClient()
 			if err := client.PutUserStreamKeepAlive(listenKey); err != nil {
 				log.WithError(err).Errorf("Failed to send Binance user stream keep alive.")
 			}
@@ -143,14 +143,12 @@ Start:
 	}
 
 	// First we have to get the user stream listen key.
-	client := binanceapi.NewRestClient().WithAuth(config.GetString("binance.api.key"), "")
-	listenKey, err := client.GetUserDataStream()
+	listenKey, err := GetBinanceRestClient().GetUserDataStream()
 	if err != nil {
 		log.WithError(err).Error("Failed to get Binance user stream key. Retyring.")
 		goto Fail
 	} else {
 		log.WithFields(log.Fields{
-			"listenKey": listenKey,
 		}).Debugf("Acquired Binance user stream listen key")
 	}
 
