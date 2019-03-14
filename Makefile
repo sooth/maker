@@ -24,6 +24,12 @@ distclean: clean
 	cd webapp && $(MAKE) $@
 	cd go && $(MAKE) $@
 
+gofmt:
+	cd go && $(MAKE) $@
+
+docker:
+	docker build -t crankykernel/maker:latest .
+
 #
 # Release building.
 #
