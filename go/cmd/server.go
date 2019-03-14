@@ -35,10 +35,16 @@ func init() {
 	flags.StringVar(&server.ServerFlags.Host, "host", "127.0.0.1", "Host to bind to")
 	flags.BoolVar(&server.ServerFlags.NoLog, "nolog", false, "Disable logging to file")
 	flags.BoolVar(&server.ServerFlags.OpenBrowser, "open", false, "Open browser")
-	flags.BoolVar(&server.ServerFlags.TLS, "tls", false, "Enable TLS")
-	flags.BoolVar(&server.ServerFlags.ItsAllMyFault, "its-all-my-fault", false, "Its all my fault")
-	flags.BoolVar(&server.ServerFlags.EnableAuth, "auth", false, "Enable authentication")
 
+	flags.BoolVar(&server.ServerFlags.TLS, "tls", false, "Enable TLS")
+	flags.BoolVar(&server.ServerFlags.NoTLS, "no-tls", false, "Disable TLS")
+	flags.MarkHidden("no-tls")
+
+	flags.BoolVar(&server.ServerFlags.EnableAuth, "auth", false, "Enable authentication")
+	flags.BoolVar(&server.ServerFlags.NoAuth, "no-auth", false, "Disable authentication")
+	flags.MarkHidden("no-auth")
+
+	flags.BoolVar(&server.ServerFlags.ItsAllMyFault, "its-all-my-fault", false, "Its all my fault")
 	flags.MarkHidden("its-all-my-fault")
 
 	viper.SetEnvPrefix("MAKER")

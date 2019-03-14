@@ -27,8 +27,10 @@ $(APP):
 		-tags "$(GO_TAGS)"
 
 install-deps:
-	go get -u github.com/gobuffalo/packr/...
-	go mod download
+	go get github.com/gobuffalo/packr/packr
+
+gofmt:
+	go fmt ./...
 
 clean:
 	rm -f $(APP)

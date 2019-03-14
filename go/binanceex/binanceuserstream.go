@@ -148,8 +148,7 @@ Start:
 		log.WithError(err).Error("Failed to get Binance user stream key. Retyring.")
 		goto Fail
 	} else {
-		log.WithFields(log.Fields{
-		}).Debugf("Acquired Binance user stream listen key")
+		log.WithFields(log.Fields{}).Debugf("Acquired Binance user stream listen key")
 	}
 
 	userStream, err := binanceapi.OpenSingleStream(listenKey)

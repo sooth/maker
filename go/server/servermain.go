@@ -49,8 +49,10 @@ var ServerFlags struct {
 	OpenBrowser    bool
 	DataDirectory  string
 	TLS            bool
+	NoTLS          bool
 	ItsAllMyFault  bool
 	EnableAuth     bool
+	NoAuth         bool
 }
 
 func initBinanceExchangeInfoService() *binanceex.ExchangeInfoService {
@@ -88,10 +90,10 @@ func ServerMain() {
 	ServerFlags.ConfigFilename = path.Join(ServerFlags.DataDirectory, "maker.yaml")
 
 	if ServerFlags.Host != "127.0.0.1" {
-		if !ServerFlags.EnableAuth {
+		if !ServerFlags.EnableAuth && !ServerFlags.NoAuth {
 			log.Fatalf("Authentication must be enabled to listen on anything other than 127.0.0.1")
 		}
-		if !ServerFlags.TLS {
+		if !ServerFlags.TLS && !ServerFlags.NoTLS {
 			log.Fatalf("TLS must be enabled to list on anything other than 127.0.0.1")
 		}
 		if !ServerFlags.ItsAllMyFault {
@@ -211,7 +213,6 @@ func ServerMain() {
 			WriteJsonError(w, http.StatusUnauthorized, "authentication failed")
 			return
 		}
-		log.Infof("SessionID: %s; Error: %v", sessionId, err)
 		WriteJsonResponse(w, http.StatusOK, map[string]interface{}{
 			"sessionId": sessionId,
 		})
