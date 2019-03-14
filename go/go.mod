@@ -2,16 +2,15 @@ module gitlab.com/crankykernel/maker/go
 
 require (
 	github.com/crankykernel/binanceapi-go v0.0.0-20190312210513-0ab984cc3889
-	github.com/gobuffalo/packr v1.23.0
 	github.com/gobuffalo/packr/v2 v2.0.4
-	github.com/gobuffalo/tags v2.0.15+incompatible // indirect
-	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.0
 	github.com/inconshreveable/mousetrap v1.0.0
+	github.com/kr/pty v1.1.3 // indirect
+	github.com/markbates/deplist v1.0.5 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0
-	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
+	github.com/mholt/certmagic v0.0.0-20190225061201-e3e89d1096d7
 	github.com/oklog/ulid v0.3.0
 	github.com/sirupsen/logrus v1.4.0
 	github.com/spf13/afero v1.2.1 // indirect

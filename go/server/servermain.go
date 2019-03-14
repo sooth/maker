@@ -21,6 +21,7 @@ import (
 	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mholt/certmagic"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/clientnotificationservice"
 	"gitlab.com/crankykernel/maker/go/context"
@@ -30,6 +31,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/log"
 	"gitlab.com/crankykernel/maker/go/tradeservice"
 	"gitlab.com/crankykernel/maker/go/version"
+	stdlog "log"
 	"math"
 	"net/http"
 	"os"
@@ -37,7 +39,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -50,6 +51,8 @@ var ServerFlags struct {
 	DataDirectory  string
 	TLS            bool
 	NoTLS          bool
+	LetsEncrypt    bool
+	LeHostname     string
 	ItsAllMyFault  bool
 	EnableAuth     bool
 	NoAuth         bool
@@ -71,7 +74,17 @@ func initBinanceExchangeInfoService() *binanceex.ExchangeInfoService {
 	return exchangeInfoService
 }
 
+type LogInterceptor struct{}
+
+func (l *LogInterceptor) Write(p []byte) (n int, err error) {
+	log.Printf("%s", string(p))
+	return 0, nil
+}
+
 func ServerMain() {
+
+	stdlog.SetOutput(&LogInterceptor{})
+	stdlog.SetFlags(0)
 
 	log.Infof("This is Maker version %s (git revision %s)",
 		version.Version, version.GitRevision)
@@ -93,7 +106,7 @@ func ServerMain() {
 		if !ServerFlags.EnableAuth && !ServerFlags.NoAuth {
 			log.Fatalf("Authentication must be enabled to listen on anything other than 127.0.0.1")
 		}
-		if !ServerFlags.TLS && !ServerFlags.NoTLS {
+		if !ServerFlags.LetsEncrypt && (!ServerFlags.TLS && !ServerFlags.NoTLS) {
 			log.Fatalf("TLS must be enabled to list on anything other than 127.0.0.1")
 		}
 		if !ServerFlags.ItsAllMyFault {
@@ -101,7 +114,19 @@ func ServerMain() {
 		}
 	}
 
-	if ServerFlags.TLS {
+	if ServerFlags.LetsEncrypt {
+		if ServerFlags.LeHostname == "" {
+			log.Fatalf("Lets Encrypt support requires --letsencrypt-hostname")
+		}
+		if !ServerFlags.EnableAuth {
+			log.Fatalf("Authentication required for Lets Encrypt support")
+		}
+		if !ServerFlags.ItsAllMyFault {
+			log.Fatalf("Secret command line argument Lets Encrypt support not set. See documentation.")
+		}
+		log.Warnf("Lets Encrypt automatically listens on port 443, --port is ignored.")
+		log.Warnf("Lets Encrypt support enables remote acccess, --host is ignored.")
+	} else if ServerFlags.TLS {
 		pemFilename := fmt.Sprintf("%s/maker.pem", ServerFlags.DataDirectory)
 		if _, err := os.Stat(pemFilename); err != nil {
 			gencert.GenCertMain(gencert.Flags{
@@ -265,30 +290,11 @@ func ServerMain() {
 
 	router.PathPrefix("/").HandlerFunc(staticAssetHandler())
 
-	listenHostPort := fmt.Sprintf("%s:%d", ServerFlags.Host, ServerFlags.Port)
-	log.Printf("Starting server on %s.", listenHostPort)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-
-		var err error = nil
-
-		if ServerFlags.TLS {
-			pemFilename := fmt.Sprintf("%s/maker.pem", ServerFlags.DataDirectory)
-			err = http.ListenAndServeTLS(listenHostPort, pemFilename, pemFilename, router)
-		} else {
-			err = http.ListenAndServe(listenHostPort, router)
-		}
-
-		if err != nil {
-			log.Fatal("Failed to start server: ", err)
-		}
-	}()
-
 	if ServerFlags.OpenBrowser {
-		url := fmt.Sprintf("http://%s:%d", ServerFlags.Host, ServerFlags.Port)
-		log.Info("Attempting to start browser.")
 		go func() {
+			time.Sleep(time.Millisecond * 500)
+			url := fmt.Sprintf("http://%s:%d", ServerFlags.Host, ServerFlags.Port)
+			log.Info("Attempting to start browser.")
 			if runtime.GOOS == "linux" {
 				c := exec.Command("xdg-open", url)
 				c.Run()
@@ -309,5 +315,29 @@ func ServerMain() {
 		}()
 	}
 
-	wg.Wait()
+	var err error = nil
+	if ServerFlags.LetsEncrypt {
+		certmagic.Agreed = true
+		if os.Getenv("LETSENCRYPT_STAGING") != "" {
+			certmagic.CA = certmagic.LetsEncryptStagingCA
+		}
+		certmagic.DefaultStorage = &certmagic.FileStorage{
+			Path: fmt.Sprintf("%s/certmagic", ServerFlags.DataDirectory),
+		}
+
+		err = certmagic.HTTPS([]string{ServerFlags.LeHostname}, router)
+	} else if ServerFlags.TLS {
+		listenHostPort := fmt.Sprintf("%s:%d", ServerFlags.Host, ServerFlags.Port)
+		log.Printf("Starting HTTPS server on %s.", listenHostPort)
+		pemFilename := fmt.Sprintf("%s/maker.pem", ServerFlags.DataDirectory)
+		err = http.ListenAndServeTLS(listenHostPort, pemFilename, pemFilename, router)
+	} else {
+		listenHostPort := fmt.Sprintf("%s:%d", ServerFlags.Host, ServerFlags.Port)
+		log.Printf("Starting HTTP server on %s.", listenHostPort)
+		err = http.ListenAndServe(listenHostPort, router)
+	}
+
+	if err != nil {
+		log.Fatal("Failed to start server: ", err)
+	}
 }

@@ -44,6 +44,11 @@ func init() {
 	flags.BoolVar(&server.ServerFlags.NoAuth, "no-auth", false, "Disable authentication")
 	flags.MarkHidden("no-auth")
 
+	flags.BoolVar(&server.ServerFlags.LetsEncrypt, "letsencrypt", false, "Enable Lets Encrypt")
+	flags.StringVar(&server.ServerFlags.LeHostname, "letsencrypt-hostname", "", "Lets Encrypt hostname")
+	flags.StringVar(&server.ServerFlags.LeHostname, "le-hostname", "", "Lets Encrypt hostname")
+	flags.MarkHidden("le-hostname")
+
 	flags.BoolVar(&server.ServerFlags.ItsAllMyFault, "its-all-my-fault", false, "Its all my fault")
 	flags.MarkHidden("its-all-my-fault")
 
