@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/crankykernel/binanceapi-go"
-	"github.com/gobuffalo/packr"
+	"github.com/gobuffalo/packr/v2"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"gitlab.com/crankykernel/maker/go/binanceex"
@@ -504,11 +504,24 @@ func yaml2json(i interface{}) interface{} {
 }
 
 func staticAssetHandler() http.HandlerFunc {
-	static := packr.NewBox("../../webapp/dist")
+	static := packr.New("webapp", "../../webapp/dist")
 	fileServer := http.FileServer(static)
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !static.Has(r.URL.Path) {
 			r.URL.Path = "/"
+		}
+		switch r.URL.Path {
+		case "":
+			fallthrough
+		case "/":
+			fallthrough
+		case "/index.html":
+			log.Println("Explicitly returning index.")
+			data, err := static.Find("index.html")
+			if err == nil {
+				w.Write(data)
+				return
+			}
 		}
 		fileServer.ServeHTTP(w, r)
 	}

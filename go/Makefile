@@ -21,18 +21,19 @@ $(APP): EXE := $(shell go env GOEXE)
 $(APP): BIN ?= $(APP)$(EXE)
 $(APP): DIR ?= .
 $(APP):
-	test -e ../webapp/dist && $(GOPATH)/bin/packr -v -z || true
+	test -e ../webapp/dist && GO111MODULE=on $(GOPATH)/bin/packr2 -v
 	CGO_ENABLED=1 go build -o $(DIR)/$(BIN) \
 		-ldflags "$(LDFLAGS)" \
 		-tags "$(GO_TAGS)"
 
 install-deps:
-	go get github.com/gobuffalo/packr/packr
+	go get github.com/gobuffalo/packr/v2/packr2
 
 gofmt:
 	go fmt ./...
 
 clean:
+	$(GOPATH)/bin/packr2 clean
 	rm -f $(APP)
 	find . -name \*~ -delete
 	find . -name \*-packr.go -delete
