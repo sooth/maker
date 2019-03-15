@@ -13,6 +13,7 @@ Maker User Guide
    getting-started
    trading
    files
+   remote-access
 
 Indices and tables
 ==================

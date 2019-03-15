@@ -1,6 +1,9 @@
 Trading
 =======
 
+Making an Order
+```````````````
+
 Buy Price
 ---------
 
@@ -80,3 +83,47 @@ soon as the buy is filled.
 This sell order can be canceled or changed after the order is made.
 
 .. note:: This feature may also be known as **take profit**.
+
+Working with an Order
+`````````````````````
+
+Once an order has been places, most options can be changed, even
+before the order is filled.
+
+Cancel Buy
+----------
+
+The *Cancel Buy* button will cancel buy. If the order has not yet been
+filled the buy will be canceled and the position will be considered
+closed.  If the order has been partially filled, the buy order will be
+cancelled but the position will remain open with the portion that was
+filled.
+
+Selling
+-------
+
+The *Sell* button allows you place a limit or market sell order. If a
+sell order has already been placed, setting a new sell will cancel the
+previous sell order.
+
+Cancel Sell
+-----------
+
+The *Cancel Sell* button will cancel a limit sell order if it
+exists. It will not have any affect on *trailing profit* or *stop
+loss*.
+
+Archive
+-------
+
+Archiving a trade removes it from the current display. This option is
+only available if the trade is in a completed state.
+
+Abandon
+-------
+
+The *Abandon* button will close out the trade as far as the
+application is concerned but will not take any action on the
+exchange. Any limit sell orders will remain. As *Maker* has abandoned
+the trade, *trailing profit* and *stop loss* are also deactived on
+this trade.  **Use with care**.
