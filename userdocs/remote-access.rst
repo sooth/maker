@@ -10,6 +10,51 @@ access there are a few options available:
 * Self Signed Certificate
 * Reverse Proxy
 
+You will also need a way to keep it running on the server machine.
+
+Keeping it Running
+------------------
+
+TMUX
+~~~~
+
+If running a remote Linux machine such as a VPS, the easiest way to
+keep the *Maker* server side running is to use a terminal multiplexer
+such as *tmux*. This is usually easily available on Linux with the
+package manager:
+
+* Ubuntu/Debian: ``apt install tmux``
+* CentOS: ``dnf install tmux``
+* Fedora: ``dnf install tmux``
+
+Basically you login to your remote machine with SSH then start **tmux**::
+
+  tmux
+
+Once inside **tmux**, start your *Maker* server with your desired
+options.  Once **Maker** has started successfully and you see the log
+output written to the terminal, you can then detach. To detach you use
+the keyboard pattern: ``control-b d``. That is, hit ``control-b``, let
+go, then hit `d`. You should then see::
+
+  [detached]
+
+You can now disconnect from the remote machine and *Maker* will
+continue to run.
+
+To re-attach to *Maker*, login to your server and then run::
+
+  tmux a -d
+
+This tells **tmux** to attach back to the terminal where *Maker* is
+running.  You should see the logout.
+
+.. note:: This does not keep **Maker** running during a server
+          reboot. That will require integration with *systemd* or
+          whatever init system is being used.  Support for *systemd*
+          on Linux is planned, but you can do it yourself if you know
+          how.
+
 Option: SSH Forwarding
 ----------------------
 
@@ -65,8 +110,8 @@ for some.
 
 TODO.
 
-Reverse Proxy
--------------
+Option: Reverse Proxy
+---------------------
 
 TODO
 
