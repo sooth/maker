@@ -100,7 +100,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         manualPrice: string;
         limitSellPrice: string;
 
-        offsetType: string;
+        offsetEnabled: boolean;
         offsetTicks: number;
     } = {
         amount: null,
@@ -109,7 +109,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         manualPrice: null,
         limitSellPrice: null,
 
-        offsetType: this.OFFSET_TYPE_NONE,
+        offsetEnabled: false,
         offsetTicks: 0,
     };
 
@@ -307,6 +307,12 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             console.log("error: failed to restore saved status:");
             console.log(err);
         }
+
+        if (this.orderFormSettings.priceSource == PriceSource.MANUAL) {
+            this.orderForm.offsetEnabled = false;
+        } else {
+            this.orderForm.offsetEnabled = true;
+        }
     }
 
     private updateBalances(accountInfo: AccountInfo) {
@@ -431,11 +437,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         };
 
         if (this.orderFormSettings.priceSource != PriceSource.MANUAL) {
-            switch (this.orderForm.offsetType) {
-                case this.OFFSET_TYPE_TICKS:
-                    options.offsetTicks = +this.orderForm.offsetTicks;
-                    break;
-            }
+            options.offsetTicks = +this.orderForm.offsetTicks;
         }
 
         if (this.orderFormSettings.limitSellEnabled) {
@@ -491,6 +493,12 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     onPriceSourceChange() {
+        if (this.orderFormSettings.priceSource == PriceSource.MANUAL) {
+            this.orderForm.offsetEnabled = false;
+        } else {
+            this.orderForm.offsetEnabled = true;
+        }
+        console.log(this.orderForm.offsetEnabled);
         this.updateOrderFormAssetAmount();
     }
 

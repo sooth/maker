@@ -2,7 +2,10 @@
 @import "~toastr/build/toastr.css";
 
 body {
-    padding-top: 40px;
+    // Pad the top.
+    // - Just for the top nav: 40px
+    // - Top nav plus connection status bar: 72px;
+    padding-top: 72px;
     margin: 0;
     height: 100%;
     min-width: 1024px;
