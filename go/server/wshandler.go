@@ -208,7 +208,7 @@ Loop:
 
 type MakerMessage struct {
 	Type                       MakerMessageType                      `json:"messageType"`
-	Trade                      *types.TradeState                     `json:"trade,omitempty"`
+	Trade                      types.TradeState                     `json:"trade,omitempty"`
 	TradeID                    string                                `json:"tradeId,omitempty"`
 	BinanceAggTrade            *binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
 	BinanceOutboundAccountInfo *binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`

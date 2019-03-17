@@ -38,7 +38,7 @@ const (
 
 type TradeEvent struct {
 	EventType  TradeEventType
-	TradeState *types.TradeState
+	TradeState types.TradeState
 	TradeID    string
 }
 
@@ -245,7 +245,7 @@ func (s *TradeService) broadcastTradeEvent(tradeEvent TradeEvent) {
 func (s *TradeService) BroadcastTradeUpdate(trade *types.Trade) {
 	tradeEvent := TradeEvent{
 		EventType:  TradeEventTypeUpdate,
-		TradeState: &trade.State,
+		TradeState: trade.State,
 	}
 	s.broadcastTradeEvent(tradeEvent)
 }
