@@ -51,7 +51,7 @@ func NewFileOutputHook(filename string) *FileOutputHook {
 		file, err = os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
 	}
 	if err != nil {
-		log.Fatal("Failed to open %s for logging: %v", filename, err)
+		log.Fatalf("Failed to open %s for logging: %v", filename, err)
 	}
 
 	return &FileOutputHook{

@@ -84,7 +84,7 @@ func (m *Authenticator) generatePassword(configFilename string) (string, string)
 	password := m.getRandom(32)
 	encoded, err := auth.EncodePassword(password)
 	if err != nil {
-		log.Fatal("Failed to encode generated password: %v", err)
+		log.WithError(err).Fatalf("Failed to encode generated password")
 	}
 	config.Set("password", encoded)
 	config.WriteConfig(configFilename)
