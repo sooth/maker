@@ -266,7 +266,7 @@ func (s *TradeService) FindTradeByLocalID(localId string) *types.Trade {
 
 func (s *TradeService) AbandonTrade(trade *types.Trade) {
 	if !trade.IsDone() {
-		s.CloseTrade(trade, types.TradeStatusAbandoned, time.Now())
+		s.closeTrade(trade, types.TradeStatusAbandoned, time.Now())
 		s.BroadcastTradeUpdate(trade)
 	}
 }
@@ -382,7 +382,7 @@ func (s *TradeService) RemoveTrade(trade *types.Trade) {
 }
 
 func (s *TradeService) FailTrade(trade *types.Trade) {
-	s.CloseTrade(trade, types.TradeStatusFailed, time.Now())
+	s.closeTrade(trade, types.TradeStatusFailed, time.Now())
 	s.BroadcastTradeUpdate(trade)
 }
 
@@ -567,6 +567,12 @@ func (s *TradeService) TriggerLimitSell(trade *types.Trade) {
 }
 
 func (s *TradeService) CloseTrade(trade *types.Trade, status types.TradeStatus, closeTime time.Time) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.closeTrade(trade, status, closeTime)
+}
+
+func (s *TradeService) closeTrade(trade *types.Trade, status types.TradeStatus, closeTime time.Time) {
 	if closeTime.IsZero() {
 		closeTime = time.Now()
 	}
