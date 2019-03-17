@@ -54,7 +54,7 @@ type TradeService struct {
 	idGenerator *idgenerator.IdGenerator
 
 	subscribers map[chan TradeEvent]bool
-	lock        sync.RWMutex
+	lock        sync.Mutex
 
 	tradeStreamManager *binanceex.TradeStreamManager
 	tradeStreamChannel binanceex.TradeStreamChannel
@@ -103,8 +103,8 @@ func (s *TradeService) CalculateProfit(trade *types.Trade, price float64) float6
 }
 
 func (s *TradeService) onLastTrade(lastTrade *binanceapi.StreamAggTrade) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	for _, trade := range s.TradesByLocalID {
 
 		if trade.IsDone() {
@@ -210,8 +210,8 @@ func (s *TradeService) checkTrailingProfit(trade *types.Trade, price float64) {
 }
 
 func (s *TradeService) GetAllTrades() []*types.Trade {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	trades := []*types.Trade{}
 	for _, trade := range s.TradesByLocalID {
 		trades = append(trades, trade)
@@ -235,8 +235,8 @@ func (s *TradeService) Unsubscribe(channel chan TradeEvent) {
 }
 
 func (s *TradeService) broadcastTradeEvent(tradeEvent TradeEvent) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	for channel := range s.subscribers {
 		channel <- tradeEvent
 	}
@@ -259,8 +259,8 @@ func (s *TradeService) BroadcastTradeArchived(tradeId string) {
 }
 
 func (s *TradeService) FindTradeByLocalID(localId string) *types.Trade {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	return s.TradesByLocalID[localId]
 }
 
@@ -387,8 +387,8 @@ func (s *TradeService) FailTrade(trade *types.Trade) {
 }
 
 func (s *TradeService) FindTradeForReport(report binanceapi.StreamExecutionReport) *types.Trade {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	if trade, ok := s.TradesByClientID[report.ClientOrderID]; ok {
 		return trade
