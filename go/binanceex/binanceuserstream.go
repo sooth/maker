@@ -113,7 +113,6 @@ func (b *BinanceUserDataStream) ListenKeyRefreshLoop() {
 }
 
 func (b *BinanceUserDataStream) Run() {
-	lastPong := time.Now()
 	configChannel := config.Subscribe()
 
 	go b.ListenKeyRefreshLoop()
@@ -163,7 +162,6 @@ Start:
 		log.WithFields(log.Fields{
 			"data": appData,
 		}).Debugf("Received Binance user stream pong")
-		lastPong = time.Now()
 		return nil
 	})
 	b.notificationService.Broadcast(
