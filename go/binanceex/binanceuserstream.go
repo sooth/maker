@@ -203,8 +203,10 @@ Start:
 			streamEvent.EventTime = time.Unix(0, streamEvent.OutboundAccountInfo.EventTimeMillis*int64(time.Millisecond))
 		}
 
+		b.lock.RLock()
 		for channel := range b.Subscribers {
 			channel <- &streamEvent
 		}
+		b.lock.RUnlock()
 	}
 }
