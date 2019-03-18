@@ -254,7 +254,7 @@ func (s *TradeService) BroadcastTradeUpdate(trade *types.Trade) {
 func (s *TradeService) broadcastTradeUpdate(trade *types.Trade) {
 	tradeEvent := TradeEvent{
 		EventType:  TradeEventTypeUpdate,
-		TradeState: trade.State,
+		TradeState: trade.State.Copy(),
 	}
 	s.broadcastTradeEvent(tradeEvent)
 }
@@ -297,12 +297,14 @@ func (s *TradeService) abandonTrade(trade *types.Trade) {
 }
 
 func (s *TradeService) ArchiveTrade(trade *types.Trade) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if trade.IsDone() {
 		if err := db.DbArchiveTrade(trade); err != nil {
 			return err
 		}
 		s.removeTrade(trade)
-		s.BroadcastTradeArchived(trade.State.TradeID)
+		s.broadcastTradeArchived(trade.State.TradeID)
 		return nil
 	}
 	return fmt.Errorf("archive not allowed in state %s", trade.State.Status)
