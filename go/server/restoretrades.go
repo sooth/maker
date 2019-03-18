@@ -141,7 +141,7 @@ func restoreTrades(tradeService *tradeservice.TradeService) {
 					if trades == nil {
 						trades, err = binanceRestClient.GetMytrades(state.Symbol, 0, -1)
 						if err != nil {
-							log.Errorf("Failed to get trades: %v", err)
+							log.WithError(err).Errorf("Failed to get trades from Binance")
 						}
 						tradeHistoryCache[state.Symbol] = trades
 					}
