@@ -22,7 +22,7 @@ $(APP): BIN ?= $(APP)$(EXE)
 $(APP): DIR ?= .
 $(APP):
 	test -e ../webapp/dist && GO111MODULE=on $(GOPATH)/bin/packr2 -v
-	CGO_ENABLED=1 go build -o $(DIR)/$(BIN) \
+	CGO_ENABLED=1 go build $(RACE) -o $(DIR)/$(BIN) \
 		-ldflags "$(LDFLAGS)" \
 		-tags "$(GO_TAGS)"
 
