@@ -132,3 +132,23 @@ type TradeState struct {
 	// not always be the last price, but could also be the last best bid or ask.
 	LastPrice float64
 }
+
+func (t *TradeState) Copy() TradeState {
+	t0 := *t
+
+	t0.History = make([]HistoryEntry, len(t.History))
+	copy(t0.History, t.History)
+
+	t0.ClientOrderIDs = make(map[string]bool)
+	for key := range t.ClientOrderIDs {
+		t0.ClientOrderIDs[key] = true
+	}
+
+	t0.BuySideFills = make([]OrderFill, len(t.BuySideFills))
+	copy(t0.BuySideFills, t.BuySideFills)
+
+	t0.SellSideFills = make([]OrderFill, len(t.SellSideFills))
+	copy(t0.SellSideFills, t.SellSideFills)
+
+	return t0
+}
