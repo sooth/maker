@@ -575,7 +575,7 @@ func PostBuyHandler(tradeService *tradeservice.TradeService,
 	}
 
 	type BuyOrderResponse struct {
-		TradeID string `json:"trade_id""`
+		TradeID string `json:"trade_id"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
