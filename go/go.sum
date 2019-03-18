@@ -24,6 +24,8 @@ github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3Ee
 github.com/coreos/go-systemd v0.0.0-20181012123002-c6f51f82210d/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/crankykernel/binanceapi-go v0.0.0-20190312210513-0ab984cc3889 h1:P/v+VJVkpl4nBwr5pE34DaTQ8KxUghqWDDdG6stOVJs=
 github.com/crankykernel/binanceapi-go v0.0.0-20190312210513-0ab984cc3889/go.mod h1:e0m6PJyfSQ5JvEXDIfw4xoRBwtk1ZUVr7uFlUH75mXU=
+github.com/crankykernel/binanceapi-go v0.0.0-20190318152857-632f0d98fabb h1:abBjZJX2G0AcL1Xzfr+xAh9upYA8DwgT+PUgTvY3/rQ=
+github.com/crankykernel/binanceapi-go v0.0.0-20190318152857-632f0d98fabb/go.mod h1:e0m6PJyfSQ5JvEXDIfw4xoRBwtk1ZUVr7uFlUH75mXU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

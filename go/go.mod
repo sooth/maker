@@ -1,7 +1,7 @@
 module gitlab.com/crankykernel/maker/go
 
 require (
-	github.com/crankykernel/binanceapi-go v0.0.0-20190312210513-0ab984cc3889
+	github.com/crankykernel/binanceapi-go v0.0.0-20190318152857-632f0d98fabb
 	github.com/gobuffalo/attrs v0.0.0-20190224210810-a9411de4debd // indirect
 	github.com/gobuffalo/buffalo-plugins v1.13.0 // indirect
 	github.com/gobuffalo/depgen v0.0.0-20190224210402-d0846c321ca8 // indirect
