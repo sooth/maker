@@ -25,12 +25,14 @@
         </span>
       </li>
 
-      <li class="nav-item dropdown">
+      <li class="nav-item dropdown" style="z-index: 1099;">
         <a class="nav-link dropdown-toggle" href="#" id="toolDropdown" role="button" data-toggle="dropdown"
            aria-haspopup="true" aria-expanded="false">
           <i class="fa fa-cog"></i>
         </a>
-        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="toolDropdown">
+        <div class="dropdown-menu dropdown-menu-right"
+             style="z-index: 9999 !important;"
+             aria-labelledby="toolDropdown">
           <a class="dropdown-item" [routerLink]="['/config']">Settings</a>
           <div *ngIf="makerApi.sessionId != null" class="dropdown-divider"></div>
           <button *ngIf="makerApi.sessionId != null"
