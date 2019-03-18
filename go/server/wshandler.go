@@ -152,7 +152,7 @@ Loop:
 			case binanceex.EventTypeOutboundAccountInfo:
 				message := MakerMessage{
 					Type:                       MakerMessageTypeBinanceAccountInfo,
-					BinanceOutboundAccountInfo: &binanceUserEvent.OutboundAccountInfo,
+					BinanceOutboundAccountInfo: binanceUserEvent.OutboundAccountInfo,
 				}
 				writeChannel <- &message
 			default:
@@ -207,13 +207,13 @@ Loop:
 }
 
 type MakerMessage struct {
-	Type                       MakerMessageType                      `json:"messageType"`
+	Type                       MakerMessageType                     `json:"messageType"`
 	Trade                      types.TradeState                     `json:"trade,omitempty"`
-	TradeID                    string                                `json:"tradeId,omitempty"`
-	BinanceAggTrade            *binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
-	BinanceOutboundAccountInfo *binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
-	Notice                     *clientnotificationservice.Notice     `json:"notice,omitempty"`
-	Health                     *healthservice.State                  `json:"health,omitempty"`
+	TradeID                    string                               `json:"tradeId,omitempty"`
+	BinanceAggTrade            binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
+	BinanceOutboundAccountInfo binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
+	Notice                     *clientnotificationservice.Notice    `json:"notice,omitempty"`
+	Health                     *healthservice.State                 `json:"health,omitempty"`
 }
 
 type MakerMessageType string

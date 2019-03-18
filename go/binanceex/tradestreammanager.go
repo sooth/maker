@@ -25,16 +25,16 @@ import (
 	"time"
 )
 
-type TradeStreamChannel chan *binanceapi.StreamAggTrade
+type TradeStreamChannel chan binanceapi.StreamAggTrade
 
 type TradeStreamManager struct {
-	mutex         sync.RWMutex
+	lock          sync.RWMutex
 	subscriptions map[TradeStreamChannel]bool
 	streams       map[string]*binanceapi.Stream
 	streamCount   map[string]int
 }
 
-func NewXTradeStreamManager() *TradeStreamManager {
+func NewTradeStreamManager() *TradeStreamManager {
 	return &TradeStreamManager{
 		subscriptions: make(map[TradeStreamChannel]bool),
 		streams:       make(map[string]*binanceapi.Stream),
@@ -43,16 +43,16 @@ func NewXTradeStreamManager() *TradeStreamManager {
 }
 
 func (m *TradeStreamManager) Subscribe() TradeStreamChannel {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	channel := make(TradeStreamChannel)
 	m.subscriptions[channel] = true
 	return channel
 }
 
 func (m *TradeStreamManager) Unsubscribe(channel TradeStreamChannel) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if _, exists := m.subscriptions[channel]; !exists {
 		log.Errorf("Attempt to unsubscribe non existing channel")
 	}
@@ -61,9 +61,9 @@ func (m *TradeStreamManager) Unsubscribe(channel TradeStreamChannel) {
 }
 
 func (m *TradeStreamManager) AddSymbol(symbol string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	symbol = strings.ToLower(symbol)
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
 	_, exists := m.streamCount[symbol]
 	if exists {
 		m.streamCount[symbol] += 1
@@ -74,9 +74,9 @@ func (m *TradeStreamManager) AddSymbol(symbol string) {
 }
 
 func (m *TradeStreamManager) RemoveSymbol(symbol string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	symbol = strings.ToLower(symbol)
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
 	count, exists := m.streamCount[symbol]
 	if !exists {
 		return
@@ -89,8 +89,8 @@ func (m *TradeStreamManager) RemoveSymbol(symbol string) {
 }
 
 func (m *TradeStreamManager) streamRefCount(name string) int {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.lock.RLock()
+	defer m.lock.RUnlock()
 	count, exists := m.streamCount[name]
 	if exists {
 		return count
@@ -144,10 +144,10 @@ Retry:
 			continue
 		}
 
-		m.mutex.RLock()
+		m.lock.RLock()
 		for channel := range m.subscriptions {
-			channel <- &trade
+			channel <- trade
 		}
-		m.mutex.RUnlock()
+		m.lock.RUnlock()
 	}
 }

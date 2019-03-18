@@ -84,27 +84,32 @@ func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeS
 	return tradeService
 }
 
-func (s *TradeService) tradeStreamListener() {
-	for {
-		select {
-		case xlastTrade := <-s.tradeStreamChannel:
-			s.onLastTrade(xlastTrade)
-		}
-	}
-}
-
 // Calculate the profit based on the trade being sold at the given price.
 // Returns a percentage value in the range of 0-100.
 func (s *TradeService) CalculateProfit(trade *types.Trade, price float64) float64 {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.calculateProfit(trade, price)
+}
+
+func (s *TradeService) calculateProfit(trade *types.Trade, price float64) float64 {
 	grossSellCost := price * trade.State.SellableQuantity
 	netSellCost := grossSellCost * (1 - trade.State.Fee)
 	profit := (netSellCost - trade.State.BuyCost) / trade.State.BuyCost * 100
 	return profit
 }
 
-func (s *TradeService) onLastTrade(lastTrade *binanceapi.StreamAggTrade) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+func (s *TradeService) tradeStreamListener() {
+	for {
+		lastTrade := <-s.tradeStreamChannel
+		// Events come externally, must lock.
+		s.lock.Lock()
+		s.onLastTrade(lastTrade)
+		s.lock.Unlock()
+	}
+}
+
+func (s *TradeService) onLastTrade(lastTrade binanceapi.StreamAggTrade) {
 	for _, trade := range s.TradesByLocalID {
 
 		if trade.IsDone() {
@@ -121,7 +126,7 @@ func (s *TradeService) onLastTrade(lastTrade *binanceapi.StreamAggTrade) {
 			}
 
 			trade.State.LastPrice = lastTrade.Price
-			trade.State.ProfitPercent = s.CalculateProfit(trade, lastTrade.Price)
+			trade.State.ProfitPercent = s.calculateProfit(trade, lastTrade.Price)
 
 			if trade.State.StopLoss.Enabled {
 				s.checkStopLoss(trade)
@@ -149,10 +154,10 @@ func (s *TradeService) checkStopLoss(trade *types.Trade) {
 			"loss":   trade.State.ProfitPercent,
 		}).Infof("Stop Loss: Triggering market sell.")
 		if trade.State.Status == types.TradeStatusPendingSell {
-			s.CancelSell(trade)
+			s.cancelSell(trade)
 		}
 		trade.State.StopLoss.Triggered = true
-		s.MarketSell(trade, true)
+		s.marketSell(trade)
 	}
 }
 
@@ -191,7 +196,7 @@ func (s *TradeService) checkTrailingProfit(trade *types.Trade, price float64) {
 					"percent": trade.State.ProfitPercent,
 				}).Infof("Executing trailing profit sell")
 				trade.State.TrailingProfit.Triggered = true
-				s.MarketSell(trade, true)
+				s.marketSell(trade)
 			}
 		}
 	} else {
@@ -203,7 +208,7 @@ func (s *TradeService) checkTrailingProfit(trade *types.Trade, price float64) {
 				"trailingProfitDeviation": trade.State.TrailingProfit.Deviation,
 			}).Infof("Activating trailing profit")
 			trade.State.TrailingProfit.Activated = true
-			s.BroadcastTradeUpdate(trade)
+			s.broadcastTradeUpdate(trade)
 		}
 	}
 
@@ -235,14 +240,18 @@ func (s *TradeService) Unsubscribe(channel chan TradeEvent) {
 }
 
 func (s *TradeService) broadcastTradeEvent(tradeEvent TradeEvent) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
 	for channel := range s.subscribers {
 		channel <- tradeEvent
 	}
 }
 
 func (s *TradeService) BroadcastTradeUpdate(trade *types.Trade) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.broadcastTradeUpdate(trade)
+}
+
+func (s *TradeService) broadcastTradeUpdate(trade *types.Trade) {
 	tradeEvent := TradeEvent{
 		EventType:  TradeEventTypeUpdate,
 		TradeState: trade.State,
@@ -251,6 +260,12 @@ func (s *TradeService) BroadcastTradeUpdate(trade *types.Trade) {
 }
 
 func (s *TradeService) BroadcastTradeArchived(tradeId string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.broadcastTradeArchived(tradeId)
+}
+
+func (s *TradeService) broadcastTradeArchived(tradeId string) {
 	tradeEvent := TradeEvent{
 		EventType: TradeEventTypeArchive,
 		TradeID:   tradeId,
@@ -261,10 +276,20 @@ func (s *TradeService) BroadcastTradeArchived(tradeId string) {
 func (s *TradeService) FindTradeByLocalID(localId string) *types.Trade {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	return s.findTradeByLocalID(localId)
+}
+
+func (s *TradeService) findTradeByLocalID(localId string) *types.Trade {
 	return s.TradesByLocalID[localId]
 }
 
 func (s *TradeService) AbandonTrade(trade *types.Trade) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.abandonTrade(trade)
+}
+
+func (s *TradeService) abandonTrade(trade *types.Trade) {
 	if !trade.IsDone() {
 		s.closeTrade(trade, types.TradeStatusAbandoned, time.Now())
 		s.BroadcastTradeUpdate(trade)
@@ -276,30 +301,36 @@ func (s *TradeService) ArchiveTrade(trade *types.Trade) error {
 		if err := db.DbArchiveTrade(trade); err != nil {
 			return err
 		}
-		s.RemoveTrade(trade)
+		s.removeTrade(trade)
 		s.BroadcastTradeArchived(trade.State.TradeID)
 		return nil
 	}
 	return fmt.Errorf("archive not allowed in state %s", trade.State.Status)
 }
 
-func (s *TradeService) AddClientOrderId(trade *types.Trade, orderId string, locked bool) {
+func (s *TradeService) AddClientOrderId(trade *types.Trade, orderId string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.addClientOrderId(trade, orderId)
+}
+
+func (s *TradeService) addClientOrderId(trade *types.Trade, orderId string) {
 	log.WithFields(log.Fields{
 		"symbol":  trade.State.Symbol,
 		"orderId": trade.State.TradeID,
 	}).Debugf("Adding client order ID to trade")
 	trade.AddClientOrderID(orderId)
-	if !locked {
-		s.lock.Lock()
-	}
 	s.TradesByClientID[orderId] = trade
-	if !locked {
-		s.lock.Unlock()
-	}
 	db.DbUpdateTrade(trade)
 }
 
 func (s *TradeService) UpdateSellableQuantity(trade *types.Trade) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.updateSellableQuantity(trade)
+}
+
+func (s *TradeService) updateSellableQuantity(trade *types.Trade) {
 	feeAsset := trade.FeeAsset()
 	if feeAsset == "BNB" {
 		trade.State.SellableQuantity = trade.State.BuyFillQuantity
@@ -309,23 +340,27 @@ func (s *TradeService) UpdateSellableQuantity(trade *types.Trade) {
 			log.WithError(err).WithField("symbol", trade.State.Symbol).
 				Error("Failed to get symbol step size.")
 		} else {
-			trade.State.SellableQuantity = s.FixQuantityToStepSize(trade.State.BuyFillQuantity, stepSize)
+			trade.State.SellableQuantity = fixQuantityToStepSize(trade.State.BuyFillQuantity, stepSize)
 		}
 	}
 }
 
 func (s *TradeService) RestoreTrade(trade *types.Trade) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.TradesByLocalID[trade.State.TradeID] = trade
 	for clientOrderId := range trade.State.ClientOrderIDs {
 		s.TradesByClientID[clientOrderId] = trade
 	}
-	s.UpdateSellableQuantity(trade)
+	s.updateSellableQuantity(trade)
 	if !trade.IsDone() {
 		s.tradeStreamManager.AddSymbol(trade.State.Symbol)
 	}
 }
 
 func (s *TradeService) AddNewTrade(trade *types.Trade) string {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if trade.State.TradeID == "" {
 		localId, err := s.idGenerator.GetID(nil)
 		if err != nil {
@@ -335,7 +370,6 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 	}
 	trade.State.Status = types.TradeStatusNew
 
-	s.lock.Lock()
 	s.TradesByLocalID[trade.State.TradeID] = trade
 	for clientOrderId := range trade.State.ClientOrderIDs {
 		log.WithFields(log.Fields{
@@ -344,14 +378,13 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 		}).Debugf("Recording clientOrderId for new trade.")
 		s.TradesByClientID[clientOrderId] = trade
 	}
-	s.lock.Unlock()
 
 	if err := db.DbSaveTrade(trade); err != nil {
 		log.WithError(err).Errorf("Failed to save trade to database")
 	}
 
 	s.tradeStreamManager.AddSymbol(trade.State.Symbol)
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 
 	lastPrice, err := binanceapi.NewRestClient().GetPriceTicker(trade.State.Symbol)
 	if err != nil {
@@ -361,7 +394,7 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 	} else {
 		if trade.State.LastPrice == 0 {
 			trade.State.LastPrice = lastPrice.Price
-			s.BroadcastTradeUpdate(trade)
+			s.broadcastTradeUpdate(trade)
 		}
 	}
 
@@ -371,6 +404,10 @@ func (s *TradeService) AddNewTrade(trade *types.Trade) string {
 func (s *TradeService) RemoveTrade(trade *types.Trade) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	s.removeTrade(trade)
+}
+
+func (s *TradeService) removeTrade(trade *types.Trade) {
 	delete(s.TradesByLocalID, trade.State.TradeID)
 	for clientId := range trade.State.ClientOrderIDs {
 		log.WithFields(log.Fields{
@@ -382,14 +419,19 @@ func (s *TradeService) RemoveTrade(trade *types.Trade) {
 }
 
 func (s *TradeService) FailTrade(trade *types.Trade) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.closeTrade(trade, types.TradeStatusFailed, time.Now())
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 }
 
 func (s *TradeService) FindTradeForReport(report binanceapi.StreamExecutionReport) *types.Trade {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	return s.findTradeForReport(report)
+}
 
+func (s *TradeService) findTradeForReport(report binanceapi.StreamExecutionReport) *types.Trade {
 	if trade, ok := s.TradesByClientID[report.ClientOrderID]; ok {
 		return trade
 	}
@@ -409,9 +451,12 @@ func (s *TradeService) FindTradeForReport(report binanceapi.StreamExecutionRepor
 // Note: Be sure to process reports even after a fill, as sometimes partial
 //       fills will be received after the fill report.
 func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	report := event.ExecutionReport
 
-	trade := s.FindTradeForReport(report)
+	trade := s.findTradeForReport(report)
 	if trade == nil {
 		log.Errorf("Failed to find trade for execution report: %s", log.ToJson(report))
 		return
@@ -461,13 +506,13 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 				trade.State.LastBuyStatus = report.CurrentOrderStatus
 			}
 			trade.AddBuyFill(report)
-			s.UpdateSellableQuantity(trade)
+			s.updateSellableQuantity(trade)
 		case binanceapi.OrderStatusFilled:
 			trade.AddBuyFill(report)
-			s.UpdateSellableQuantity(trade)
+			s.updateSellableQuantity(trade)
 			trade.State.Status = types.TradeStatusWatching
 			trade.State.LastBuyStatus = report.CurrentOrderStatus
-			s.TriggerLimitSell(trade)
+			s.triggerLimitSell(trade)
 		}
 
 	case binanceapi.OrderSideSell:
@@ -533,10 +578,10 @@ func (s *TradeService) OnExecutionReport(event *binanceex.UserStreamEvent) {
 	}
 
 	db.DbUpdateTrade(trade)
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 }
 
-func (s *TradeService) TriggerLimitSell(trade *types.Trade) {
+func (s *TradeService) triggerLimitSell(trade *types.Trade) {
 	if trade.State.LimitSell.Enabled {
 		if trade.State.LimitSell.Type == types.LimitSellTypePercent {
 			log.WithFields(log.Fields{
@@ -544,14 +589,14 @@ func (s *TradeService) TriggerLimitSell(trade *types.Trade) {
 				"symbol":  trade.State.Symbol,
 			}).Infof("Triggering limit sell at %f percent.",
 				trade.State.LimitSell.Percent)
-			s.LimitSellByPercent(trade, trade.State.LimitSell.Percent)
+			s.limitSellByPercent(trade, trade.State.LimitSell.Percent)
 		} else if trade.State.LimitSell.Type == types.LimitSellTypePrice {
 			log.WithFields(log.Fields{
 				"tradeId": trade.State.TradeID,
 				"symbol":  trade.State.Symbol,
 			}).Infof("Triggering limit sell at price %f.",
 				trade.State.LimitSell.Price)
-			s.LimitSellByPrice(trade, trade.State.LimitSell.Price)
+			s.limitSellByPrice(trade, trade.State.LimitSell.Price)
 		} else {
 			log.WithFields(log.Fields{
 				"tradeId": trade.State.TradeID,
@@ -582,16 +627,13 @@ func (s *TradeService) closeTrade(trade *types.Trade, status types.TradeStatus, 
 	db.DbUpdateTrade(trade)
 }
 
-// Return the sellable quantity adjusted for lot size.
-func (s *TradeService) FixQuantityToStepSize(quantity float64, stepSize float64) float64 {
-	fixedQuantity := util.Roundx(quantity, 1/stepSize)
-	if fixedQuantity > quantity {
-		fixedQuantity = util.Roundx(fixedQuantity-stepSize, 1/stepSize)
-	}
-	return fixedQuantity
+func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.marketSell(trade)
 }
 
-func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
+func (s *TradeService) marketSell(trade *types.Trade) error {
 	quantity := trade.State.SellableQuantity - trade.State.SellFillQuantity
 
 	clientOrderId, err := s.MakeOrderID()
@@ -600,7 +642,7 @@ func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
 		return err
 	}
 
-	s.AddClientOrderId(trade, clientOrderId, locked)
+	s.addClientOrderId(trade, clientOrderId)
 
 	log.WithFields(log.Fields{
 		"symbol":   trade.State.Symbol,
@@ -620,6 +662,12 @@ func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
 }
 
 func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.limitSellByPercent(trade, percent)
+}
+
+func (s *TradeService) limitSellByPercent(trade *types.Trade, percent float64) error {
 	symbolInfo, err := s.binanceExchangeInfo.GetSymbol(trade.State.Symbol)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
@@ -651,7 +699,7 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 		log.WithError(err).Errorf("Failed to generate clientOrderId")
 		return err
 	}
-	s.AddClientOrderId(trade, clientOrderId, false)
+	s.addClientOrderId(trade, clientOrderId)
 
 	quantity := trade.State.SellableQuantity - trade.State.SellFillQuantity
 
@@ -701,18 +749,24 @@ func (s *TradeService) LimitSellByPercent(trade *types.Trade, percent float64) e
 	trade.State.LimitSell.Type = types.LimitSellTypePercent
 
 	db.DbUpdateTrade(trade)
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 
 	return nil
 }
 
 func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.limitSellByPrice(trade, price)
+}
+
+func (s *TradeService) limitSellByPrice(trade *types.Trade, price float64) error {
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
 		log.WithError(err).Errorf("Failed to generate clientOrderId")
 		return err
 	}
-	s.AddClientOrderId(trade, clientOrderId, false)
+	s.addClientOrderId(trade, clientOrderId)
 
 	log.WithFields(log.Fields{
 		"price":    fmt.Sprintf("%.8f", price),
@@ -745,6 +799,13 @@ func (s *TradeService) LimitSellByPrice(trade *types.Trade, price float64) error
 }
 
 func (s *TradeService) UpdateStopLoss(trade *types.Trade, enable bool, percent float64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.updateStopLoss(trade, enable, percent)
+	s.broadcastTradeUpdate(trade)
+}
+
+func (s *TradeService) updateStopLoss(trade *types.Trade, enable bool, percent float64) {
 	trade.SetStopLoss(enable, percent)
 	log.WithFields(log.Fields{
 		"symbol":  trade.State.Symbol,
@@ -757,7 +818,7 @@ func (s *TradeService) UpdateStopLoss(trade *types.Trade, enable bool, percent f
 		"percent": percent,
 	})
 	db.DbUpdateTrade(trade)
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 }
 
 func (s *TradeService) MakeOrderID() (string, error) {
@@ -770,6 +831,13 @@ func (s *TradeService) MakeOrderID() (string, error) {
 }
 
 func (s *TradeService) UpdateTrailingProfit(trade *types.Trade, enable bool,
+	percent float64, deviation float64) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.updateTrailingProfit(trade, enable, percent, deviation)
+}
+
+func (s *TradeService) updateTrailingProfit(trade *types.Trade, enable bool,
 	percent float64, deviation float64) {
 	trade.SetTrailingProfit(enable, percent, deviation)
 	log.WithFields(log.Fields{
@@ -785,10 +853,16 @@ func (s *TradeService) UpdateTrailingProfit(trade *types.Trade, enable bool,
 		"deviation": deviation,
 	})
 	db.DbUpdateTrade(trade)
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 }
 
 func (s *TradeService) CancelSell(trade *types.Trade) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.cancelSell(trade)
+}
+
+func (s *TradeService) cancelSell(trade *types.Trade) error {
 	log.WithFields(log.Fields{
 		"symbol":  trade.State.Symbol,
 		"tradeId": trade.State.TradeID,
@@ -815,11 +889,17 @@ func (s *TradeService) CancelSell(trade *types.Trade) error {
 		})
 	}
 	db.DbUpdateTrade(trade)
-	s.BroadcastTradeUpdate(trade)
+	s.broadcastTradeUpdate(trade)
 	return err
 }
 
 func (s *TradeService) CancelBuy(trade *types.Trade) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.cancelBuy(trade)
+}
+
+func (s *TradeService) cancelBuy(trade *types.Trade) error {
 	_, err := binanceex.GetBinanceRestClient().CancelOrderById(
 		trade.State.Symbol, trade.State.BuyOrderId)
 	if err != nil {
@@ -834,4 +914,13 @@ func (s *TradeService) CancelBuy(trade *types.Trade) error {
 	}
 	db.DbUpdateTrade(trade)
 	return err
+}
+
+// Return the sellable quantity adjusted for lot size.
+func fixQuantityToStepSize(quantity float64, stepSize float64) float64 {
+	fixedQuantity := util.Roundx(quantity, 1/stepSize)
+	if fixedQuantity > quantity {
+		fixedQuantity = util.Roundx(fixedQuantity-stepSize, 1/stepSize)
+	}
+	return fixedQuantity
 }

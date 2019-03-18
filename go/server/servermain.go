@@ -138,7 +138,7 @@ func ServerMain() {
 	}
 
 	applicationContext := &context.ApplicationContext{}
-	applicationContext.BinanceTradeStreamManager = binanceex.NewXTradeStreamManager()
+	applicationContext.BinanceTradeStreamManager = binanceex.NewTradeStreamManager()
 
 	db.DbOpen(ServerFlags.DataDirectory)
 
