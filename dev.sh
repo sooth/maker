@@ -2,8 +2,6 @@
 
 trap 'echo "Killing background jobs..."; kill $(jobs -p)' EXIT
 
-make
-
 (cd webapp && make update-version && npm start) &
 
 args="$@"
