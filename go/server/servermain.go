@@ -173,18 +173,16 @@ func ServerMain() {
 			roundTripTime := time.Now().Sub(requestStart)
 			now := time.Now().UnixNano() / int64(time.Millisecond)
 			diff := math.Abs(float64(now - response.ServerTime))
+			logFields := log.Fields{
+				"roundTripTime":          fmt.Sprintf("%v", roundTripTime),
+				"binanceTimeDifferentMs": fmt.Sprintf("%v", diff),
+			}
 			if diff > 999 {
-				log.WithFields(log.Fields{
-					"roundTripTime":          roundTripTime,
-					"binanceTimeDifferentMs": diff,
-				}).Warnf("Time difference from Binance servers may be too large; order may fail")
+				log.WithFields(logFields).Warnf("Time difference from Binance servers may be too large; order may fail")
 				clientNotificationService.Broadcast(clientnotificationservice.NewNotice(clientnotificationservice.LevelWarning,
 					"Time difference between Binance and Maker server too large, orders may fail."))
 			} else {
-				log.WithFields(log.Fields{
-					"roundTripTime":           roundTripTime,
-					"binanceTimeDifferenceMs": diff,
-				}).Infof("Binance time check")
+				log.WithFields(logFields).Infof("Binance time check")
 			}
 			time.Sleep(1 * time.Minute)
 		}
