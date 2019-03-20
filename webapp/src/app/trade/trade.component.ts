@@ -204,8 +204,11 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             return this.updateAccountInfo();
         })).subscribe(() => {
             this.changeSymbol();
-        }, () => {
+        }, (error) => {
             // Error.
+            console.log("Failed to udpate account info:");
+            console.log(error);
+            this.toastr.error("Failed to update account information, see browser console for more details.");
         }, () => {
         });
 
