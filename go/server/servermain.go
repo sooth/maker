@@ -86,9 +86,6 @@ func ServerMain() {
 	stdlog.SetOutput(&LogInterceptor{})
 	stdlog.SetFlags(0)
 
-	log.Infof("This is Maker version %s (git revision %s)",
-		version.Version, version.GitRevision)
-
 	log.SetLevel(log.LogLevelDebug)
 
 	if _, err := os.Stat(ServerFlags.DataDirectory); err != nil {
@@ -100,6 +97,10 @@ func ServerMain() {
 	if !ServerFlags.NoLog {
 		log.AddHook(log.NewFileOutputHook(path.Join(ServerFlags.DataDirectory, "maker.log")))
 	}
+
+	log.Infof("This is Maker version %s (git revision %s)",
+		version.Version, version.GitRevision)
+
 	ServerFlags.ConfigFilename = path.Join(ServerFlags.DataDirectory, "maker.yaml")
 
 	if ServerFlags.Host != "127.0.0.1" {
