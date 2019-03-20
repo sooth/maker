@@ -55,7 +55,7 @@
 </nav>
 
 <div *ngIf="loginService.authenticated" class="container-fluid app-status-bar">
-  <div class="alert {{alertClass}}">
+  <div class="alert {{alertClass}}" style="border-radius: 0 !important;">
     <div style="display: inline;">
       Maker Socket: {{status.makerSocketState}}
     </div>
