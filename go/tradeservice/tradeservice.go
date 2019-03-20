@@ -638,6 +638,13 @@ func (s *TradeService) MarketSell(trade *types.Trade, locked bool) error {
 func (s *TradeService) marketSell(trade *types.Trade) error {
 	quantity := trade.State.SellableQuantity - trade.State.SellFillQuantity
 
+	if trade.State.Status == types.TradeStatusPendingSell {
+		log.WithFields(log.Fields{
+			"symbol": trade.State.Symbol,
+		}).Infof("Cancelling pending sell order before market sell")
+		s.cancelSell(trade)
+	}
+
 	clientOrderId, err := s.MakeOrderID()
 	if err != nil {
 		log.WithError(err).Errorf("Failed to generate order ID")
