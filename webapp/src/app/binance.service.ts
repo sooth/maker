@@ -99,8 +99,6 @@ export class BinanceService {
         console.log("BinanceServer.init()");
         // Get config then do initialization that depends on config.
         this.makerApi.getConfig().subscribe((config) => {
-            this.api.apiKey = config["binance.api.key"];
-            this.api.apiSecret = config["binance.api.secret"];
             this.updateExchangeInfo().subscribe(() => {
                 this.isReadySubject.next(true);
             });

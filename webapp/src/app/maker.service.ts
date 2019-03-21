@@ -17,12 +17,12 @@ import {Injectable} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
 import {Subject} from "rxjs/Subject";
 import {
-    AccountInfo,
+    BinanceAccountInfo,
     AggTrade,
     BinanceApiService,
     buildAggTradeFromStream,
     CancelOrderResponse,
-    RawStreamAccountInfo,
+    BinanceStreamAccountInfoResponse,
     StreamAggTrade
 } from "./binance-api.service";
 import {HttpParams} from "@angular/common/http";
@@ -54,7 +54,7 @@ export class MakerService {
 
     public binanceAggTrades$: Subject<AggTrade> = new Subject();
 
-    public binanceAccountInfo$: Subject<AccountInfo> = new Subject();
+    public binanceAccountInfo$: Subject<BinanceAccountInfo> = new Subject();
 
     private logger: Logger = null;
 
@@ -94,7 +94,7 @@ export class MakerService {
                 this.tradeMap$.next(this.tradeMap);
                 break;
             case MakerMessageType.BINANCE_OUTBOUND_ACCOUNT_INFO:
-                const accountInfo = AccountInfo.fromStream(
+                const accountInfo = BinanceAccountInfo.fromStream(
                     message.binanceOutboundAccountInfo);
                 this.binanceAccountInfo$.next(accountInfo);
                 break;
@@ -326,7 +326,7 @@ export interface MakerMessage {
     trade?: TradeState;
     binanceAggTrade?: StreamAggTrade;
     tradeId?: string;
-    binanceOutboundAccountInfo: RawStreamAccountInfo;
+    binanceOutboundAccountInfo: BinanceStreamAccountInfoResponse;
     notice?: any;
 }
 

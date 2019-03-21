@@ -268,6 +268,10 @@ func ServerMain() {
 	router.HandleFunc("/api/binance/trade/{tradeId}/abandon",
 		abandonTradeHandler(tradeService)).Methods("POST")
 
+	// Handlers that proxy requests to Binance.
+	binanceProxyHandlers := NewBinanceProxyHandlers()
+	binanceProxyHandlers.RegisterHandlers(router)
+
 	router.HandleFunc("/api/trade/query", queryTradesHandler).
 		Methods("GET")
 	router.HandleFunc("/api/trade/{tradeId}",

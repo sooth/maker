@@ -15,8 +15,6 @@
 
 import {Injectable} from "@angular/core";
 import {HttpHeaders, HttpParams} from "@angular/common/http";
-import * as hmacSHA256 from "crypto-js/hmac-sha256";
-import * as hex from "crypto-js/enc-hex";
 import {catchError, map} from "rxjs/operators";
 import {Observable} from "rxjs";
 import {throwError} from "rxjs/internal/observable/throwError";
@@ -30,19 +28,7 @@ const STREAM_ROOT = "wss://stream.binance.com:9443";
 @Injectable()
 export class BinanceApiService {
 
-    private _apiKey: string = null;
-
-    private _apiSecret: string = null;
-
     constructor(private makerApi: MakerApiService) {
-    }
-
-    set apiKey(key: string) {
-        this._apiKey = key;
-    }
-
-    set apiSecret(secret: string) {
-        this._apiSecret = secret;
     }
 
     private get(path: string, params: HttpParams = null): Observable<Object> {
@@ -53,29 +39,6 @@ export class BinanceApiService {
         }
 
         return this.makerApi.get(url, {
-            params: params,
-        });
-    }
-
-    private authenticateGet(path: string, params: HttpParams = null): Observable<Object> {
-        const url = `${API_ROOT}${path}`;
-
-        if (params == null) {
-            params = new HttpParams();
-        }
-
-        let headers = new HttpHeaders();
-
-        const timestamp = new Date().getTime();
-        params = params.set("timestamp", `${timestamp}`);
-
-        const hmacDigest = hmacSHA256(params.toString(), this._apiSecret);
-        params = params.set("signature", hex.stringify(hmacDigest));
-
-        headers = headers.append("X-MBX-APIKEY", this._apiKey);
-
-        return this.makerApi.get(url, {
-            headers: headers,
             params: params,
         });
     }
@@ -106,11 +69,12 @@ export class BinanceApiService {
         });
     }
 
-    getAccountInfo(): Observable<AccountInfo> {
-        const endpoint = "/api/v3/account";
-        return this.authenticateGet(endpoint, null)
-            .pipe(map((raw: RawRestAccountInfo) => {
-                return AccountInfo.fromRest(raw);
+    getAccountInfo(): Observable<BinanceAccountInfo> {
+        return this.makerApi.get("/api/binance/proxy/getAccount")
+            .pipe(map((restResponse: BinanceRestAccountInfoResrponse) => {
+                const accountInfo = BinanceAccountInfo.fromRest(restResponse);
+                console.log(accountInfo);
+                return accountInfo;
             }));
     }
 
@@ -202,36 +166,28 @@ export class Balance {
     }
 }
 
-export interface RawRestAccountInfo {
-    makeCommission: number;
-    takerCommission: number;
-    buyerCommission: number;
-    sellerCommission: number;
-    canTrade: boolean;
-    canWithdraw: boolean;
-    canDeposit: boolean;
-    updateTime: number;
+export interface BinanceRestAccountInfoResrponse {
     balances: RestBalance[];
 }
 
-export interface RawStreamAccountInfo {
+export interface BinanceStreamAccountInfoResponse {
     B: StreamBalance[];
 }
 
-export class AccountInfo {
+export class BinanceAccountInfo {
 
     balances: Balance[] = null;
 
-    static fromRest(raw: RawRestAccountInfo): AccountInfo {
-        const accountInfo = new AccountInfo();
+    static fromRest(raw: BinanceRestAccountInfoResrponse): BinanceAccountInfo {
+        const accountInfo = new BinanceAccountInfo();
         accountInfo.balances = raw.balances.map((b): Balance => {
             return Balance.fromRest(b);
         });
         return accountInfo;
     }
 
-    static fromStream(raw: RawStreamAccountInfo): AccountInfo {
-        const accountInfo = new AccountInfo();
+    static fromStream(raw: BinanceStreamAccountInfoResponse): BinanceAccountInfo {
+        const accountInfo = new BinanceAccountInfo();
         accountInfo.balances = raw.B.map((b): Balance => {
             return Balance.fromStream(b);
         });

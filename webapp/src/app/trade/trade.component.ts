@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
-import {AccountInfo, AggTrade, Balance, BinanceApiService} from "../binance-api.service";
+import {BinanceAccountInfo, AggTrade, Balance, BinanceApiService} from "../binance-api.service";
 import {Observable} from "rxjs";
 import {BinanceService, LimitSellType, OpenTradeOptions, PriceSource} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
@@ -280,7 +280,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    private updateAccountInfo(): Observable<AccountInfo> {
+    private updateAccountInfo(): Observable<BinanceAccountInfo> {
         return this.api.getAccountInfo().pipe(tap((accountInfo) => {
             console.log("Updating account info.");
             this.updateBalances(accountInfo);
@@ -318,7 +318,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         }
     }
 
-    private updateBalances(accountInfo: AccountInfo) {
+    private updateBalances(accountInfo: BinanceAccountInfo) {
         for (const balance of accountInfo.balances) {
             this.balances[balance.asset] = balance;
         }
