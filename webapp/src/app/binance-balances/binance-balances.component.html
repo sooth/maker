@@ -3,6 +3,13 @@
   <div class="card">
     <div class="card-header">
       Binance Balances
+      <span class="float-right">
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm"
+                style="margin: 0; padding: 1px;"
+                (click)="refresh();"
+        >Refresh</button>
+      </span>
     </div>
     <div class="card-body">
       <table class="table">

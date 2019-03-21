@@ -31,6 +31,10 @@ export class BinanceBalancesComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.refresh();
+    }
+
+    refresh() {
         this.binanceApi.getAccountInfo().subscribe((accountInfo) => {
             this.accountInfo = accountInfo;
             this.balances = accountInfo.balances
