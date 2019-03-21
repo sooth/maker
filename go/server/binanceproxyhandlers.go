@@ -16,7 +16,6 @@
 package server
 
 import (
-	"github.com/crankykernel/binanceapi-go"
 	"github.com/gorilla/mux"
 	"gitlab.com/crankykernel/maker/go/binanceex"
 	"gitlab.com/crankykernel/maker/go/log"
@@ -24,13 +23,10 @@ import (
 )
 
 type BinanceProxyHandlers struct {
-	client *binanceapi.RestClient
 }
 
 func NewBinanceProxyHandlers() *BinanceProxyHandlers {
-	return &BinanceProxyHandlers{
-		client: binanceex.GetBinanceRestClient(),
-	}
+	return &BinanceProxyHandlers{}
 }
 
 func (h *BinanceProxyHandlers) RegisterHandlers(router *mux.Router) {
@@ -38,7 +34,8 @@ func (h *BinanceProxyHandlers) RegisterHandlers(router *mux.Router) {
 }
 
 func (h *BinanceProxyHandlers) GetAccount(w http.ResponseWriter, r *http.Request) {
-	response, err := h.client.GetAccount()
+	client := binanceex.GetBinanceRestClient()
+	response, err := client.GetAccount()
 	if err != nil {
 		log.WithError(err).Errorf("Binance GetAccount request failed")
 	}
