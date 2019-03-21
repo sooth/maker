@@ -19,6 +19,13 @@
 - Add authentication support. The `--auth` command line option is used
   to enable authentication and will auto generate a strong password.
   https://gitlab.com/crankykernel/maker/issues/1
+- Move AccountInfo request (Binance) from the UI to the server so the
+  UI doesn't have to make any authenticated requests to
+  Binance. Solves the issue where the server on a VPS may have good
+  time sync, but the browser machine
+  doesn't. https://gitlab.com/crankykernel/maker/issues/52
+- Provide visiable health status in the
+  UI. https://gitlab.com/crankykernel/maker/issues/42
 
 [Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.2...master)
 
