@@ -459,6 +459,9 @@ func marketSellHandler(tradeService *tradeservice.TradeService) http.HandlerFunc
 
 		err := tradeService.MarketSell(trade, false)
 		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"symbol": trade.State.Symbol,
+			}).Errorf("Market sell failed")
 			WriteJsonError(w, http.StatusInternalServerError, err.Error())
 		}
 	}

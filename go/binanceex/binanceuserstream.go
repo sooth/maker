@@ -64,7 +64,7 @@ type UserStreamEvent struct {
 }
 
 type BinanceUserDataStream struct {
-	Subscribers         map[chan *UserStreamEvent]bool
+	Subscribers         map[chan *UserStreamEvent]string
 	lock                sync.RWMutex
 	listenKey           *ListenKeyWrapper
 	notificationService *clientnotificationservice.Service
@@ -74,25 +74,24 @@ type BinanceUserDataStream struct {
 func NewBinanceUserDataStream(notificationService *clientnotificationservice.Service,
 	healthService *healthservice.Service) *BinanceUserDataStream {
 	return &BinanceUserDataStream{
-		Subscribers:         make(map[chan *UserStreamEvent]bool),
+		Subscribers:         make(map[chan *UserStreamEvent]string),
 		listenKey:           NewListenKeyWrapper(),
 		notificationService: notificationService,
 		healthService:       healthService,
 	}
 }
 
-func (b *BinanceUserDataStream) Subscribe() chan *UserStreamEvent {
+func (b *BinanceUserDataStream) Subscribe(name string) chan *UserStreamEvent {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	channel := make(chan *UserStreamEvent)
-	b.Subscribers[channel] = true
+	channel := make(chan *UserStreamEvent, 3)
+	b.Subscribers[channel] = name
 	return channel
 }
 
 func (b *BinanceUserDataStream) Unsubscribe(channel chan *UserStreamEvent) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	b.Subscribers[channel] = false
 	delete(b.Subscribers, channel)
 }
 
@@ -205,7 +204,12 @@ Start:
 
 		b.lock.RLock()
 		for channel := range b.Subscribers {
-			channel <- &streamEvent
+			select {
+			case channel <- &streamEvent:
+			default:
+				log.Warnf("Failed to send Binance user-stream update to channel [%s]: would block",
+					b.Subscribers[channel])
+			}
 		}
 		b.lock.RUnlock()
 	}

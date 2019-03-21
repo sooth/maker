@@ -156,7 +156,7 @@ func ServerMain() {
 
 	applicationContext.BinanceUserDataStream = binanceex.NewBinanceUserDataStream(
 		clientNotificationService, healthService)
-	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe()
+	userStreamChannel := applicationContext.BinanceUserDataStream.Subscribe("main")
 	go applicationContext.BinanceUserDataStream.Run()
 
 	go func() {

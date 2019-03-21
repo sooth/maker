@@ -53,7 +53,7 @@ type TradeService struct {
 
 	idGenerator *idgenerator.IdGenerator
 
-	subscribers map[chan TradeEvent]bool
+	subscribers map[chan TradeEvent]string
 	lock        sync.Mutex
 
 	tradeStreamManager *binanceex.TradeStreamManager
@@ -67,7 +67,7 @@ func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeS
 		TradesByLocalID:     make(map[string]*types.Trade),
 		TradesByClientID:    make(map[string]*types.Trade),
 		idGenerator:         idgenerator.NewIdGenerator(),
-		subscribers:         make(map[chan TradeEvent]bool),
+		subscribers:         make(map[chan TradeEvent]string),
 		tradeStreamManager:  binanceStreamManager,
 		binanceExchangeInfo: binanceex.NewExchangeInfoService(),
 	}
@@ -77,7 +77,7 @@ func NewTradeService(binanceStreamManager *binanceex.TradeStreamManager) *TradeS
 			Errorf("Failed to update Binance exchange info")
 	}
 
-	tradeService.tradeStreamChannel = tradeService.tradeStreamManager.Subscribe()
+	tradeService.tradeStreamChannel = tradeService.tradeStreamManager.Subscribe("trade-service")
 
 	go tradeService.tradeStreamListener()
 
@@ -224,24 +224,28 @@ func (s *TradeService) GetAllTrades() []*types.Trade {
 	return trades
 }
 
-func (s *TradeService) Subscribe() chan TradeEvent {
+func (s *TradeService) Subscribe(name string) chan TradeEvent {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	channel := make(chan TradeEvent)
-	s.subscribers[channel] = true
+	channel := make(chan TradeEvent, 3)
+	s.subscribers[channel] = name
 	return channel
 }
 
 func (s *TradeService) Unsubscribe(channel chan TradeEvent) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.subscribers[channel] = false
 	delete(s.subscribers, channel)
 }
 
 func (s *TradeService) broadcastTradeEvent(tradeEvent TradeEvent) {
 	for channel := range s.subscribers {
-		channel <- tradeEvent
+		select {
+		case channel <- tradeEvent:
+		default:
+			log.Warnf("Failed to send trade update from trade-service to channel [%s], would block",
+				s.subscribers[channel])
+		}
 	}
 }
 
@@ -292,7 +296,7 @@ func (s *TradeService) AbandonTrade(trade *types.Trade) {
 func (s *TradeService) abandonTrade(trade *types.Trade) {
 	if !trade.IsDone() {
 		s.closeTrade(trade, types.TradeStatusAbandoned, time.Now())
-		s.BroadcastTradeUpdate(trade)
+		s.broadcastTradeUpdate(trade)
 	}
 }
 

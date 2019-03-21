@@ -53,8 +53,13 @@ func (h *UserWebSocketHandler) readLoop(ws *websocket.Conn, doneChannel chan boo
 	for {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
-			doneChannel <- true
-			close(doneChannel)
+			log.WithError(err).WithFields(log.Fields{
+				"remoteAddr": ws.RemoteAddr(),
+			}).Errorf("Error reading next message from client websocket")
+			select {
+			case doneChannel <- true:
+			default:
+			}
 			break
 		}
 	}
@@ -67,17 +72,24 @@ func (h *UserWebSocketHandler) writeLoop(ws *websocket.Conn, writeChannel chan *
 		if message == nil {
 			break
 		}
-		buf, err := json.Marshal(message)
-		if err != nil {
-			log.WithError(err).Error("Failed to encode message to JSON.")
-			continue
-		}
-		if err := ws.WriteMessage(websocket.TextMessage, buf); err != nil {
-			log.Printf("error: failed to write to websocket: %v", err)
-			return
+		if err := h.WriteMessage(ws, message); err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"remoteAddr": ws.RemoteAddr(),
+			}).Errorf("Failed to write message to websocket client")
+			ws.Close()
+			break
 		}
 	}
 	log.WithField("remoteAddr", ws.RemoteAddr()).Debug("Client websocket write-loop done")
+}
+
+func (h *UserWebSocketHandler) WriteMessage(ws *websocket.Conn, message *MakerMessage) error {
+	buf, err := json.Marshal(message)
+	if err != nil {
+		log.WithError(err).Error("Failed to encode message to JSON.")
+		return nil
+	}
+	return ws.WriteMessage(websocket.TextMessage, buf)
 }
 
 func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -106,16 +118,16 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}).Info("Client websocket connected")
 
 	doneChannel := make(chan bool)
-	tradeChannel := h.appContext.TradeService.Subscribe()
+	tradeChannel := h.appContext.TradeService.Subscribe("wshandler")
 	defer h.appContext.TradeService.Unsubscribe(tradeChannel)
 
-	binanceTradeStreamChannel := h.appContext.BinanceTradeStreamManager.Subscribe()
+	binanceTradeStreamChannel := h.appContext.BinanceTradeStreamManager.Subscribe("wshandler")
 	defer h.appContext.BinanceTradeStreamManager.Unsubscribe(binanceTradeStreamChannel)
 
-	binanceUserStreamChannel := h.appContext.BinanceUserDataStream.Subscribe()
+	binanceUserStreamChannel := h.appContext.BinanceUserDataStream.Subscribe("wshandler")
 	defer h.appContext.BinanceUserDataStream.Unsubscribe(binanceUserStreamChannel)
 
-	writeChannel := make(chan *MakerMessage)
+	writeChannel := make(chan *MakerMessage, 128)
 
 	go h.readLoop(ws, doneChannel)
 	go h.writeLoop(ws, writeChannel)
@@ -142,40 +154,45 @@ func (h *UserWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 Loop:
 	for {
+		var outboundMessage *MakerMessage = nil
 		select {
 		case <-doneChannel:
+			log.WithFields(log.Fields{
+				"remoteAddr": ws.RemoteAddr(),
+			}).Debugf("Received read-loop done message, closing down websocket")
+			select {
+			case writeChannel <- nil:
+			default:
+			}
 			break Loop
 		case binanceUserEvent := <-binanceUserStreamChannel:
 			switch binanceUserEvent.EventType {
 			case binanceex.EventTypeExecutionReport:
 				// Do nothing.
 			case binanceex.EventTypeOutboundAccountInfo:
-				message := MakerMessage{
+				outboundMessage = &MakerMessage{
 					Type:                       MakerMessageTypeBinanceAccountInfo,
 					BinanceOutboundAccountInfo: binanceUserEvent.OutboundAccountInfo,
 				}
-				writeChannel <- &message
 			default:
 				log.WithFields(log.Fields{
 					"eventType": binanceUserEvent.EventType,
 				}).Info("Ignoring binance user stream event.")
 			}
 		case trade := <-binanceTradeStreamChannel:
-			message := MakerMessage{
+			outboundMessage = &MakerMessage{
 				Type:            MakerMessageTypeBinanceAggTrade,
 				BinanceAggTrade: trade,
 			}
-			writeChannel <- &message
 		case trade := <-tradeChannel:
-			var message *MakerMessage
 			switch trade.EventType {
 			case tradeservice.TradeEventTypeUpdate:
-				message = &MakerMessage{
+				outboundMessage = &MakerMessage{
 					Type:  MakerMessageTypeTrade,
 					Trade: trade.TradeState,
 				}
 			case tradeservice.TradeEventTypeArchive:
-				message = &MakerMessage{
+				outboundMessage = &MakerMessage{
 					Type:    MakerMessageTypeTradeArchived,
 					TradeID: trade.TradeID,
 				}
@@ -183,23 +200,31 @@ Loop:
 				log.Printf("ERROR: Unknown trade server event type: %s",
 					trade.EventType)
 			}
-			if message != nil {
-				writeChannel <- message
-			}
 		case notice := <-clientNoticeChannel:
-			writeChannel <- &MakerMessage{
+			outboundMessage = &MakerMessage{
 				Type:   MakerMessageTypeNotice,
 				Notice: notice,
 			}
 		case health := <-healthUpdateChannel:
-			writeChannel <- &MakerMessage{
+			outboundMessage = &MakerMessage{
 				Type:   MakerMessageTypeHealth,
 				Health: health,
 			}
 		}
-	}
 
-	writeChannel <- nil
+		if outboundMessage != nil {
+			select {
+			case writeChannel <- outboundMessage:
+			default:
+				log.WithFields(log.Fields{
+					"remoteAddr": ws.RemoteAddr(),
+				}).Errorf("Too many messages queued for websocket client, dropping")
+				ws.Close()
+				break Loop
+			}
+		}
+
+	}
 
 	log.WithFields(log.Fields{
 		"remoteAddr": r.RemoteAddr,

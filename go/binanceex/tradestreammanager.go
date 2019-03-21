@@ -29,24 +29,24 @@ type TradeStreamChannel chan binanceapi.StreamAggTrade
 
 type TradeStreamManager struct {
 	lock          sync.RWMutex
-	subscriptions map[TradeStreamChannel]bool
+	subscriptions map[TradeStreamChannel]string
 	streams       map[string]*binanceapi.Stream
 	streamCount   map[string]int
 }
 
 func NewTradeStreamManager() *TradeStreamManager {
 	return &TradeStreamManager{
-		subscriptions: make(map[TradeStreamChannel]bool),
+		subscriptions: make(map[TradeStreamChannel]string),
 		streams:       make(map[string]*binanceapi.Stream),
 		streamCount:   make(map[string]int),
 	}
 }
 
-func (m *TradeStreamManager) Subscribe() TradeStreamChannel {
+func (m *TradeStreamManager) Subscribe(name string) TradeStreamChannel {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	channel := make(TradeStreamChannel)
-	m.subscriptions[channel] = true
+	channel := make(TradeStreamChannel, 3)
+	m.subscriptions[channel] = name
 	return channel
 }
 
@@ -56,7 +56,6 @@ func (m *TradeStreamManager) Unsubscribe(channel TradeStreamChannel) {
 	if _, exists := m.subscriptions[channel]; !exists {
 		log.Errorf("Attempt to unsubscribe non existing channel")
 	}
-	m.subscriptions[channel] = false
 	delete(m.subscriptions, channel)
 }
 
@@ -146,7 +145,12 @@ Retry:
 
 		m.lock.RLock()
 		for channel := range m.subscriptions {
-			channel <- trade
+			select {
+			case channel <- trade:
+			default:
+				log.Warnf("Failed to send Binance trade to channel [%s], would block",
+					m.subscriptions[channel])
+			}
 		}
 		m.lock.RUnlock()
 	}
