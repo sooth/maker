@@ -41,6 +41,7 @@ import {TradeTableRowComponent} from './trade-table-row/trade-table-row.componen
 import {TrailingProfitFormComponent} from './trailingprofitform/trailing-profit-form.component';
 import {AboutComponent} from './about/about.component';
 import {LoginComponent} from './login/login.component';
+import { BinanceBalancesComponent } from './binance-balances/binance-balances.component';
 
 fontawesome.library.add(faCog);
 fontawesome.library.add(faQuestion);
@@ -60,6 +61,7 @@ fontawesome.library.add(faSyncAlt);
         TradeDetailComponent,
         AboutComponent,
         LoginComponent,
+        BinanceBalancesComponent,
     ],
     imports: [
         // Angular modules.

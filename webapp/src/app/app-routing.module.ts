@@ -21,6 +21,7 @@ import {HistoryComponent} from './history/history.component';
 import {TradeDetailComponent} from './trade-detail/trade-detail.component';
 import {LoginComponent} from "./login/login.component";
 import {CompositeGuard} from "./composite.guard";
+import {BinanceBalancesComponent} from "./binance-balances/binance-balances.component";
 
 const routes: Routes = [
     {
@@ -59,6 +60,17 @@ const routes: Routes = [
     {
         path: "history",
         component: HistoryComponent,
+        canActivate: [
+            CompositeGuard,
+        ],
+        data: {
+            authRequired: true,
+            configRequired: true,
+        }
+    },
+    {
+        path: "binance/balances",
+        component: BinanceBalancesComponent,
         canActivate: [
             CompositeGuard,
         ],

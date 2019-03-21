@@ -1,0 +1,24 @@
+<div class="container-fluid">
+
+  <div class="card">
+    <div class="card-header">
+      Binance Balances
+    </div>
+    <div class="card-body">
+      <table class="table">
+        <tr>
+          <th>Asset</th>
+          <th>Total</th>
+          <th>Free</th>
+          <th>Locked</th>
+        </tr>
+        <tr *ngFor="let b of balances">
+          <td>{{b.asset}}</td>
+          <td>{{b.total}}</td>
+          <td>{{b.free}}</td>
+          <td>{{b.locked}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>

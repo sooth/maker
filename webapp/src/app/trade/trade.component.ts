@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
-import {BinanceAccountInfo, AggTrade, Balance, BinanceApiService} from "../binance-api.service";
+import {BinanceAccountInfo, AggTrade, BinanceBalance, BinanceApiService} from "../binance-api.service";
 import {Observable} from "rxjs";
 import {BinanceService, LimitSellType, OpenTradeOptions, PriceSource} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
@@ -113,7 +113,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
         offsetTicks: 0,
     };
 
-    balances: { [key: string]: Balance } = {};
+    balances: { [key: string]: BinanceBalance } = {};
 
     private tradeSubscription: Subscription = null;
 

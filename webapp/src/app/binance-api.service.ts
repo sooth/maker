@@ -73,7 +73,6 @@ export class BinanceApiService {
         return this.makerApi.get("/api/binance/proxy/getAccount")
             .pipe(map((restResponse: BinanceRestAccountInfoResrponse) => {
                 const accountInfo = BinanceAccountInfo.fromRest(restResponse);
-                console.log(accountInfo);
                 return accountInfo;
             }));
     }
@@ -129,19 +128,19 @@ export interface BuyOrderResponse {
     trade_id: string;
 }
 
-export interface StreamBalance {
+export interface BinanceStreamBalanceResponse {
     a: string; // Asset.
     f: string; // Free amount.
     l: string; // Locked amount.
 }
 
-export interface RestBalance {
+export interface BinanceRestBalanceResponse {
     asset: string;
     free: string;
     locked: string;
 }
 
-export class Balance {
+export class BinanceBalance {
 
     asset: string;
 
@@ -149,16 +148,16 @@ export class Balance {
 
     locked: number;
 
-    static fromRest(raw: RestBalance): Balance {
-        const balance = new Balance();
+    static fromRest(raw: BinanceRestBalanceResponse): BinanceBalance {
+        const balance = new BinanceBalance();
         balance.asset = raw.asset;
         balance.free = +raw.free;
         balance.locked = +raw.locked;
         return balance;
     }
 
-    static fromStream(raw: StreamBalance): Balance {
-        const balance = new Balance();
+    static fromStream(raw: BinanceStreamBalanceResponse): BinanceBalance {
+        const balance = new BinanceBalance();
         balance.asset = raw.a;
         balance.free = +raw.f;
         balance.locked = +raw.l;
@@ -167,29 +166,29 @@ export class Balance {
 }
 
 export interface BinanceRestAccountInfoResrponse {
-    balances: RestBalance[];
+    balances: BinanceRestBalanceResponse[];
 }
 
 export interface BinanceStreamAccountInfoResponse {
-    B: StreamBalance[];
+    B: BinanceStreamBalanceResponse[];
 }
 
 export class BinanceAccountInfo {
 
-    balances: Balance[] = null;
+    balances: BinanceBalance[] = null;
 
     static fromRest(raw: BinanceRestAccountInfoResrponse): BinanceAccountInfo {
         const accountInfo = new BinanceAccountInfo();
-        accountInfo.balances = raw.balances.map((b): Balance => {
-            return Balance.fromRest(b);
+        accountInfo.balances = raw.balances.map((b): BinanceBalance => {
+            return BinanceBalance.fromRest(b);
         });
         return accountInfo;
     }
 
     static fromStream(raw: BinanceStreamAccountInfoResponse): BinanceAccountInfo {
         const accountInfo = new BinanceAccountInfo();
-        accountInfo.balances = raw.B.map((b): Balance => {
-            return Balance.fromStream(b);
+        accountInfo.balances = raw.B.map((b): BinanceBalance => {
+            return BinanceBalance.fromStream(b);
         });
         return accountInfo;
     }

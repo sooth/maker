@@ -26,6 +26,7 @@
   doesn't. https://gitlab.com/crankykernel/maker/issues/52
 - Provide visiable health status in the
   UI. https://gitlab.com/crankykernel/maker/issues/42
+- Add simple Binance balance view.
 
 [Full Changelog](https://gitlab.com/crankykernel/maker/compare/0.3.2...master)
 
