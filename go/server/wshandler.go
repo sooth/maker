@@ -28,6 +28,7 @@ import (
 	"gitlab.com/crankykernel/maker/go/types"
 	"gitlab.com/crankykernel/maker/go/version"
 	"net/http"
+	"strings"
 )
 
 // This handler implements the read-only websocket that all clients connect
@@ -53,9 +54,15 @@ func (h *UserWebSocketHandler) readLoop(ws *websocket.Conn, doneChannel chan boo
 	for {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"remoteAddr": ws.RemoteAddr(),
-			}).Errorf("Error reading next message from client websocket")
+			if strings.Index(err.Error(), "going away") > -1 {
+				log.WithError(err).WithFields(log.Fields{
+					"remoteAddr": ws.RemoteAddr(),
+				}).Infof("Websocket client disconnected")
+			} else {
+				log.WithError(err).WithFields(log.Fields{
+					"remoteAddr": ws.RemoteAddr(),
+				}).Errorf("Error reading next message from client websocket")
+			}
 			select {
 			case doneChannel <- true:
 			default:
