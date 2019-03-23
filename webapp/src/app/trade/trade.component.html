@@ -133,14 +133,14 @@
                         >
                         <div class="input-group-append">
                           <button type="button" class="btn btn-outline-secondary"
-                                  (click)="orderForm.offsetTicks = orderForm.offsetTicks + 1;"
-                                  [attr.disabled]="orderForm.offsetEnabled ? null : ''"
-                          >+
-                          </button>
-                          <button type="button" class="btn btn-outline-secondary"
                                   (click)="orderForm.offsetTicks = orderForm.offsetTicks - 1;"
                                   [attr.disabled]="orderForm.offsetEnabled ? null : ''"
                           >-
+                          </button>
+                          <button type="button" class="btn btn-outline-secondary"
+                                  (click)="orderForm.offsetTicks = orderForm.offsetTicks + 1;"
+                                  [attr.disabled]="orderForm.offsetEnabled ? null : ''"
+                          >+
                           </button>
                           <button type="button" class="btn btn-outline-secondary"
                                   (click)="orderForm.offsetTicks = 0;"
