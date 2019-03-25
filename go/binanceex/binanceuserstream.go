@@ -206,9 +206,9 @@ Start:
 		for channel := range b.Subscribers {
 			select {
 			case channel <- &streamEvent:
-			default:
-				log.Warnf("Failed to send Binance user-stream update to channel [%s]: would block",
-					b.Subscribers[channel])
+			//default:
+			//	log.Warnf("Failed to send Binance user-stream update to channel [%s]: would block",
+			//		b.Subscribers[channel])
 			}
 		}
 		b.lock.RUnlock()
