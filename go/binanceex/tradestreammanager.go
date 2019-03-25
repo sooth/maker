@@ -45,7 +45,7 @@ func NewTradeStreamManager() *TradeStreamManager {
 func (m *TradeStreamManager) Subscribe(name string) TradeStreamChannel {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	channel := make(TradeStreamChannel, 3)
+	channel := make(TradeStreamChannel, 128)
 	m.subscriptions[channel] = name
 	return channel
 }
