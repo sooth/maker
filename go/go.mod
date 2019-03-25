@@ -4,7 +4,7 @@ require (
 	github.com/crankykernel/binanceapi-go v0.0.0-20190318152857-632f0d98fabb
 	github.com/gobuffalo/buffalo-plugins v1.13.0 // indirect
 	github.com/gobuffalo/meta v0.0.0-20190207205153-50a99e08b8cf // indirect
-	github.com/gobuffalo/packr/v2 v2.0.7
+	github.com/gobuffalo/packr/v2 v2.0.8
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.0
