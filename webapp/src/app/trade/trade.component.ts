@@ -14,7 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
-import {BinanceAccountInfo, AggTrade, BinanceBalance, BinanceApiService} from "../binance-api.service";
+import {BinanceAccountInfo, BinanceApiService, BinanceBalance} from "../binance-api.service";
 import {Observable} from "rxjs";
 import {BinanceService, LimitSellType, OpenTradeOptions, PriceSource} from "../binance.service";
 import {switchMap, tap} from "rxjs/operators";
@@ -114,8 +114,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     };
 
     balances: { [key: string]: BinanceBalance } = {};
-
-    private tradeSubscription: Subscription = null;
 
     private tickerSubscription: Subscription = null;
 
@@ -269,9 +267,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     ngOnDestroy() {
-        if (this.tradeSubscription) {
-            this.tradeSubscription.unsubscribe();
-        }
         if (this.tickerSubscription) {
             this.tickerSubscription.unsubscribe();
         }
@@ -360,16 +355,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.priceStepSize = this.binance.symbolMap[symbol].tickSize;
 
-        if (this.tradeSubscription) {
-            this.tradeSubscription.unsubscribe();
-        }
-
-        this.tradeSubscription = this.binance.subscribeAggTradeStream(symbol)
-            .subscribe((aggTrade) => {
-                this.ticker.last = aggTrade.price;
-                this.onAggTrade(aggTrade);
-            });
-
         if (this.tickerSubscription) {
             this.tickerSubscription.unsubscribe();
         }
@@ -379,6 +364,8 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             this.ticker.ask = ticker.bestAsk;
             this.ticker.vol24 = ticker.volume;
             this.ticker.percentChange24 = ticker.percentChange24;
+            this.ticker.last = ticker.price;
+            this.updateOrderFormAssetAmount();
         });
 
         this.saveState();
@@ -392,12 +379,6 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     fixManualPriceInput() {
         this.orderForm.manualPrice = this.toFixed(+this.orderForm.manualPrice, 8);
         this.updateOrderFormAssetAmount();
-    }
-
-    private onAggTrade(trade: AggTrade) {
-        if (trade.symbol === this.orderFormSettings.symbol) {
-            this.updateOrderFormAssetAmount();
-        }
     }
 
     updateOrderFormAssetAmount() {
@@ -507,21 +488,5 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
 
     toFixed(value: number | string, fractionDigits: number): string {
         return (+value).toFixed(fractionDigits);
-    }
-
-    private getPrice(): number {
-        switch (this.orderFormSettings.priceSource) {
-            case PriceSource.MANUAL:
-                return +this.orderForm.manualPrice;
-            case PriceSource.LAST_PRICE:
-                return this.ticker.last;
-            case PriceSource.BEST_BID:
-                return this.ticker.bid;
-            case PriceSource.BEST_ASK:
-                return this.ticker.ask;
-            default:
-                break;
-        }
-        return 0;
     }
 }
