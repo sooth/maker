@@ -179,7 +179,7 @@ Loop:
 			case binanceex.EventTypeOutboundAccountInfo:
 				outboundMessage = &MakerMessage{
 					Type:                       MakerMessageTypeBinanceAccountInfo,
-					BinanceOutboundAccountInfo: binanceUserEvent.OutboundAccountInfo,
+					BinanceOutboundAccountInfo: &binanceUserEvent.OutboundAccountInfo,
 				}
 			default:
 				log.WithFields(log.Fields{
@@ -189,14 +189,14 @@ Loop:
 		case trade := <-binanceTradeStreamChannel:
 			outboundMessage = &MakerMessage{
 				Type:            MakerMessageTypeBinanceAggTrade,
-				BinanceAggTrade: trade,
+				BinanceAggTrade: &trade,
 			}
 		case trade := <-tradeChannel:
 			switch trade.EventType {
 			case tradeservice.TradeEventTypeUpdate:
 				outboundMessage = &MakerMessage{
 					Type:  MakerMessageTypeTrade,
-					Trade: trade.TradeState,
+					Trade: &trade.TradeState,
 				}
 			case tradeservice.TradeEventTypeArchive:
 				outboundMessage = &MakerMessage{
@@ -240,10 +240,10 @@ Loop:
 
 type MakerMessage struct {
 	Type                       MakerMessageType                     `json:"messageType"`
-	Trade                      types.TradeState                     `json:"trade,omitempty"`
+	Trade                      *types.TradeState                     `json:"trade,omitempty"`
 	TradeID                    string                               `json:"tradeId,omitempty"`
-	BinanceAggTrade            binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
-	BinanceOutboundAccountInfo binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
+	BinanceAggTrade            *binanceapi.StreamAggTrade            `json:"binanceAggTrade,omitempty"`
+	BinanceOutboundAccountInfo *binanceapi.StreamOutboundAccountInfo `json:"binanceOutboundAccountInfo,omitempty"`
 	Notice                     *clientnotificationservice.Notice    `json:"notice,omitempty"`
 	Health                     *healthservice.State                 `json:"health,omitempty"`
 }
