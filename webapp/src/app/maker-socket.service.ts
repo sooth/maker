@@ -63,7 +63,7 @@ export class MakerSocketService {
 
     private startConnect() {
         this.makerApi.getVersion().subscribe((response) => {
-            console.log("Version check OK, procedding with websocket connection.");
+            this.log("Version check OK, procedding with websocket connection.");
             this.connect();
         }, (error) => {
             if (error.status === 401) {

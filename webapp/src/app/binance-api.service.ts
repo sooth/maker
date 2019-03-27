@@ -109,11 +109,6 @@ export class BinanceApiService {
 
 }
 
-interface RestTickerPriceResponse {
-    symbol: string;
-    price: string;
-}
-
 /**
  * Cancel order response object. Needs no translation.
  */
@@ -293,11 +288,6 @@ export class ExchangeInfo {
     }
 }
 
-interface MultiStreamFrame {
-    stream: string;
-    data: any;
-}
-
 export interface StreamAggTrade {
     e: string; // Event type
     E: number; // Event time
@@ -316,56 +306,6 @@ export interface AggTrade {
     symbol: string;
     price: number;
     quantity: number;
-}
-
-export interface RestBookTicker {
-    symbol: string;
-    bidPrice: string;
-    bidQty: string;
-    askPrice: string;
-    askQty: string;
-}
-
-export interface BookTicker {
-    symbol: string;
-    bidPrice: number;
-    bidQty: number;
-    askPrice: number;
-    askQty: number;
-}
-
-interface StreamDepth {
-    lastUpdateId: number;
-    bids: any[];
-    asks: any[];
-}
-
-export interface Depth {
-    symbol: string;
-    lastUpdateId: number;
-    bids: { price: number, quantity: number }[];
-    asks: { price: number, quantity: number }[];
-}
-
-export function makeDepthFromStream(symbol: string, raw: StreamDepth): Depth {
-    const bids = raw.bids.map((bid) => {
-        return {
-            price: +bid[0],
-            quantity: +bid[1],
-        };
-    });
-    const asks = raw.asks.map((ask) => {
-        return {
-            price: +ask[0],
-            quantity: +ask[1],
-        };
-    });
-    return {
-        symbol: symbol.toUpperCase(),
-        lastUpdateId: raw.lastUpdateId,
-        bids: bids,
-        asks: asks,
-    };
 }
 
 export function buildAggTradeFromStream(raw: StreamAggTrade): AggTrade {
@@ -406,14 +346,7 @@ export function buildTickerFromStream(raw: StreamTicker): PriceTicker {
     };
 }
 
-function buildTickerFromRest(r: RestTickerPriceResponse): PriceTicker {
-    return {
-        symbol: r.symbol.toUpperCase(),
-        price: +r.price,
-    };
-}
-
-export function makeWebSocketObservable(url: string): Observable<any> {
+function makeWebSocketObservable(url: string): Observable<any> {
     return Observable.create((observer: Observer<any>) => {
 
         let ws: WebSocket = null;

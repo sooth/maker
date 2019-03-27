@@ -14,17 +14,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Injectable} from "@angular/core";
-import {
-    AggTrade,
-    BinanceApiService,
-    buildAggTradeFromStream,
-    buildTickerFromStream,
-    Depth,
-    ExchangeInfo,
-    makeDepthFromStream,
-    PriceTicker,
-    SymbolInfo
-} from "./binance-api.service";
+import {BinanceApiService, buildTickerFromStream, ExchangeInfo, PriceTicker, SymbolInfo} from "./binance-api.service";
 import {map, multicast, refCount, take, tap} from "rxjs/operators";
 import {Observable, Subject} from "rxjs";
 import {ReplaySubject} from "rxjs/ReplaySubject";
@@ -90,7 +80,7 @@ export class BinanceService {
         this.isReadySubject = new ReplaySubject<boolean>(1);
         this.isReady$ = this.isReadySubject.pipe(take(1));
         this.loginService.$onLogin.asObservable().pipe(take(1))
-            .subscribe((result) => {
+            .subscribe(() => {
                 this.init();
             });
     }
@@ -109,22 +99,6 @@ export class BinanceService {
         return this.api.postBuyOrder(body);
     }
 
-    subscribeAggTradeStream(symbol: string): Observable<AggTrade> {
-        const stream = `${symbol.toLowerCase()}@aggTrade`;
-        if (!this.streams$[stream]) {
-            const path = `/ws/${stream}`;
-            this.streams$[stream] = this.api.openStream(path)
-                .pipe(
-                    multicast(new Subject<any>()),
-                    refCount(),
-                    map((message) => {
-                        return buildAggTradeFromStream(message);
-                    })
-                );
-        }
-        return this.streams$[stream];
-    }
-
     subscribeToTicker(symbol: string): Observable<PriceTicker> {
         const stream = `${symbol.toLowerCase()}@ticker`;
         if (!this.streams$[stream]) {
@@ -135,22 +109,6 @@ export class BinanceService {
                     refCount(),
                     map((ticker) => {
                         return buildTickerFromStream(ticker);
-                    })
-                );
-        }
-        return this.streams$[stream];
-    }
-
-    subscribeToDepth(symbol: string, depth: number = 5): Observable<Depth> {
-        const stream = `${symbol.toLowerCase()}@depth${depth}`;
-        if (!this.streams$[stream]) {
-            const path = `/ws/${stream}`;
-            this.streams$[stream] = this.api.openStream(path)
-                .pipe(
-                    multicast(new Subject<any>()),
-                    refCount(),
-                    map((depth) => {
-                        return makeDepthFromStream(symbol, depth);
                     })
                 );
         }
