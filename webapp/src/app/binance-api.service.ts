@@ -14,99 +14,57 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Injectable} from "@angular/core";
-import {HttpHeaders, HttpParams} from "@angular/common/http";
-import {catchError, map} from "rxjs/operators";
 import {Observable} from "rxjs";
-import {throwError} from "rxjs/internal/observable/throwError";
-import {OpenTradeOptions} from "./binance.service";
 import {Observer} from "rxjs/Observer";
-import {MakerApiService} from "./maker-api.service";
 
-const API_ROOT = "/proxy/binance";
 const STREAM_ROOT = "wss://stream.binance.com:9443";
 
 @Injectable()
 export class BinanceApiService {
-
-    constructor(private makerApi: MakerApiService) {
-    }
-
-    private get(path: string, params: HttpParams = null): Observable<Object> {
-        const url = `${API_ROOT}${path}`;
-
-        if (params == null) {
-            params = new HttpParams();
-        }
-
-        return this.makerApi.get(url, {
-            params: params,
-        });
-    }
-
-    private post(path: string, options?: {
-        params?: HttpParams;
-        headers?: HttpHeaders;
-    }, body: any = null) {
-        const headers = options && options.headers || new HttpHeaders();
-        const params = options && options.params || new HttpParams();
-        return this.makerApi.post(path, body, {
-            params: params,
-            headers: headers,
-        }).pipe(catchError((error) => {
-            if (error.error instanceof ErrorEvent) {
-                console.log("A client side error occurred: ");
-                console.log(error);
-                return throwError(error);
-            } else {
-                return throwError(error);
-            }
-        }));
-    }
-
-    private delete(path: string, params: HttpParams = null): Observable<any> {
-        return this.makerApi.delete(path, {
-            params: params,
-        });
-    }
-
-    getAccountInfo(): Observable<BinanceAccountInfo> {
-        return this.makerApi.get("/api/binance/proxy/getAccount")
-            .pipe(map((restResponse: BinanceRestAccountInfoResrponse) => {
-                const accountInfo = BinanceAccountInfo.fromRest(restResponse);
-                return accountInfo;
-            }));
-    }
-
-    getExchangeInfo(): Observable<ExchangeInfo> {
-        const endpoint = "/api/v1/exchangeInfo";
-        return this.get(endpoint, null).pipe(map((info: RestExchangeInfoResponse) => {
-            return ExchangeInfo.fromRest(info);
-        }));
-    }
-
-    postBuyOrder(body: OpenTradeOptions = null): Observable<BuyOrderResponse> {
-        const endpoint = "/api/binance/buy";
-        return <Observable<BuyOrderResponse>>this.post(endpoint, null, body);
-    }
-
-    cancelSellOrder(tradeId: string): Observable<CancelOrderResponse> {
-        const endpoint = "/api/binance/sell";
-        const params = new HttpParams().set("trade_id", tradeId);
-        return this.delete(endpoint, params);
-    }
-
-    cancelBuy(tradeId: string): Observable<CancelOrderResponse> {
-        const endpoint = "/api/binance/buy";
-        const params = new HttpParams()
-            .set("trade_id", tradeId);
-        return this.delete(endpoint, params);
-    }
-
     openStream(path: string): Observable<any> {
         const url = `${STREAM_ROOT}${path}`;
         return makeWebSocketObservable(url);
     }
+}
 
+function makeWebSocketObservable(url: string): Observable<any> {
+    return Observable.create((observer: Observer<any>) => {
+
+        let ws: WebSocket = null;
+        let closeRequested = false;
+
+        const openWebSocket = () => {
+            console.log(`websocket: connecting to ${url}.`);
+            ws = new WebSocket(url);
+
+            ws.onmessage = (event) => {
+                observer.next(JSON.parse(event.data));
+            };
+
+            ws.onerror = (event) => {
+                console.log(`websocket: error: ${url}: ${JSON.stringify(event)}`);
+                console.log(event);
+                observer.error(event);
+            };
+
+            ws.onclose = () => {
+                console.log(`websocket: closed ${url}.`);
+                if (!closeRequested) {
+                    openWebSocket();
+                }
+            };
+        };
+
+        openWebSocket();
+
+        return () => {
+            closeRequested = true;
+            if (ws != null) {
+                ws.close();
+            }
+        };
+
+    });
 }
 
 /**
@@ -199,7 +157,7 @@ export interface RestSymbolInfo {
     filters: any[];
 }
 
-interface RestExchangeInfoResponse {
+export interface RestExchangeInfoResponse {
     symbols: RestSymbolInfo[];
 }
 
@@ -344,45 +302,4 @@ export function buildTickerFromStream(raw: StreamTicker): PriceTicker {
         volume: +raw.q,
         percentChange24: +raw.P,
     };
-}
-
-function makeWebSocketObservable(url: string): Observable<any> {
-    return Observable.create((observer: Observer<any>) => {
-
-        let ws: WebSocket = null;
-        let closeRequested = false;
-
-        const openWebSocket = () => {
-            console.log(`websocket: connecting to ${url}.`);
-            ws = new WebSocket(url);
-
-            ws.onmessage = (event) => {
-                observer.next(JSON.parse(event.data));
-            };
-
-            ws.onerror = (event) => {
-                console.log(`websocket: error: ${url}: ${JSON.stringify(event)}`);
-                console.log(event);
-                observer.error(event);
-            };
-
-            ws.onclose = () => {
-                console.log(`websocket: closed ${url}.`);
-                if (!closeRequested) {
-                    openWebSocket();
-                }
-            };
-        };
-
-        openWebSocket();
-
-        return () => {
-            closeRequested = true;
-            if (ws != null) {
-                ws.close();
-            }
-        };
-
-    });
-
 }

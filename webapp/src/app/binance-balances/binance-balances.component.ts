@@ -14,7 +14,8 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import {Component, OnInit} from '@angular/core';
-import {BinanceAccountInfo, BinanceApiService, BinanceBalance} from "../binance-api.service";
+import {BinanceAccountInfo, BinanceBalance} from "../binance-api.service";
+import {BinanceProxyService} from "../binance-proxy.service";
 
 @Component({
     selector: 'app-binance-balances',
@@ -27,7 +28,7 @@ export class BinanceBalancesComponent implements OnInit {
 
     balances: BalanceEntry[] = [];
 
-    constructor(private binanceApi: BinanceApiService) {
+    constructor(private binanceProxy: BinanceProxyService) {
     }
 
     ngOnInit() {
@@ -35,7 +36,7 @@ export class BinanceBalancesComponent implements OnInit {
     }
 
     refresh() {
-        this.binanceApi.getAccountInfo().subscribe((accountInfo) => {
+        this.binanceProxy.getAccountInfo().subscribe((accountInfo) => {
             this.accountInfo = accountInfo;
             this.balances = accountInfo.balances
                 .map((binanceBalance) => {

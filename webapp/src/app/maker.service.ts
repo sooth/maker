@@ -17,19 +17,19 @@ import {Injectable} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
 import {Subject} from "rxjs/Subject";
 import {
-    BinanceAccountInfo,
     AggTrade,
+    BinanceAccountInfo,
     BinanceApiService,
-    buildAggTradeFromStream,
-    CancelOrderResponse,
     BinanceStreamAccountInfoResponse,
+    buildAggTradeFromStream, BuyOrderResponse,
+    CancelOrderResponse,
     StreamAggTrade
 } from "./binance-api.service";
 import {HttpParams} from "@angular/common/http";
 import {Logger, LoggerService} from "./logger.service";
 import {Observable} from "rxjs";
 import {ToastrService} from './toastr.service';
-import {LimitSellType} from './binance.service';
+import {LimitSellType, OpenTradeOptions} from './binance.service';
 import {GIT_REVISION, VERSION} from "../environments/version";
 import {take} from "rxjs/operators";
 import {LoginService} from "./login.service";
@@ -186,15 +186,22 @@ export class MakerService {
         });
     }
 
-    cancelBuy(trade: TradeState) {
-        this.binanceApi.cancelBuy(trade.TradeID).subscribe((response) => {
-        }, (error) => {
-            console.log("Failed to cancel buy order: " + JSON.stringify(error));
-        });
+    cancelBuy(tradeId: string): Observable<CancelOrderResponse> {
+        const endpoint = "/api/binance/buy";
+        const params = new HttpParams()
+            .set("trade_id", tradeId);
+        return this.makerApi.delete(endpoint, params);
     }
 
     cancelSell(trade: TradeState): Observable<CancelOrderResponse> {
-        return this.binanceApi.cancelSellOrder(trade.TradeID);
+        const endpoint = "/api/binance/sell";
+        const params = new HttpParams().set("trade_id", trade.TradeID);
+        return this.makerApi.delete(endpoint, params);
+    }
+
+    postBuyOrder(body: OpenTradeOptions): Observable<BuyOrderResponse> {
+        const endpoint = "/api/binance/buy";
+        return <Observable<BuyOrderResponse>>this.makerApi.post(endpoint, body, null);
     }
 
     limitSellByPercent(trade: TradeState, percent: number) {

@@ -25,6 +25,7 @@ import {Logger, LoggerService} from "../logger.service";
 import {ToastrService} from "../toastr.service";
 import {AppTradeState} from '../trade-table/trade-table.component';
 import * as $ from "jquery";
+import {BinanceApiService} from "../binance-api.service";
 
 interface SellAtPriceModel {
     price: number;
@@ -113,6 +114,7 @@ export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit 
 
     constructor(public maker: MakerService,
                 private toastr: ToastrService,
+                private binanceApi: BinanceApiService,
                 logger: LoggerService) {
         this.logger = logger.getLogger("TradeTableRowComponent");
     }
@@ -145,7 +147,10 @@ export class TradeTableRowComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     cancelBuy() {
-        this.maker.cancelBuy(this.trade);
+        this.maker.cancelBuy(this.trade.TradeID).subscribe(() => {
+        }, (error) => {
+            console.log("Failed to cancel buy order: " + JSON.stringify(error));
+        });
     }
 
     cancelSell() {

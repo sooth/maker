@@ -18,11 +18,11 @@ import {BinanceApiService, buildTickerFromStream, ExchangeInfo, PriceTicker, Sym
 import {map, multicast, refCount, take, tap} from "rxjs/operators";
 import {Observable, Subject} from "rxjs";
 import {ReplaySubject} from "rxjs/ReplaySubject";
-import {Logger, LoggerService} from "./logger.service";
 import {MakerService} from "./maker.service";
 import {MakerApiService} from "./maker-api.service";
 import {ToastrService} from "./toastr.service";
 import {LoginService} from "./login.service";
+import {BinanceProxyService} from "./binance-proxy.service";
 
 /**
  * Enum of types that can be used as a price source.
@@ -66,17 +66,16 @@ export class BinanceService {
     streams$: { [key: string]: Observable<any> } = {};
 
     private isReadySubject: Subject<boolean> = null;
-    public isReady$: Observable<boolean> = null;
 
-    private logger: Logger = null;
+    public isReady$: Observable<boolean> = null;
 
     constructor(private api: BinanceApiService,
                 private maker: MakerService,
                 private makerApi: MakerApiService,
                 private toastr: ToastrService,
                 private loginService: LoginService,
-                logger: LoggerService) {
-        this.logger = logger.getLogger("binance.service");
+                private binanceProxy: BinanceProxyService,
+    ) {
         this.isReadySubject = new ReplaySubject<boolean>(1);
         this.isReady$ = this.isReadySubject.pipe(take(1));
         this.loginService.$onLogin.asObservable().pipe(take(1))
@@ -86,17 +85,12 @@ export class BinanceService {
     }
 
     private init() {
-        console.log("BinanceServer.init()");
         // Get config then do initialization that depends on config.
-        this.makerApi.getConfig().subscribe((config) => {
+        this.makerApi.getConfig().subscribe(() => {
             this.updateExchangeInfo().subscribe(() => {
                 this.isReadySubject.next(true);
             });
         });
-    }
-
-    postBuyOrder(body: OpenTradeOptions) {
-        return this.api.postBuyOrder(body);
     }
 
     subscribeToTicker(symbol: string): Observable<PriceTicker> {
@@ -116,7 +110,7 @@ export class BinanceService {
     }
 
     updateExchangeInfo(): Observable<ExchangeInfo> {
-        return this.api.getExchangeInfo().pipe(tap((exchangeInfo) => {
+        return this.binanceProxy.getExchangeInfo().pipe(tap((exchangeInfo) => {
             const quoteAssets: any = {};
 
             exchangeInfo.symbols.forEach((symbol) => {

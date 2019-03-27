@@ -17,28 +17,48 @@ import {Injectable} from '@angular/core';
 import {HttpParams} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {MakerApiService} from "./maker-api.service";
-
-const REST_API_ROOT = "/proxy/binance";
+import {map} from "rxjs/operators";
+import {
+    BinanceAccountInfo,
+    BinanceRestAccountInfoResrponse,
+    ExchangeInfo,
+    RestExchangeInfoResponse
+} from "./binance-api.service";
 
 @Injectable({
     providedIn: 'root'
 })
-export class BinanceRestApiService {
+export class BinanceProxyService {
 
     constructor(private makerApi: MakerApiService) {
     }
 
     private get(path: string, params: HttpParams = new HttpParams()): Observable<Object> {
-        const url = `${REST_API_ROOT}${path}`;
+        const url = `${path}`;
         return this.makerApi.get(url, {
             params: params,
         });
     }
 
     getTicker24h(symbol: string): Observable<Ticker24hResponse> {
-        const endpoint = "/api/v1/ticker/24hr";
+        const endpoint = "/proxy/binance/api/v1/ticker/24hr";
         const params = new HttpParams().set("symbol", symbol);
         return <Observable<Ticker24hResponse>>this.get(endpoint, params);
+    }
+
+    getAccountInfo(): Observable<BinanceAccountInfo> {
+        return this.makerApi.get("/api/binance/proxy/getAccount")
+            .pipe(map((restResponse: BinanceRestAccountInfoResrponse) => {
+                const accountInfo = BinanceAccountInfo.fromRest(restResponse);
+                return accountInfo;
+            }));
+    }
+
+    getExchangeInfo(): Observable<ExchangeInfo> {
+        const endpoint = "/proxy/binance/api/v1/exchangeInfo";
+        return this.get(endpoint, null).pipe(map((info: RestExchangeInfoResponse) => {
+            return ExchangeInfo.fromRest(info);
+        }));
     }
 
 }

@@ -29,7 +29,7 @@ import {FormBuilder, FormGroup} from "@angular/forms";
 import {ToastrService} from "../toastr.service";
 import {TradeTableComponent} from '../trade-table/trade-table.component';
 import {ActivatedRoute, Router} from '@angular/router';
-import {BinanceRestApiService} from "../binance-rest-api.service";
+import {BinanceProxyService} from "../binance-proxy.service";
 
 declare var window: any;
 
@@ -141,7 +141,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
                 private route: ActivatedRoute,
                 private router: Router,
                 logger: LoggerService,
-                private binanceRestApi: BinanceRestApiService,
+                private binanceProxy: BinanceProxyService,
     ) {
         this.logger = logger.getLogger("trade-component");
     }
@@ -276,7 +276,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     private updateAccountInfo(): Observable<BinanceAccountInfo> {
-        return this.api.getAccountInfo().pipe(tap((accountInfo) => {
+        return this.binanceProxy.getAccountInfo().pipe(tap((accountInfo) => {
             console.log("Updating account info.");
             this.updateBalances(accountInfo);
         }));
@@ -341,7 +341,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             return;
         }
 
-        this.binanceRestApi.getTicker24h(symbol).subscribe((response) => {
+        this.binanceProxy.getTicker24h(symbol).subscribe((response) => {
             this.ticker.last = +response.lastPrice;
             this.ticker.percentChange24 = +response.priceChangePercent;
             this.ticker.vol24 = +response.quoteVolume;
@@ -434,7 +434,7 @@ export class TradeComponent implements OnInit, OnDestroy, AfterViewInit {
             options.limitSellPrice = +this.orderForm.limitSellPrice;
         }
 
-        this.binance.postBuyOrder(options).subscribe(() => {
+        this.maker.postBuyOrder(options).subscribe(() => {
         }, (error) => {
             console.log("Failed to post order:");
             console.log(error);
